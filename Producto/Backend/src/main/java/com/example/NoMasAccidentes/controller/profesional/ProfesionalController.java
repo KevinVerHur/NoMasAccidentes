@@ -2,8 +2,8 @@ package com.example.NoMasAccidentes.controller.profesional;
 
 import com.example.NoMasAccidentes.dto.profesional.ActualizarProfesionalRequest;
 import com.example.NoMasAccidentes.dto.profesional.ActualizarUbicacionRequest;
-import com.example.NoMasAccidentes.dto.profesional.CrearProfesionalRequest;
 import com.example.NoMasAccidentes.dto.profesional.ProfesionalResponse;
+import com.example.NoMasAccidentes.dto.profesional.RegistrarProfesionalRequest;
 import com.example.NoMasAccidentes.service.profesional.ProfesionalService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -36,7 +36,7 @@ public class ProfesionalController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ProfesionalResponse> crear(@Valid @RequestBody CrearProfesionalRequest request) {
+    public ResponseEntity<ProfesionalResponse> crear(@Valid @RequestBody RegistrarProfesionalRequest request) {
         ProfesionalResponse creado = profesionalService.crear(request);
         return ResponseEntity
             .created(URI.create("/api/profesionales/" + creado.id()))

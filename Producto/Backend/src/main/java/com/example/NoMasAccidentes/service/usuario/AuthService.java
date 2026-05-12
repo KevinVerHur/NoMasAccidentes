@@ -1,18 +1,25 @@
 package com.example.NoMasAccidentes.service.usuario;
 
 import com.example.NoMasAccidentes.common.ConflictoNegocioException;
+import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
 import com.example.NoMasAccidentes.dto.usuario.CrearUsuarioRequest;
 import com.example.NoMasAccidentes.dto.usuario.LoginRequest;
 import com.example.NoMasAccidentes.dto.usuario.LoginResponse;
+import com.example.NoMasAccidentes.dto.usuario.RestablecerPasswordRequest;
+import com.example.NoMasAccidentes.dto.usuario.SolicitarRecuperacionRequest;
 import com.example.NoMasAccidentes.dto.usuario.UsuarioResponse;
+import com.example.NoMasAccidentes.model.usuario.PasswordResetToken;
 import com.example.NoMasAccidentes.model.usuario.Usuario;
+import com.example.NoMasAccidentes.repository.usuario.PasswordResetTokenRepository;
 import com.example.NoMasAccidentes.repository.usuario.UsuarioRepository;
 import com.example.NoMasAccidentes.security.JwtService;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +34,11 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final UsuarioRepository usuarioRepository;
+    private final PasswordResetTokenRepository tokenRepository;
     private final JwtService jwtService;
     private final UsuarioService usuarioService;
+    private final CorreoService correoService;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public LoginResponse login(LoginRequest request) {
@@ -54,6 +64,47 @@ public class AuthService {
                 "%s %s".formatted(usuario.getNombre(), usuario.getApellido()),
                 usuario.getRol().getNombre()
         );
+    }
+
+    /**
+     * Genera un token de recuperación y envía el correo al usuario (RF — recuperación de cuenta).
+     * Si el email no existe, responde igual para no revelar qué emails están registrados.
+     */
+    @Transactional
+    public void solicitarRecuperacion(SolicitarRecuperacionRequest request) {
+        usuarioRepository.findByEmail(request.email()).ifPresent(usuario -> {
+            String token = UUID.randomUUID().toString();
+            tokenRepository.save(PasswordResetToken.builder()
+                    .token(token)
+                    .usuario(usuario)
+                    .creadoEn(LocalDateTime.now())
+                    .expiraEn(LocalDateTime.now().plusHours(1))
+                    .build());
+            correoService.enviarRecuperacionPassword(usuario.getEmail(), token);
+            log.info("Token de recuperación generado para email={}", usuario.getEmail());
+        });
+    }
+
+    /**
+     * Valida el token y actualiza la contraseña del usuario.
+     */
+    @Transactional
+    public void restablecerPassword(RestablecerPasswordRequest request) {
+        PasswordResetToken prt = tokenRepository.findByToken(request.token())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Token inválido o expirado"));
+
+        if (!prt.estaVigente()) {
+            throw new ConflictoNegocioException("El enlace de recuperación ya fue usado o expiró");
+        }
+
+        Usuario usuario = prt.getUsuario();
+        usuario.setPasswordHash(passwordEncoder.encode(request.nuevaPassword()));
+        usuarioRepository.save(usuario);
+
+        prt.setUsado(true);
+        tokenRepository.save(prt);
+
+        log.info("Contraseña restablecida para email={}", usuario.getEmail());
     }
 
     /** Autoregistro público (RF01). El rol ADMIN (id=1) está bloqueado. */

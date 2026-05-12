@@ -3,6 +3,8 @@ package com.example.NoMasAccidentes.controller.usuario;
 import com.example.NoMasAccidentes.dto.usuario.CrearUsuarioRequest;
 import com.example.NoMasAccidentes.dto.usuario.LoginRequest;
 import com.example.NoMasAccidentes.dto.usuario.LoginResponse;
+import com.example.NoMasAccidentes.dto.usuario.RestablecerPasswordRequest;
+import com.example.NoMasAccidentes.dto.usuario.SolicitarRecuperacionRequest;
 import com.example.NoMasAccidentes.service.usuario.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -43,5 +45,34 @@ public class AuthController {
     @PostMapping("/registro")
     public ResponseEntity<LoginResponse> registro(@Valid @RequestBody CrearUsuarioRequest request) {
         return ResponseEntity.ok(authService.registrar(request));
+    }
+
+    @Operation(
+        summary = "Solicitar recuperación de contraseña",
+        description = "Envía un correo con un enlace de restablecimiento válido por 1 hora. " +
+                      "Siempre responde 200 para no revelar si el email existe.",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Correo enviado (o email no registrado, respuesta idéntica)")
+        }
+    )
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> solicitarRecuperacion(@Valid @RequestBody SolicitarRecuperacionRequest request) {
+        authService.solicitarRecuperacion(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Restablecer contraseña",
+        description = "Valida el token recibido por correo y actualiza la contraseña.",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Contraseña actualizada"),
+            @ApiResponse(responseCode = "404", description = "Token inválido"),
+            @ApiResponse(responseCode = "409", description = "Token expirado o ya usado")
+        }
+    )
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> restablecerPassword(@Valid @RequestBody RestablecerPasswordRequest request) {
+        authService.restablecerPassword(request);
+        return ResponseEntity.ok().build();
     }
 }

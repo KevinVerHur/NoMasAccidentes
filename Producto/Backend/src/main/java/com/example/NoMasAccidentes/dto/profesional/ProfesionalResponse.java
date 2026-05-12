@@ -1,5 +1,6 @@
 package com.example.NoMasAccidentes.dto.profesional;
 
+import com.example.NoMasAccidentes.model.profesional.EstadoProfesional;
 import java.math.BigDecimal;
 
 /**
@@ -16,5 +17,7 @@ public record ProfesionalResponse(
     String especialidad,
     BigDecimal latitud,
     BigDecimal longitud,
-    boolean activo
+    EstadoProfesional estado,
+    boolean activo,
+    long cantidadClientes
 ) {}

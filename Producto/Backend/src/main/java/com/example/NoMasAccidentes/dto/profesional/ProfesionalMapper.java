@@ -11,8 +11,10 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ProfesionalMapper {
 
-    @Mapping(target = "idUsuario",      source = "usuario.id")
-    @Mapping(target = "email",          source = "usuario.email")
-    @Mapping(target = "nombreCompleto", expression = "java(profesional.getUsuario().getNombre() + \" \" + profesional.getUsuario().getApellido())")
+    @Mapping(target = "idUsuario",        source = "usuario.id")
+    @Mapping(target = "email",            source = "usuario.email")
+    @Mapping(target = "nombreCompleto",   expression = "java(profesional.getUsuario().getNombre() + \" \" + profesional.getUsuario().getApellido())")
+    @Mapping(target = "estado",           source = "estado")
+    @Mapping(target = "cantidadClientes", constant = "0L")
     ProfesionalResponse toResponse(Profesional profesional);
 }
