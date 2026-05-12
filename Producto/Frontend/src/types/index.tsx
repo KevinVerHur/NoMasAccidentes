@@ -60,3 +60,70 @@ export interface AccidentabilidadResumen {
   tasa: string;
   variante: VarianteBarra;
 }
+
+// ---- Cliente ----
+export type EstadoCliente = 'ACTIVO' | 'MOROSO' | 'SUSPENDIDO';
+
+export interface ClienteResponse {
+  id: number;
+  razonSocial: string;
+  rut: string;
+  nombreContacto: string;
+  email: string;
+  telefono: string | null;
+  rubro: string;
+  plan: string;
+  estado: EstadoCliente;
+  idProfesional: number | null;
+  nombreProfesional: string | null;
+  activo: boolean;
+}
+
+export interface CrearClienteRequest {
+  razonSocial: string;
+  rut: string;
+  nombreContacto: string;
+  email: string;
+  telefono?: string;
+  rubro: string;
+  plan: string;
+  idProfesional?: number | null;
+}
+
+export interface ActualizarClienteRequest extends CrearClienteRequest {
+  estado: EstadoCliente;
+}
+
+// ---- Profesional ----
+export type EstadoProfesional = 'DISPONIBLE' | 'EN_VISITA' | 'EN_CAPACITACION';
+
+export interface ProfesionalResponse {
+  id: number;
+  idUsuario: number;
+  email: string;
+  nombreCompleto: string;
+  rut: string;
+  telefono: string | null;
+  especialidad: string | null;
+  latitud: number | null;
+  longitud: number | null;
+  estado: EstadoProfesional;
+  activo: boolean;
+  cantidadClientes: number;
+}
+
+export interface CrearProfesionalRequest {
+  email: string;
+  password: string;
+  nombre: string;
+  apellido: string;
+  rut: string;
+  especialidad?: string;
+  telefono?: string;
+}
+
+export interface ActualizarProfesionalRequest {
+  rut: string;
+  telefono?: string;
+  especialidad?: string;
+}
