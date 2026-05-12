@@ -7,6 +7,10 @@ import AppLayout from './components/layout/AppLayout';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
 import Dashboard from './pages/Dashboard';
+import Clientes from './pages/Clientes';
+import Profesionales from './pages/Profesionales';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import './index.css';
 
 const router = createBrowserRouter([
@@ -19,13 +23,23 @@ const router = createBrowserRouter([
     element: <Registro />,
   },
   {
+    path: '/recuperar-contrasena',
+    element: <ForgotPassword />,
+  },
+  {
+    path: '/restablecer-contrasena',
+    element: <ResetPassword />,
+  },
+  {
     element: (
       <ProtectedRoute>
         <AppLayout />
       </ProtectedRoute>
     ),
     children: [
-      { path: '/dashboard', element: <Dashboard /> },
+      { path: '/dashboard',      element: <Dashboard /> },
+      { path: '/clientes',       element: <Clientes /> },
+      { path: '/profesionales',  element: <Profesionales /> },
     ],
   },
   {
