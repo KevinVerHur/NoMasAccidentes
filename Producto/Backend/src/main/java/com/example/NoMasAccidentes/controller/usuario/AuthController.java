@@ -27,7 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
-
+    @Operation(
+            summary = "Iniciar sesión ",
+            description = "Autentica al usuario con sus credenciales y retorna un token JWT listo para usar."
+    )
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
