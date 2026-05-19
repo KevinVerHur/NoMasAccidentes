@@ -5,6 +5,7 @@ import com.example.NoMasAccidentes.dto.usuario.CambiarPasswordRequest;
 import com.example.NoMasAccidentes.dto.usuario.CrearUsuarioRequest;
 import com.example.NoMasAccidentes.dto.usuario.UsuarioResponse;
 import com.example.NoMasAccidentes.service.usuario.UsuarioService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -35,27 +36,43 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
+    @Operation(
+            summary = "Crear un nuevo usuario",
+            description = "Registra un nuevo usuario en el sistema. Solo accesible por administradores."
+    )
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UsuarioResponse> crear(@Valid @RequestBody CrearUsuarioRequest request) {
         UsuarioResponse creado = usuarioService.crear(request);
         return ResponseEntity
-            .created(URI.create("/api/usuarios/" + creado.id()))
-            .body(creado);
+                .created(URI.create("/api/usuarios/" + creado.id()))
+                .body(creado);
     }
 
+    @Operation(
+            summary = "Listar usuarios paginados",
+            description = "Retorna una página con todos los usuarios registrados en el sistema. Solo accesible por administradores."
+    )
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public Page<UsuarioResponse> listar(Pageable pageable) {
         return usuarioService.listar(pageable);
     }
 
+    @Operation(
+            summary = "Obtener usuario por ID ",
+            description = "Retorna los datos de un usuario específico por su identificador. Solo accesible por administradores."
+    )
     @GetMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public UsuarioResponse obtener(@PathVariable Long id) {
         return usuarioService.obtenerPorId(id);
     }
 
+    @Operation(
+            summary = "Actualizar usuario completo ",
+            description = "Reemplaza todos los datos de un usuario existente. Solo accesible por administradores."
+    )
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public UsuarioResponse actualizar(
@@ -64,6 +81,10 @@ public class UsuarioController {
         return usuarioService.actualizar(id, request);
     }
 
+    @Operation(
+            summary = "Cambiar contraseña de usuario ",
+            description = "Actualiza la contraseña de un usuario específico. Solo accesible por administradores."
+    )
     @PatchMapping("/{id}/password")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> cambiarPassword(
@@ -73,6 +94,10 @@ public class UsuarioController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(
+            summary = "Eliminar usuario ",
+            description = "Elimina permanentemente un usuario del sistema. Solo accesible por administradores."
+    )
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {

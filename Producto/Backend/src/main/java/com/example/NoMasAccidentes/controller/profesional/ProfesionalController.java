@@ -5,6 +5,7 @@ import com.example.NoMasAccidentes.dto.profesional.ActualizarUbicacionRequest;
 import com.example.NoMasAccidentes.dto.profesional.ProfesionalResponse;
 import com.example.NoMasAccidentes.dto.profesional.RegistrarProfesionalRequest;
 import com.example.NoMasAccidentes.service.profesional.ProfesionalService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -34,27 +35,43 @@ public class ProfesionalController {
 
     private final ProfesionalService profesionalService;
 
+    @Operation(
+            summary = "Registrar nuevo profesional",
+            description = "Crea un nuevo profesional de prevención de riesgos en el sistema. Solo accesible por administradores."
+    )
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProfesionalResponse> crear(@Valid @RequestBody RegistrarProfesionalRequest request) {
         ProfesionalResponse creado = profesionalService.crear(request);
         return ResponseEntity
-            .created(URI.create("/api/profesionales/" + creado.id()))
-            .body(creado);
+                .created(URI.create("/api/profesionales/" + creado.id()))
+                .body(creado);
     }
 
+    @Operation(
+            summary = "Listar profesionales paginados ",
+            description = "Retorna una página con todos los profesionales registrados. Accesible por administradores y profesionales."
+    )
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public Page<ProfesionalResponse> listar(Pageable pageable) {
         return profesionalService.listar(pageable);
     }
 
+    @Operation(
+            summary = "Obtener profesional por ID ",
+            description = "Retorna los datos de un profesional específico por su identificador. Accesible por administradores y profesionales."
+    )
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public ProfesionalResponse obtener(@PathVariable Long id) {
         return profesionalService.obtenerPorId(id);
     }
 
+    @Operation(
+            summary = "Actualizar profesional completo",
+            description = "Reemplaza todos los datos de un profesional existente. Solo accesible por administradores."
+    )
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ProfesionalResponse actualizar(
@@ -63,6 +80,10 @@ public class ProfesionalController {
         return profesionalService.actualizar(id, request);
     }
 
+    @Operation(
+            summary = "Actualizar ubicación del profesional ",
+            description = "Actualiza las coordenadas de ubicación geográfica de un profesional. Accesible por administradores y profesionales."
+    )
     @PatchMapping("/{id}/ubicacion")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public ProfesionalResponse actualizarUbicacion(
@@ -71,6 +92,10 @@ public class ProfesionalController {
         return profesionalService.actualizarUbicacion(id, request);
     }
 
+    @Operation(
+            summary = "Eliminar profesional ",
+            description = "Elimina permanentemente un profesional del sistema. Solo accesible por administradores."
+    )
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
