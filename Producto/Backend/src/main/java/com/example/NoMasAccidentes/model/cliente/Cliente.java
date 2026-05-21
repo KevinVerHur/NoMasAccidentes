@@ -2,17 +2,8 @@ package com.example.NoMasAccidentes.model.cliente;
 
 import com.example.NoMasAccidentes.common.BaseEntity;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.example.NoMasAccidentes.model.usuario.Usuario;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -70,6 +61,10 @@ public class Cliente extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_profesional")
     private Profesional profesional;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario", unique = true)
+    private Usuario usuario;
 
     @Column(name = "activo", nullable = false)
     @Builder.Default
