@@ -124,16 +124,12 @@
             <version>2.8.3</version>
         </dependency>
 
-        <!-- Generación de PDFs (informes post-visita y reportes mensuales) -->
+        <!-- Generación de PDFs (informes post-visita y reportes mensuales).
+             OpenPDF: licencia LGPL/MPL (permisiva), evita la restricción AGPL de iText. -->
         <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>kernel</artifactId>
-            <version>8.0.5</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>layout</artifactId>
-            <version>8.0.5</version>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>3.0.4</version>
         </dependency>
 
         <!-- AWS SDK v2 - S3: almacenamiento de informes PDF en la nube -->
