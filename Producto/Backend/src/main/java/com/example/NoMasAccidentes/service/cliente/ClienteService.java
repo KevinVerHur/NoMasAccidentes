@@ -9,12 +9,22 @@ import com.example.NoMasAccidentes.dto.cliente.CrearClienteRequest;
 import com.example.NoMasAccidentes.model.cliente.Cliente;
 import com.example.NoMasAccidentes.model.cliente.EstadoCliente;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
+import com.example.NoMasAccidentes.model.usuario.PasswordResetToken;
+import com.example.NoMasAccidentes.model.usuario.Rol;
+import com.example.NoMasAccidentes.model.usuario.Usuario;
 import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
 import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
+import com.example.NoMasAccidentes.repository.usuario.PasswordResetTokenRepository;
+import com.example.NoMasAccidentes.repository.usuario.RolRepository;
+import com.example.NoMasAccidentes.repository.usuario.UsuarioRepository;
+import com.example.NoMasAccidentes.service.usuario.CorreoService;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,17 +37,29 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class ClienteService {
 
+    private static final String ROL_CLIENTE = "CLIENTE";
+    private static final long INVITACION_VALIDEZ_HORAS = 48;
+
     private final ClienteRepository clienteRepository;
     private final ProfesionalRepository profesionalRepository;
     private final ClienteMapper clienteMapper;
+    private final UsuarioRepository usuarioRepository;
+    private final RolRepository rolRepository;
+    private final PasswordResetTokenRepository tokenRepository;
+    private final CorreoService correoService;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public ClienteResponse crear(CrearClienteRequest request) {
         if (clienteRepository.findByRut(request.rut()).isPresent()) {
             throw new ConflictoNegocioException("Ya existe un cliente con RUT " + request.rut());
         }
+        if (usuarioRepository.existsByEmail(request.email())) {
+            throw new ConflictoNegocioException("Ya existe un usuario con email " + request.email());
+        }
 
         Profesional profesional = resolverProfesional(request.idProfesional());
+        Usuario usuario = provisionarUsuarioCliente(request);
 
         Cliente cliente = Cliente.builder()
                 .razonSocial(request.razonSocial())
@@ -49,11 +71,45 @@ public class ClienteService {
                 .plan(request.plan())
                 .estado(EstadoCliente.ACTIVO)
                 .profesional(profesional)
+                .usuario(usuario)
                 .build();
 
         Cliente guardado = clienteRepository.save(cliente);
-        log.info("Cliente creado id={} rut={} (RF06)", guardado.getId(), guardado.getRut());
+        enviarInvitacion(usuario);
+        log.info("Cliente creado id={} rut={} con cuenta usuario id={} (RF06)",
+                guardado.getId(), guardado.getRut(), usuario.getId());
         return clienteMapper.toResponse(guardado);
+    }
+
+    /**
+     * Crea la cuenta de acceso del cliente con rol CLIENTE. La contraseña queda en un
+     * valor aleatorio inutilizable: el cliente define la suya vía el enlace de invitación.
+     */
+    private Usuario provisionarUsuarioCliente(CrearClienteRequest request) {
+        Rol rolCliente = rolRepository.findByNombre(ROL_CLIENTE)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Rol CLIENTE no encontrado"));
+
+        Usuario usuario = Usuario.builder()
+                .email(request.email())
+                .passwordHash(passwordEncoder.encode(UUID.randomUUID().toString()))
+                .nombre(request.nombreContacto())
+                .apellido(request.razonSocial())
+                .rol(rolCliente)
+                .activo(true)
+                .build();
+        return usuarioRepository.save(usuario);
+    }
+
+    /** Genera el token de activación y dispara el correo de invitación (válido 48 h). */
+    private void enviarInvitacion(Usuario usuario) {
+        String token = UUID.randomUUID().toString();
+        tokenRepository.save(PasswordResetToken.builder()
+                .token(token)
+                .usuario(usuario)
+                .creadoEn(LocalDateTime.now())
+                .expiraEn(LocalDateTime.now().plusHours(INVITACION_VALIDEZ_HORAS))
+                .build());
+        correoService.enviarInvitacionCliente(usuario.getEmail(), token);
     }
 
     public Page<ClienteResponse> listar(Pageable pageable) {

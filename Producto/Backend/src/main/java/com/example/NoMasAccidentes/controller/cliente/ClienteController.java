@@ -32,6 +32,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Clientes", description = "Gestión de empresas clientes (RF06–RF12)")
 public class ClienteController {
 
+
     private final ClienteService clienteService;
 
     @Operation(
