@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Rol } from '../types';
 
@@ -21,6 +21,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 function decodificarJwt(token: string): DatosJwt | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
+    if (typeof payload.exp === 'number' && payload.exp * 1000 <= Date.now()) {
+      return null;
+    }
     return {
       email: payload.sub,
       rol: payload.rol,
@@ -39,6 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const email = datos?.email ?? null;
   const rol = datos?.rol ?? null;
   const cargando = false;
+
+    useEffect(() => {
+    if (token && !datos) {
+      localStorage.removeItem('nma_token');
+      setToken(null);
+    }
+  }, [token, datos]);
 
   function iniciarSesion(nuevoToken: string) {
     localStorage.setItem('nma_token', nuevoToken);
