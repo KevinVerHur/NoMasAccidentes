@@ -61,6 +61,56 @@ export interface AccidentabilidadResumen {
   variante: VarianteBarra;
 }
 
+// ---- Dashboard Profesional (mock) ----
+export interface MiVisita {
+  cliente: string;
+  fecha: string;
+  hora: string;
+  direccion: string;
+  estado: 'Programada' | 'Realizada' | 'Pendiente';
+}
+
+export interface MiClienteAsignado {
+  razonSocial: string;
+  rubro: string;
+  ultimaVisita: string;
+  estado: 'ACTIVO' | 'MOROSO' | 'SUSPENDIDO';
+}
+
+// ---- Dashboard Cliente (mock) ----
+export interface ProximaActividad {
+  fecha: string;
+  actividad: string;
+  profesional: string;
+  estado: 'Programada' | 'Por confirmar' | 'Pendiente';
+}
+
+export interface AccionImportante {
+  tipo: VarianteAlerta;
+  titulo: string;
+  texto: string;
+}
+
+export interface VisitaRecibida {
+  fecha: string;
+  profesional: string;
+  tipo: string;
+  estado: 'Realizada' | 'Programada';
+}
+
+export interface ReporteDisponible {
+  nombre: string;
+  fecha: string;
+  tipo: string;
+}
+
+export interface MiCapacitacion {
+  nombre: string;
+  fecha: string;
+  asistentes: number;
+  estado: 'Realizada' | 'Programada';
+}
+
 // ---- Cliente ----
 export type EstadoCliente = 'ACTIVO' | 'MOROSO' | 'SUSPENDIDO';
 
