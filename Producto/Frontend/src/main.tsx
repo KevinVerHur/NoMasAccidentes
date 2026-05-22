@@ -38,8 +38,14 @@ const router = createBrowserRouter([
     ),
     children: [
       { path: '/dashboard',      element: <Dashboard /> },
-      { path: '/clientes',       element: <Clientes /> },
-      { path: '/profesionales',  element: <Profesionales /> },
+      {
+        path: '/clientes',
+        element: <ProtectedRoute roles={['ADMIN']}><Clientes /></ProtectedRoute>,
+      },
+      {
+        path: '/profesionales',
+        element: <ProtectedRoute roles={['ADMIN']}><Profesionales /></ProtectedRoute>,
+      },
     ],
   },
   {
