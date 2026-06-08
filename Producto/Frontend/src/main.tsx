@@ -13,6 +13,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import './index.css';
 
+
 const router = createBrowserRouter([
   {
     path: '/login',
@@ -46,6 +47,7 @@ const router = createBrowserRouter([
         path: '/profesionales',
         element: <ProtectedRoute roles={['ADMIN']}><Profesionales /></ProtectedRoute>,
       },
+      
     ],
   },
   {

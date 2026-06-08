@@ -6,11 +6,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface VisitaRepository extends JpaRepository<Visita, Long>{
-    
+public interface VisitaRepository extends JpaRepository<Visita, Long> {
+
     List<Visita> findByEstadoAndRecordatorioEnviadoFalseAndFechaProgramadaBetween(
-        EstadoVisita estado,
-        LocalDateTime desde,
-        LocalDateTime hasta
+            EstadoVisita estado,
+            LocalDateTime desde,
+            LocalDateTime hasta
+    );
+
+    List<Visita> findByProfesionalUsuarioEmailOrderByFechaProgramadaAsc(String email);
+
+    List<Visita> findByProfesionalUsuarioEmailAndEstadoOrderByFechaProgramadaAsc(
+            String email,
+            EstadoVisita estado
     );
 }

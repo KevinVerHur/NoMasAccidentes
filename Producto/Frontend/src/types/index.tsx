@@ -177,3 +177,49 @@ export interface ActualizarProfesionalRequest {
   telefono?: string;
   especialidad?: string;
 }
+
+export interface ActualizarEstadoProfesionalRequest {
+  estado: EstadoProfesional;
+}
+
+export interface ActualizarUbicacionProfesionalRequest {
+  latitud: number;
+  longitud: number;
+}
+
+export interface RegistrarUbicacionRequest {
+  latitud: number;
+  longitud: number;
+}
+
+export interface UbicacionProfesionalResponse {
+  idProfesional: number;
+  nombreProfesional: string;
+  email: string;
+  estado: EstadoProfesional;
+  latitud: number;
+  longitud: number;
+  fechaRegistro: string;
+}
+
+export type EstadoVisitaBackend = 'PROGRAMADA' | 'REALIZADA' | 'CANCELADA';
+
+export interface VisitaResponse {
+  id: number;
+  idCliente: number;
+  cliente: string;
+  idProfesional: number | null;
+  profesional: string | null;
+  fechaProgramada: string;
+  direccion: string;
+  motivo: string | null;
+  estado: EstadoVisitaBackend;
+}
+
+export interface CrearVisitaRequest {
+  idCliente: number;
+  idProfesional: number;
+  fechaProgramada: string;
+  direccion: string;
+  motivo?: string | null;
+}

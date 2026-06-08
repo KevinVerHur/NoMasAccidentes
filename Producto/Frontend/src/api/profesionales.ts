@@ -1,5 +1,11 @@
-import type { ProfesionalResponse, CrearProfesionalRequest, ActualizarProfesionalRequest } from '../types';
 import api from './axiosConfig';
+import type {
+  ProfesionalResponse,
+  CrearProfesionalRequest,
+  ActualizarProfesionalRequest,
+  ActualizarEstadoProfesionalRequest,
+  ActualizarUbicacionProfesionalRequest,
+} from '../types';
 
 interface Pagina<T> { content: T[]; totalElements: number; totalPages: number; }
 
@@ -25,4 +31,32 @@ export async function actualizarProfesional(id: number, data: ActualizarProfesio
 
 export async function eliminarProfesional(id: number): Promise<void> {
   await api.delete(`/api/profesionales/${id}`);
+}
+
+export async function actualizarEstadoProfesional(
+  id: number,
+  data: ActualizarEstadoProfesionalRequest
+): Promise<ProfesionalResponse> {
+  const res = await api.patch<ProfesionalResponse>(`/api/profesionales/${id}/estado`, data);
+  return res.data;
+}
+
+export async function actualizarUbicacionProfesional(
+  id: number,
+  data: ActualizarUbicacionProfesionalRequest
+): Promise<ProfesionalResponse>{
+  const res = await api.patch<ProfesionalResponse>(`/api/profesionales/${id}/ubicacion`, data);
+  return res.data;
+}
+
+export async function obtenerMiPerfilProfesional(): Promise<ProfesionalResponse> {
+  const res = await api.get<ProfesionalResponse>('/api/profesionales/me');
+  return res.data;
+}
+
+export async function actualizarMiEstadoProfesional(
+  data: ActualizarEstadoProfesionalRequest
+): Promise<ProfesionalResponse> {
+  const res = await api.patch<ProfesionalResponse>('/api/profesionales/me/estado', data);
+  return res.data;
 }
