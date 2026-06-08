@@ -11,6 +11,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
+
 
 /**
  * Empresa cliente que contrata los servicios de prevención de riesgos.
@@ -23,6 +26,7 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
 @SQLDelete(sql = "UPDATE cliente SET activo = false WHERE id_cliente = ?")
 @SQLRestriction("activo = true")
 public class Cliente extends BaseEntity {
