@@ -21,6 +21,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
+
 
 /**
  * Profesional de prevención de riesgos. Asociado 1-a-1 con un Usuario del sistema.
@@ -32,6 +35,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
 @Builder
 @SQLDelete(sql = "UPDATE profesional SET activo = false WHERE id_profesional = ?")
 @SQLRestriction("activo = true")
