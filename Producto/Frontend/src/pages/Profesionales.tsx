@@ -6,6 +6,7 @@ import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import type { ProfesionalResponse, CrearProfesionalRequest, ActualizarProfesionalRequest, EstadoProfesional, VarianteBadge } from '../types';
 import { listarProfesionales, crearProfesional, actualizarProfesional, eliminarProfesional } from '../api/profesionales';
+import EstadoProfesionalesPanel from '../components/profesionales/EstadoProfesionalesPanel';
 
 const MAX_CLIENTES_CARGA = 12;
 
@@ -131,6 +132,8 @@ export default function Profesionales() {
                 <KpiCard label="En terreno"         value={enVisita} />
                 <KpiCard label="Clientes asignados" value={totalClientes} />
             </div>
+
+            <EstadoProfesionalesPanel />
 
             <Panel
                 titulo="🧑‍💼 Listado de profesionales"
