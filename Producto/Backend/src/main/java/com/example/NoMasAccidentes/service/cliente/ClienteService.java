@@ -153,17 +153,29 @@ public class ClienteService {
         if (cliente.getEstado() == EstadoCliente.SUSPENDIDO) {
             throw new ConflictoNegocioException("El cliente ya está suspendido");
         }
+
         cliente.setEstado(EstadoCliente.SUSPENDIDO);
-        log.info("Cliente suspendido id={} (RF09)", id);
+        
+        if (cliente.getUsuario() != null) {
+            cliente.getUsuario().setActivo(false);
+        }
+
+        log.info("Cliente suspendido id={} (RF09/RF12)", id);
         return clienteMapper.toResponse(cliente);
     }
 
-    /** Reactiva un cliente suspendido (RF09). */
+    /** Reactiva un cliente suspendido (RF09/RF12). */
     @Transactional
     public ClienteResponse reactivar(Long id) {
         Cliente cliente = buscarOFallar(id);
+
         cliente.setEstado(EstadoCliente.ACTIVO);
-        log.info("Cliente reactivado id={} (RF09)", id);
+
+        if(cliente.getUsuario() != null) {
+            cliente.getUsuario().setActivo(true);
+        }
+
+        log.info("Cliente reactivado id={} (RF09/EF12)", id);
         return clienteMapper.toResponse(cliente);
     }
 
