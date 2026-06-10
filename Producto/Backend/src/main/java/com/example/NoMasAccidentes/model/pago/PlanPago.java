@@ -1,6 +1,7 @@
 package com.example.NoMasAccidentes.model.pago;
 
 import com.example.NoMasAccidentes.common.BaseEntity;
+import com.example.NoMasAccidentes.model.cliente.Cliente;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,7 +13,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,57 +23,47 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 /**
- * Cuota de pago de un plan (RF09, RF10).
+ * Contrato de un cliente con un plan de pago (RF08).
  */
 @Entity
-@Table(name = "pago")
+@Table(name = "plan_de_pago")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE pago SET activo = false WHERE id_pago = ?")
+@SQLDelete(sql = "UPDATE plan_de_pago SET activo = false WHERE id_plan = ?")
 @SQLRestriction("activo = true")
-public class Pago extends BaseEntity {
+public class PlanPago extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_pago")
+    @Column(name = "id_plan")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_plan", nullable = false)
-    private PlanPago plan;
+    @JoinColumn(name = "id_cliente", nullable = false)
+    private Cliente cliente;
 
-    @Column(name = "numero_cuota", nullable = false)
-    private Integer numeroCuota;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_mensualidad", nullable = false)
+    private Mensualidad mensualidad;
 
-    @Column(name = "monto", nullable = false, precision = 10, scale = 2)
-    private BigDecimal monto;
+    @Column(name = "fecha_inicio", nullable = false)
+    private LocalDate fechaInicio;
 
-    @Column(name = "fecha_emision", nullable = false)
-    private LocalDate fechaEmision;
+    @Column(name = "fecha_termino")
+    private LocalDate fechaTermino;
 
-    @Column(name = "fecha_vencimiento", nullable = false)
-    private LocalDate fechaVencimiento;
-
-    @Column(name = "fecha_pago")
-    private LocalDate fechaPago;
-
-    @Column(name = "medio_pago", length = 40)
-    private String medioPago;
+    @Column(name = "cuotas_totales")
+    private Integer cuotasTotales;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_pago", nullable = false, length = 20)
+    @Column(name = "periodicidad", nullable = false, length = 20)
     @Builder.Default
-    private EstadoPago estadoPago = EstadoPago.PENDIENTE;
+    private Periodicidad periodicidad = Periodicidad.MENSUAL;
 
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private boolean activo = true;
-
-    /** Indica si ya se envió la alerta de pago pendiente (RF31). */
-    @Column(name = "alerta_enviada", nullable = false)
-    @Builder.Default
-    private boolean alertaEnviada = false;
 }

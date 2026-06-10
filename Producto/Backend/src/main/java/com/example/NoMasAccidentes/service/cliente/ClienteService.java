@@ -18,6 +18,7 @@ import com.example.NoMasAccidentes.repository.usuario.PasswordResetTokenReposito
 import com.example.NoMasAccidentes.repository.usuario.RolRepository;
 import com.example.NoMasAccidentes.repository.usuario.UsuarioRepository;
 import com.example.NoMasAccidentes.service.usuario.CorreoService;
+import com.example.NoMasAccidentes.service.visita.ListaChequeoService;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,7 @@ public class ClienteService {
     private final PasswordResetTokenRepository tokenRepository;
     private final CorreoService correoService;
     private final PasswordEncoder passwordEncoder;
+    private final ListaChequeoService listaChequeoService;
 
     @Transactional
     public ClienteResponse crear(CrearClienteRequest request) {
@@ -75,6 +77,7 @@ public class ClienteService {
                 .build();
 
         Cliente guardado = clienteRepository.save(cliente);
+        listaChequeoService.crearPorDefecto(guardado);
         enviarInvitacion(usuario);
         log.info("Cliente creado id={} rut={} con cuenta usuario id={} (RF06)",
                 guardado.getId(), guardado.getRut(), usuario.getId());
@@ -183,6 +186,13 @@ public class ClienteService {
     public void eliminar(Long id) {
         clienteRepository.delete(buscarOFallar(id));
         log.info("Cliente eliminado (soft) id={} (RNF14)", id);
+    }
+
+    /** Resuelve el cliente asociado al usuario autenticado (portal cliente). */
+    public Cliente clienteAutenticado(String email) {
+        return clienteRepository.findByUsuarioEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No hay un cliente asociado al usuario " + email));
     }
 
     private Cliente buscarOFallar(Long id) {

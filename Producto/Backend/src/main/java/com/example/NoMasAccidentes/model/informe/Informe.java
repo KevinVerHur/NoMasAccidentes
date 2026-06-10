@@ -1,6 +1,7 @@
-package com.example.NoMasAccidentes.model.pago;
+package com.example.NoMasAccidentes.model.informe;
 
 import com.example.NoMasAccidentes.common.BaseEntity;
+import com.example.NoMasAccidentes.model.visita.Visita;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,7 +13,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,57 +23,52 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 /**
- * Cuota de pago de un plan (RF09, RF10).
+ * Informe posterior a una visita (RF15). El PDF se almacena en S3 (prod) o en
+ * disco local (dev); {@code urlPdf} guarda la clave/ruta del archivo.
  */
 @Entity
-@Table(name = "pago")
+@Table(name = "informe")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE pago SET activo = false WHERE id_pago = ?")
+@SQLDelete(sql = "UPDATE informe SET activo = false WHERE id_informe = ?")
 @SQLRestriction("activo = true")
-public class Pago extends BaseEntity {
+public class Informe extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_pago")
+    @Column(name = "id_informe")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_plan", nullable = false)
-    private PlanPago plan;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_visita")
+    private Visita visita;
 
-    @Column(name = "numero_cuota", nullable = false)
-    private Integer numeroCuota;
-
-    @Column(name = "monto", nullable = false, precision = 10, scale = 2)
-    private BigDecimal monto;
+    /** Referencia a asesoría (módulo futuro). Sin FK por ahora. */
+    @Column(name = "id_asesoria")
+    private Long idAsesoria;
 
     @Column(name = "fecha_emision", nullable = false)
     private LocalDate fechaEmision;
 
-    @Column(name = "fecha_vencimiento", nullable = false)
-    private LocalDate fechaVencimiento;
+    @Column(name = "contenido", length = 4000)
+    private String contenido;
 
-    @Column(name = "fecha_pago")
-    private LocalDate fechaPago;
-
-    @Column(name = "medio_pago", length = 40)
-    private String medioPago;
+    @Column(name = "hallazgos", length = 2000)
+    private String hallazgos;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_pago", nullable = false, length = 20)
+    @Column(name = "estado", nullable = false, length = 20)
     @Builder.Default
-    private EstadoPago estadoPago = EstadoPago.PENDIENTE;
+    private EstadoInforme estado = EstadoInforme.GENERADO;
+
+    /** Clave/ruta del PDF almacenado (S3 key o ruta local). */
+    @Column(name = "url_pdf", length = 300)
+    private String urlPdf;
 
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private boolean activo = true;
-
-    /** Indica si ya se envió la alerta de pago pendiente (RF31). */
-    @Column(name = "alerta_enviada", nullable = false)
-    @Builder.Default
-    private boolean alertaEnviada = false;
 }

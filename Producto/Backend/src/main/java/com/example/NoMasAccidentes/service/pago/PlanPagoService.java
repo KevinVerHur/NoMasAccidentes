@@ -1,0 +1,93 @@
+package com.example.NoMasAccidentes.service.pago;
+
+import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
+import com.example.NoMasAccidentes.dto.pago.CrearPlanPagoRequest;
+import com.example.NoMasAccidentes.dto.pago.PlanPagoMapper;
+import com.example.NoMasAccidentes.dto.pago.PlanPagoResponse;
+import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.pago.EstadoPago;
+import com.example.NoMasAccidentes.model.pago.Mensualidad;
+import com.example.NoMasAccidentes.model.pago.Pago;
+import com.example.NoMasAccidentes.model.pago.Periodicidad;
+import com.example.NoMasAccidentes.model.pago.PlanPago;
+import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.pago.PagoRepository;
+import com.example.NoMasAccidentes.repository.pago.PlanPagoRepository;
+import java.time.LocalDate;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Planes de pago por cliente (RF08). Al crear el plan genera sus cuotas.
+ */
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)
+@Slf4j
+public class PlanPagoService {
+
+    private final PlanPagoRepository planPagoRepository;
+    private final PagoRepository pagoRepository;
+    private final ClienteRepository clienteRepository;
+    private final MensualidadService mensualidadService;
+    private final PlanPagoMapper planPagoMapper;
+
+    @Transactional
+    public PlanPagoResponse crear(CrearPlanPagoRequest request) {
+        Cliente cliente = clienteRepository.findById(request.idCliente())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", request.idCliente()));
+        Mensualidad mensualidad = mensualidadService.buscarOFallar(request.idMensualidad());
+        Periodicidad periodicidad = request.periodicidad() != null ? request.periodicidad() : Periodicidad.MENSUAL;
+
+        LocalDate fechaTermino = vencimientoCuota(request.fechaInicio(), periodicidad, request.cuotasTotales());
+
+        PlanPago plan = PlanPago.builder()
+                .cliente(cliente)
+                .mensualidad(mensualidad)
+                .fechaInicio(request.fechaInicio())
+                .fechaTermino(fechaTermino)
+                .cuotasTotales(request.cuotasTotales())
+                .periodicidad(periodicidad)
+                .build();
+        PlanPago guardado = planPagoRepository.save(plan);
+
+        generarCuotas(guardado, mensualidad, periodicidad);
+        log.info("Plan de pago creado id={} cliente={} cuotas={} (RF08)",
+                guardado.getId(), cliente.getId(), request.cuotasTotales());
+        return planPagoMapper.toResponse(guardado);
+    }
+
+    private void generarCuotas(PlanPago plan, Mensualidad mensualidad, Periodicidad periodicidad) {
+        for (int cuota = 1; cuota <= plan.getCuotasTotales(); cuota++) {
+            LocalDate vencimiento = vencimientoCuota(plan.getFechaInicio(), periodicidad, cuota - 1);
+            pagoRepository.save(Pago.builder()
+                    .plan(plan)
+                    .numeroCuota(cuota)
+                    .monto(mensualidad.getMontoBase())
+                    .fechaEmision(plan.getFechaInicio())
+                    .fechaVencimiento(vencimiento)
+                    .estadoPago(EstadoPago.PENDIENTE)
+                    .build());
+        }
+    }
+
+    private LocalDate vencimientoCuota(LocalDate inicio, Periodicidad periodicidad, int periodos) {
+        return switch (periodicidad) {
+            case MENSUAL    -> inicio.plusMonths(periodos);
+            case TRIMESTRAL -> inicio.plusMonths(3L * periodos);
+            case ANUAL      -> inicio.plusYears(periodos);
+        };
+    }
+
+    public List<PlanPagoResponse> listarPorCliente(Long idCliente) {
+        return planPagoRepository.findByClienteId(idCliente).stream().map(planPagoMapper::toResponse).toList();
+    }
+
+    public PlanPagoResponse obtenerPorId(Long id) {
+        return planPagoMapper.toResponse(planPagoRepository.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Plan de pago", id)));
+    }
+}

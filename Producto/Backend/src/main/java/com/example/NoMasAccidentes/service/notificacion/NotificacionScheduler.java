@@ -7,7 +7,6 @@ import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
 import com.example.NoMasAccidentes.service.usuario.CorreoService;
 import java.text.NumberFormat;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -26,31 +25,27 @@ public class NotificacionScheduler {
     private final PagoRepository pagoRepository;
     private final CorreoService correoService;
 
-    private static final DateTimeFormatter FECHA_HORA = 
-            DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter FECHA_FORMATO =
+            DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
-    @Scheduled(cron = "0 0 * * * *", zone = "America/Santiago")
+    @Scheduled(cron = "0 0 8 * * *", zone = "America/Santiago")
     @Transactional
     public void enviarRecordatoriosVisitas24HorasAntes(){
-        LocalDateTime desde = LocalDateTime.now().plusHours(24);
-        LocalDateTime hasta = desde.plusHours(1);
+        LocalDate manana = LocalDate.now().plusDays(1);
 
-        var visitas = visitaRepository.findByEstadoAndRecordatorioEnviadoFalseAndFechaProgramadaBetween(
+        var visitas = visitaRepository.findByEstadoAndRecordatorioEnviadoFalseAndFechaProgramada(
                 EstadoVisita.PROGRAMADA,
-                desde,
-                hasta
+                manana
         );
 
         visitas.forEach(visita -> {
             var cliente = visita.getCliente();
-
             correoService.enviarRecordatorioVisita(
                     cliente.getEmail(),
                     cliente.getRazonSocial(),
-                    visita.getFechaProgramada().format(FECHA_HORA),
-                    visita.getDireccion()
+                    visita.getFechaProgramada().format(FECHA_FORMATO),
+                    ""
             );
-
             visita.setRecordatorioEnviado(true);
         });
 
@@ -61,23 +56,21 @@ public class NotificacionScheduler {
     @Scheduled(cron = "0 0 9 * * *", zone = "America/Santiago")
     @Transactional
     public void enviarAlertasPagosPendientes(){
-        var pagos = pagoRepository.findByEstadoInAndAlertaEnviadaFalseAndFechaVencimientoLessThanEqual(
-                List.of(EstadoPago.PENDIENTE, EstadoPago.VENCIDO),
-                LocalDate.now()      
+        var pagos = pagoRepository.findByEstadoPagoInAndAlertaEnviadaFalseAndFechaVencimientoLessThanEqual(
+                List.of(EstadoPago.PENDIENTE, EstadoPago.ATRASADO),
+                LocalDate.now()
         );
 
         NumberFormat formatoMoneda = NumberFormat.getCurrencyInstance(new Locale("es", "CL"));
 
         pagos.forEach(pago -> {
-            var cliente = pago.getCliente();
-
+            var cliente = pago.getPlan().getCliente();
             correoService.enviarAlertaPagoPendiente(
                 cliente.getEmail(),
                 cliente.getRazonSocial(),
-                pago.getFechaVencimiento().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                pago.getFechaVencimiento().format(FECHA_FORMATO),
                 formatoMoneda.format(pago.getMonto())
             );
-
             pago.setAlertaEnviada(true);
         });
 

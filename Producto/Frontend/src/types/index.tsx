@@ -202,24 +202,122 @@ export interface UbicacionProfesionalResponse {
   fechaRegistro: string;
 }
 
-export type EstadoVisitaBackend = 'PROGRAMADA' | 'REALIZADA' | 'CANCELADA';
+// ---- Visitas (RF13–RF14) ----
+export type EstadoVisita = 'PROGRAMADA' | 'EN_CURSO' | 'REALIZADA' | 'CANCELADA';
+/** @deprecated Usar EstadoVisita */
+export type EstadoVisitaBackend = EstadoVisita;
 
 export interface VisitaResponse {
   id: number;
   idCliente: number;
-  cliente: string;
-  idProfesional: number | null;
-  profesional: string | null;
+  razonSocialCliente: string;
+  idProfesional: number;
+  nombreProfesional: string;
+  idListaChequeo: number;
+  tipoRevision: string | null;
   fechaProgramada: string;
-  direccion: string;
-  motivo: string | null;
-  estado: EstadoVisitaBackend;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  estado: EstadoVisita;
+  latitud: number | null;
+  longitud: number | null;
+  observaciones: string | null;
+  esVisitaExtra: boolean;
 }
 
-export interface CrearVisitaRequest {
+export interface PlanificarVisitaRequest {
   idCliente: number;
   idProfesional: number;
   fechaProgramada: string;
-  direccion: string;
-  motivo?: string | null;
+  tipoRevision?: string;
+  esVisitaExtra?: boolean;
+}
+
+export interface RegistrarVisitaRequest {
+  observaciones?: string;
+  latitud?: number;
+  longitud?: number;
+}
+
+// ---- Pagos (RF08–RF12) ----
+export type EstadoPago = 'PENDIENTE' | 'PAGADO' | 'ATRASADO';
+export type Periodicidad = 'MENSUAL' | 'TRIMESTRAL' | 'ANUAL';
+
+export interface MensualidadResponse {
+  id: number;
+  nombrePlan: string;
+  montoBase: number;
+  visitasIncluidas: number | null;
+  asesoriasIncluidas: number | null;
+  capacitacionesIncluidas: number | null;
+  costoVisitaExtra: number | null;
+  costoAsesoriaExtra: number | null;
+  costoCapacitacionExtra: number | null;
+  costoLlamadoFueraHorario: number | null;
+  activo: boolean;
+}
+
+export interface CrearMensualidadRequest {
+  nombrePlan: string;
+  montoBase: number;
+  visitasIncluidas?: number;
+  asesoriasIncluidas?: number;
+  capacitacionesIncluidas?: number;
+  costoVisitaExtra?: number;
+  costoAsesoriaExtra?: number;
+  costoCapacitacionExtra?: number;
+  costoLlamadoFueraHorario?: number;
+}
+
+export interface PlanPagoResponse {
+  id: number;
+  idCliente: number;
+  razonSocialCliente: string;
+  idMensualidad: number;
+  nombrePlan: string;
+  fechaInicio: string;
+  fechaTermino: string | null;
+  cuotasTotales: number | null;
+  periodicidad: Periodicidad;
+  activo: boolean;
+}
+
+export interface CrearPlanPagoRequest {
+  idCliente: number;
+  idMensualidad: number;
+  fechaInicio: string;
+  cuotasTotales: number;
+  periodicidad?: Periodicidad;
+}
+
+export interface PagoResponse {
+  id: number;
+  idPlan: number;
+  idCliente: number;
+  razonSocialCliente: string;
+  numeroCuota: number;
+  monto: number;
+  fechaEmision: string;
+  fechaVencimiento: string;
+  fechaPago: string | null;
+  medioPago: string | null;
+  estadoPago: EstadoPago;
+}
+
+export interface RegistrarPagoRequest {
+  medioPago?: string;
+}
+
+// ---- Informe post-visita (RF15) ----
+export type EstadoInforme = 'GENERADO' | 'ANULADO';
+
+export interface InformeResponse {
+  id: number;
+  idVisita: number;
+  razonSocialCliente: string;
+  nombreProfesional: string;
+  fechaEmision: string;
+  estado: EstadoInforme;
+  hallazgos: string | null;
+  tieneArchivo: boolean;
 }
