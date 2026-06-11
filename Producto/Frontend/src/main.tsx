@@ -15,6 +15,7 @@ import MisPagos from './pages/MisPagos';
 import MisActividades from './pages/MisActividades';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import SeguimientoPreventivo from './pages/SeguimientoPreventivo';
 import './index.css';
 
 
@@ -66,6 +67,10 @@ const router = createBrowserRouter([
       {
         path: '/mis-actividades',
         element: <ProtectedRoute roles={['CLIENTE']}><MisActividades /></ProtectedRoute>,
+      },
+      {
+        path: '/seguimiento-preventivo',
+        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><SeguimientoPreventivo /></ProtectedRoute>,
       },
     ],
   },

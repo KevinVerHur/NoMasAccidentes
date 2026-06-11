@@ -28,6 +28,7 @@ const seccionesOperativas: SeccionNav[] = [
             { icono: '📅', label: 'Visitas',        path: '/visitas',        roles: ['ADMIN', 'PROFESIONAL'] },
             { icono: '🎓', label: 'Capacitaciones', path: '/capacitaciones', roles: ['ADMIN', 'PROFESIONAL', 'CAPACITADOR'] },
             { icono: '📋', label: 'Asesorías',      path: '/asesorias',      roles: ['ADMIN', 'PROFESIONAL'] },
+            { icono: '✅', label: 'Seguimiento preventivo', path: '/seguimiento-preventivo', roles: ['ADMIN', 'PROFESIONAL'] },
         ],
     },
     {
