@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import KpiCard from '../components/ui/KpiCard';
 import Badge from '../components/ui/Badge';
 import Panel from '../components/ui/Panel';
+import SeguimientoPreventivoPanel from '../components/actividades/SeguimientoPreventivoPanel';
 import { useAuth } from '../context/AuthContext';
 import { registrarMiUbicacion } from '../api/ubicaciones';
 import { obtenerMiPerfilProfesional, actualizarMiEstadoProfesional } from '../api/profesionales';
@@ -37,12 +38,14 @@ const clientes: MiClienteAsignado[] = [
 
 const badgePorEstadoVisita: Record<EstadoVisitaBackend, VarianteBadge> = {
   PROGRAMADA: 'blue',
+  EN_CURSO: 'yellow',
   REALIZADA: 'green',
   CANCELADA: 'red',
 };
 
 const labelEstadoVisita: Record<EstadoVisitaBackend, string> = {
   PROGRAMADA: 'Programada',
+  EN_CURSO: 'En curso',
   REALIZADA: 'Realizada',
   CANCELADA: 'Cancelada',
 };
@@ -488,7 +491,7 @@ export default function DashboardProfesional() {
             <table className="app-table">
               <thead>
                 <tr>
-                  {['Cliente', 'Fecha', 'Hora', 'Direccion', 'Estado', 'Accion'].map((h) => (
+                  {['Cliente', 'Fecha', 'Hora', 'Tipo', 'Estado', 'Accion'].map((h) => (
                     <th key={h}>{h}</th>
                   ))}
                 </tr>
@@ -496,10 +499,10 @@ export default function DashboardProfesional() {
               <tbody>
                 {visitas.map((v) => (
                   <tr key={v.id}>
-                    <td>{v.cliente}</td>
+                    <td>{v.razonSocialCliente}</td>
                     <td>{formatearFecha(v.fechaProgramada)}</td>
                     <td>{formatearHora(v.fechaProgramada)}</td>
-                    <td>{v.direccion}</td>
+                    <td>{v.tipoRevision ?? '-'}</td>
                     <td>
                       <Badge variante={badgePorEstadoVisita[v.estado]}>
                         {labelEstadoVisita[v.estado]}
@@ -507,25 +510,27 @@ export default function DashboardProfesional() {
                     </td>
                     <td>
                       <div className="btn-group">
-                        {v.estado === 'PROGRAMADA' ? (
-                          <>
-                            <button
-                              className="btn btn-sm btn-primary"
-                              disabled={operandoVisitaId === v.id}
-                              onClick={() => iniciarVisita(v.id)}
-                            >
-                              Iniciar
-                            </button>
+                        {v.estado === 'PROGRAMADA' && (
+                          <button
+                            className="btn btn-sm btn-primary"
+                            disabled={operandoVisitaId === v.id}
+                            onClick={() => iniciarVisita(v.id)}
+                          >
+                            Iniciar
+                          </button>
+                        )}
 
-                            <button
-                              className="btn btn-sm btn-outline"
-                              disabled={operandoVisitaId === v.id}
-                              onClick={() => finalizarVisita(v.id)}
-                            >
-                              Finalizar
-                            </button>
-                          </>
-                        ) : (
+                        {v.estado === 'EN_CURSO' && (
+                          <button
+                            className="btn btn-sm btn-success"
+                            disabled={operandoVisitaId === v.id}
+                            onClick={() => finalizarVisita(v.id)}
+                          >
+                            Finalizar
+                          </button>
+                        )}
+
+                        {v.estado !== 'PROGRAMADA' && v.estado !== 'EN_CURSO' && (
                           <span style={{ color: '#9ca3af', fontSize: 12 }}>Sin accion</span>
                         )}
                       </div>
@@ -601,7 +606,7 @@ export default function DashboardProfesional() {
 
             <span>
               {proximaVisita
-                ? `Proxima visita: ${proximaVisita.cliente} - ${proximaVisita.direccion} - ${formatearHora(proximaVisita.fechaProgramada)}`
+                ? `Proxima visita: ${proximaVisita.razonSocialCliente} - ${proximaVisita.tipoRevision ?? 'Sin tipo'} - ${formatearHora(proximaVisita.fechaProgramada)}`
                 : 'Sin proximas visitas asignadas'}
             </span>
 
@@ -643,6 +648,12 @@ export default function DashboardProfesional() {
           </tbody>
         </table>
       </Panel>
+
+      <SeguimientoPreventivoPanel
+        titulo="Mis actividades preventivas"
+        compacto
+        editable
+      />
 
       {modalMapa && (
         <div
