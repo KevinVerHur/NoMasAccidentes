@@ -32,8 +32,13 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Clientes", description = "Gestión de empresas clientes (RF06–RF12)")
 public class ClienteController {
 
+
     private final ClienteService clienteService;
 
+    @Operation(
+            summary = "Crear un nuevo cliente",
+            description = "Registra una nueva empresa cliente en el sistema. Solo accesible por administradores."
+    )
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ClienteResponse> crear(@Valid @RequestBody CrearClienteRequest request) {
@@ -41,18 +46,30 @@ public class ClienteController {
         return ResponseEntity.created(URI.create("/api/clientes/" + creado.id())).body(creado);
     }
 
+    @Operation(
+            summary = "Listar clientes paginados ",
+            description = "Retorna una página de clientes registrados. Accesible por administradores y profesionales."
+    )
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public Page<ClienteResponse> listar(Pageable pageable) {
         return clienteService.listar(pageable);
     }
 
+    @Operation(
+            summary = "Obtener cliente por ID",
+            description = "Retorna los datos de un cliente específico por su identificador. Accesible por administradores y profesionales."
+    )
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public ClienteResponse obtener(@PathVariable Long id) {
         return clienteService.obtenerPorId(id);
     }
 
+    @Operation(
+            summary = "Actualizar cliente completo",
+            description = "Reemplaza todos los datos de un cliente existente. Solo accesible por administradores."
+    )
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ClienteResponse actualizar(
@@ -61,20 +78,30 @@ public class ClienteController {
         return clienteService.actualizar(id, request);
     }
 
-    @Operation(summary = "Suspender servicio del cliente (RF09)")
+    @Operation(
+            summary = "Suspender servicio del cliente ",
+            description = "Suspende el acceso al servicio de un cliente activo. Solo accesible por administradores."
+    )
     @PatchMapping("/{id}/suspender")
     @PreAuthorize("hasRole('ADMIN')")
     public ClienteResponse suspender(@PathVariable Long id) {
         return clienteService.suspender(id);
     }
 
-    @Operation(summary = "Reactivar cliente suspendido (RF09)")
+    @Operation(
+            summary = "Reactivar cliente suspendido ",
+            description = "Reactiva el acceso al servicio de un cliente previamente suspendido. Solo accesible por administradores."
+    )
     @PatchMapping("/{id}/reactivar")
     @PreAuthorize("hasRole('ADMIN')")
     public ClienteResponse reactivar(@PathVariable Long id) {
         return clienteService.reactivar(id);
     }
 
+    @Operation(
+            summary = "Eliminar cliente ",
+            description = "Elimina permanentemente un cliente del sistema. Solo accesible por administradores."
+    )
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {

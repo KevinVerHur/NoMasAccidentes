@@ -46,6 +46,84 @@ public class CorreoService {
         }
     }
 
+    /**
+     * Envía la invitación a un cliente recién dado de alta para que defina su
+     * contraseña y acceda al portal. Reutiliza el flujo de restablecimiento; el
+     * enlace tiene validez de 48 horas (ver ClienteService).
+     */
+    @Async
+    public void enviarInvitacionCliente(String destinatario, String token) {
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Más Accidentes — Activa tu cuenta de cliente");
+            helper.setText(construirHtmlInvitacion(token), true);
+
+            mailSender.send(mensaje);
+            log.info("Correo de invitación enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar correo de invitación a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    @Async
+    public void enviarRecordatorioVisita(String destinatario, String cliente, String fecha, String direccion){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Recordatorio de visita");
+            helper.setText(construirHtmlRecordatorioVisita(cliente, fecha, direccion), true);
+
+            mailSender.send(mensaje);
+            log.info("Recordatorio de visita enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar recordatorio de visita a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    @Async
+    public void enviarAlertaPagoPendiente(String destinatario, String cliente, String vencimiento, String monto){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Pago pendiente");
+            helper.setText(construirHtmlPagoPendiente(cliente, vencimiento, monto), true);
+
+            mailSender.send(mensaje);
+            log.info("Alerta de pago pendiente enviada a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar alerta de pago pendiente a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    private String construirHtmlInvitacion(String token) {
+        String enlace = frontendUrl + "/restablecer-contrasena?token=" + token;
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:32px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px">🦺 <span style="color:#f0a500">No Más</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Tu consultora de prevención de riesgos te creó una cuenta para acceder al portal de clientes.</p>
+              <p style="color:#3d4856;font-size:14px">Haz clic en el botón para definir tu contraseña y activar tu acceso. El enlace es válido por <strong>48 horas</strong>.</p>
+              <div style="text-align:center;margin:28px 0">
+                <a href="%s"
+                   style="background:#18395a;color:white;padding:12px 28px;border-radius:8px;
+                          text-decoration:none;font-weight:bold;font-size:14px;display:inline-block">
+                  Activar mi cuenta
+                </a>
+              </div>
+              <p style="color:#8b95a1;font-size:12px">Si no esperabas este correo, puedes ignorarlo.</p>
+            </div>
+            """.formatted(enlace);
+    }
+
     private String construirHtml(String token) {
         String enlace = frontendUrl + "/restablecer-contrasena?token=" + token;
         return """
@@ -64,4 +142,33 @@ public class CorreoService {
             </div>
             """.formatted(enlace);
     }
+
+    private String construirHtmlRecordatorioVisita(String cliente, String fecha, String direccion){
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Hola, te recordamos que tienes una visita programada en las proximas 24 horas.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Cliente:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Direccion:</strong> %s</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(cliente, fecha, direccion);
+    }
+
+    private String construirHtmlPagoPendiente(String cliente, String vencimiento, String monto){
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#fff7ed;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Registramos un pago pendiente asociado a tu cuenta.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Cliente:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha de vencimiento:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Monto:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px">Por favor regulariza el pago para mantener el servicio activo.</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(cliente, vencimiento, monto);
+    }
+
+
 }

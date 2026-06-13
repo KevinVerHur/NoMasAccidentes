@@ -1,0 +1,293 @@
+/* ================================================
+   Estilos compartidos para vistas del sistema
+   Dashboard, Clientes, Visitas, Reportes, etc.
+   ================================================ */
+
+/* ---- Cabecera de página ---- */
+.page-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--color-azul);
+    margin: 0 0 4px;
+}
+
+.page-subtitle {
+    font-size: 12px;
+    color: #9ca3af;
+    margin: 0 0 20px;
+}
+
+/* ---- Fila de KPIs ---- */
+.kpi-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+/* ---- Grillas de paneles ---- */
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+}
+
+/* ---- Tabla estándar ---- */
+.app-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.app-table th {
+    background: #f9fafb;
+    color: #6b7280;
+    font-weight: 600;
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.app-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f9fafb;
+    color: #4b5563;
+}
+
+.app-table tr:hover td {
+    background: #f8fafc;
+}
+
+/* ---- Botones de acción ---- */
+.btn {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.15s, opacity 0.15s;
+    font-family: inherit;
+    text-decoration: none;
+    line-height: 1.4;
+}
+
+.btn-primary {
+    background: var(--color-azul);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #162d4a;
+}
+
+.btn-outline {
+    background: white;
+    color: var(--color-azul);
+    border: 1px solid var(--color-azul);
+}
+
+.btn-outline:hover {
+    background: #f0f4ff;
+}
+
+.btn-danger {
+    background: var(--color-peligro);
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #a93226;
+}
+
+.btn-warn {
+    background: var(--color-warn);
+    color: white;
+}
+
+.btn-warn:hover {
+    background: #c96d00;
+}
+
+.btn-success {
+    background: var(--color-ok);
+    color: white;
+}
+
+.btn-success:hover {
+    background: #1e8449;
+}
+
+.btn-sm {
+    padding: 4px 10px;
+    font-size: 11px;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Grupo de botones inline */
+.btn-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* ---- Items de alerta (panel de alertas, listados) ---- */
+.alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.alert-item--peligro {
+    background: #fef2f2;
+    color: #991b1b;
+}
+
+.alert-item--warn {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.alert-item--info {
+    background: #eff6ff;
+    color: #1e40af;
+}
+
+.alert-item--ok {
+    background: #f0fdf4;
+    color: #166534;
+}
+
+/* ---- Barra de búsqueda / filtros ---- */
+.searchbar {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.searchbar input,
+.searchbar select {
+    padding: 7px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 12px;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.15s;
+}
+
+.searchbar input {
+    flex: 1;
+    min-width: 160px;
+}
+
+.searchbar input:focus,
+.searchbar select:focus {
+    border-color: var(--color-azul);
+}
+
+/* ---- Tabs ---- */
+.tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #f3f4f6;
+    padding: 0 16px;
+}
+
+.tab {
+    padding: 10px 14px;
+    font-size: 12px;
+    cursor: pointer;
+    color: #9ca3af;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover {
+    color: var(--color-azul);
+}
+
+.tab--active {
+    color: var(--color-azul);
+    border-bottom-color: var(--color-azul);
+    font-weight: bold;
+}
+
+/* ---- Placeholder (contenido pendiente) ---- */
+.placeholder {
+    background: #f9fafb;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    text-align: center;
+    padding: 16px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* ---- Mapa de profesionales ----*/
+.mapa-profesionales {
+    height: 420px;
+}
+
+.estado-marker {
+    background: transparent;
+    border: none;
+}
+
+.estado-marker span {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border: 3px solid white;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.estado-select {
+    padding: 6px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 12px;
+    background: white;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 900px) {
+    .grid-2,
+    .grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .kpi-row {
+        flex-direction: column;
+    }
+
+    .mapa-profesionales {
+        height: 320px;
+    }
+}

@@ -1,17 +1,19 @@
 @import "tailwindcss";
+@import "./styles/auth.css";
+@import "./styles/app.css";
 
 @theme {
-  --color-azul: #1a3a5c;
-  --color-dorado: #f0a500;
-  --color-ok: #27ae60;
-  --color-warn: #e07b00;
-  --color-peligro: #c0392b;
-  --color-fondo: #f0f2f5;
+    --color-azul: #1a3a5c;
+    --color-dorado: #f0a500;
+    --color-ok: #27ae60;
+    --color-warn: #e07b00;
+    --color-peligro: #c0392b;
+    --color-fondo: #f0f2f5;
 }
 
 body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  font-size: 13px;
-  color: #333;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    color: #333;
 }

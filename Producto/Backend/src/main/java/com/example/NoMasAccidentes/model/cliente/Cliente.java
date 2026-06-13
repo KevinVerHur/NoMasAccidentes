@@ -2,17 +2,8 @@ package com.example.NoMasAccidentes.model.cliente;
 
 import com.example.NoMasAccidentes.common.BaseEntity;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.example.NoMasAccidentes.model.usuario.Usuario;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,6 +11,9 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
+
 
 /**
  * Empresa cliente que contrata los servicios de prevención de riesgos.
@@ -32,6 +26,7 @@ import org.hibernate.annotations.SQLRestriction;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
 @SQLDelete(sql = "UPDATE cliente SET activo = false WHERE id_cliente = ?")
 @SQLRestriction("activo = true")
 public class Cliente extends BaseEntity {
@@ -70,6 +65,10 @@ public class Cliente extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_profesional")
     private Profesional profesional;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario", unique = true)
+    private Usuario usuario;
 
     @Column(name = "activo", nullable = false)
     @Builder.Default

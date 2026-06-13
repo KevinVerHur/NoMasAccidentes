@@ -60,3 +60,300 @@ export interface AccidentabilidadResumen {
   tasa: string;
   variante: VarianteBarra;
 }
+
+// ---- Dashboard Profesional (mock) ----
+export interface MiVisita {
+  cliente: string;
+  fecha: string;
+  hora: string;
+  direccion: string;
+  estado: 'Programada' | 'Realizada' | 'Pendiente';
+}
+
+export interface MiClienteAsignado {
+  razonSocial: string;
+  rubro: string;
+  ultimaVisita: string;
+  estado: 'ACTIVO' | 'MOROSO' | 'SUSPENDIDO';
+}
+
+// ---- Dashboard Cliente (mock) ----
+export interface ProximaActividad {
+  fecha: string;
+  actividad: string;
+  profesional: string;
+  estado: 'Programada' | 'Por confirmar' | 'Pendiente';
+}
+
+export interface AccionImportante {
+  tipo: VarianteAlerta;
+  titulo: string;
+  texto: string;
+}
+
+export interface VisitaRecibida {
+  fecha: string;
+  profesional: string;
+  tipo: string;
+  estado: 'Realizada' | 'Programada';
+}
+
+export interface ReporteDisponible {
+  nombre: string;
+  fecha: string;
+  tipo: string;
+}
+
+export interface MiCapacitacion {
+  nombre: string;
+  fecha: string;
+  asistentes: number;
+  estado: 'Realizada' | 'Programada';
+}
+
+// ---- Cliente ----
+export type EstadoCliente = 'ACTIVO' | 'MOROSO' | 'SUSPENDIDO';
+
+export interface ClienteResponse {
+  id: number;
+  razonSocial: string;
+  rut: string;
+  nombreContacto: string;
+  email: string;
+  telefono: string | null;
+  rubro: string;
+  plan: string;
+  estado: EstadoCliente;
+  idProfesional: number | null;
+  nombreProfesional: string | null;
+  activo: boolean;
+}
+
+export interface CrearClienteRequest {
+  razonSocial: string;
+  rut: string;
+  nombreContacto: string;
+  email: string;
+  telefono?: string;
+  rubro: string;
+  plan: string;
+  idProfesional?: number | null;
+}
+
+export interface ActualizarClienteRequest extends CrearClienteRequest {
+  estado: EstadoCliente;
+}
+
+// ---- Profesional ----
+export type EstadoProfesional = 'DISPONIBLE' | 'EN_VISITA' | 'EN_CAPACITACION';
+
+export interface ProfesionalResponse {
+  id: number;
+  idUsuario: number;
+  email: string;
+  nombreCompleto: string;
+  rut: string;
+  telefono: string | null;
+  especialidad: string | null;
+  latitud: number | null;
+  longitud: number | null;
+  estado: EstadoProfesional;
+  activo: boolean;
+  cantidadClientes: number;
+}
+
+export interface CrearProfesionalRequest {
+  email: string;
+  password: string;
+  nombre: string;
+  apellido: string;
+  rut: string;
+  especialidad?: string;
+  telefono?: string;
+}
+
+export interface ActualizarProfesionalRequest {
+  rut: string;
+  telefono?: string;
+  especialidad?: string;
+}
+
+export interface ActualizarEstadoProfesionalRequest {
+  estado: EstadoProfesional;
+}
+
+export interface ActualizarUbicacionProfesionalRequest {
+  latitud: number;
+  longitud: number;
+}
+
+export interface RegistrarUbicacionRequest {
+  latitud: number;
+  longitud: number;
+}
+
+export interface UbicacionProfesionalResponse {
+  idProfesional: number;
+  nombreProfesional: string;
+  email: string;
+  estado: EstadoProfesional;
+  latitud: number;
+  longitud: number;
+  fechaRegistro: string;
+}
+
+// ---- Visitas (RF13–RF14) ----
+export type EstadoVisita = 'PROGRAMADA' | 'EN_CURSO' | 'REALIZADA' | 'CANCELADA';
+/** @deprecated Usar EstadoVisita */
+export type EstadoVisitaBackend = EstadoVisita;
+
+export interface VisitaResponse {
+  id: number;
+  idCliente: number;
+  razonSocialCliente: string;
+  idProfesional: number;
+  nombreProfesional: string;
+  idListaChequeo: number;
+  tipoRevision: string | null;
+  fechaProgramada: string;
+  fechaInicio: string | null;
+  fechaFin: string | null;
+  estado: EstadoVisita;
+  latitud: number | null;
+  longitud: number | null;
+  observaciones: string | null;
+  esVisitaExtra: boolean;
+}
+
+export interface PlanificarVisitaRequest {
+  idCliente: number;
+  idProfesional: number;
+  fechaProgramada: string;
+  tipoRevision?: string;
+  esVisitaExtra?: boolean;
+}
+
+export interface RegistrarVisitaRequest {
+  observaciones?: string;
+  latitud?: number;
+  longitud?: number;
+}
+
+// ---- Pagos (RF08–RF12) ----
+export type EstadoPago = 'PENDIENTE' | 'PAGADO' | 'ATRASADO';
+export type Periodicidad = 'MENSUAL' | 'TRIMESTRAL' | 'ANUAL';
+
+export interface MensualidadResponse {
+  id: number;
+  nombrePlan: string;
+  montoBase: number;
+  visitasIncluidas: number | null;
+  asesoriasIncluidas: number | null;
+  capacitacionesIncluidas: number | null;
+  costoVisitaExtra: number | null;
+  costoAsesoriaExtra: number | null;
+  costoCapacitacionExtra: number | null;
+  costoLlamadoFueraHorario: number | null;
+  activo: boolean;
+}
+
+export interface CrearMensualidadRequest {
+  nombrePlan: string;
+  montoBase: number;
+  visitasIncluidas?: number;
+  asesoriasIncluidas?: number;
+  capacitacionesIncluidas?: number;
+  costoVisitaExtra?: number;
+  costoAsesoriaExtra?: number;
+  costoCapacitacionExtra?: number;
+  costoLlamadoFueraHorario?: number;
+}
+
+export interface PlanPagoResponse {
+  id: number;
+  idCliente: number;
+  razonSocialCliente: string;
+  idMensualidad: number;
+  nombrePlan: string;
+  fechaInicio: string;
+  fechaTermino: string | null;
+  cuotasTotales: number | null;
+  periodicidad: Periodicidad;
+  activo: boolean;
+}
+
+export interface CrearPlanPagoRequest {
+  idCliente: number;
+  idMensualidad: number;
+  fechaInicio: string;
+  cuotasTotales: number;
+  periodicidad?: Periodicidad;
+}
+
+export interface PagoResponse {
+  id: number;
+  idPlan: number;
+  idCliente: number;
+  razonSocialCliente: string;
+  numeroCuota: number;
+  monto: number;
+  fechaEmision: string;
+  fechaVencimiento: string;
+  fechaPago: string | null;
+  medioPago: string | null;
+  estadoPago: EstadoPago;
+}
+
+export interface RegistrarPagoRequest {
+  medioPago?: string;
+}
+
+// ---- Informe post-visita (RF15) ----
+export type EstadoInforme = 'GENERADO' | 'ANULADO';
+
+export interface InformeResponse {
+  id: number;
+  idVisita: number;
+  razonSocialCliente: string;
+  nombreProfesional: string;
+  fechaEmision: string;
+  estado: EstadoInforme;
+  hallazgos: string | null;
+  tieneArchivo: boolean;
+}
+
+export type EstadoActividadPreventiva = 'PENDIENTE' | 'EN_CURSO' | 'CUMPLIDA' | 'VENCIDA';
+
+export interface ActividadPreventivaResponse {
+  id: number;
+  idCliente: number;
+  razonSocialCliente: string;
+  titulo: string;
+  descripcion: string | null;
+  responsable: string | null;
+  fechaPlanificada: string;
+  fechaCompromiso: string;
+  fechaCumplimiento: string | null;
+  estado: EstadoActividadPreventiva;
+  observaciones: string | null;
+  vencida: boolean;
+}
+
+export interface CrearActividadPreventivaRequest {
+  idCliente: number;
+  titulo: string;
+  descripcion?: string;
+  responsable?: string;
+  fechaPlanificada: string;
+  fechaCompromiso: string;
+  observaciones?: string;
+}
+
+export interface ActualizarActividadPreventivaRequest extends CrearActividadPreventivaRequest {
+  estado?: EstadoActividadPreventiva;
+}
+
+export interface CambiarEstadoActividadRequest {
+  estado: EstadoActividadPreventiva;
+  observaciones?: string;
+}
