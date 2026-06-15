@@ -205,4 +205,9 @@ public class ClienteService {
         return profesionalRepository.findById(idProfesional)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Profesional", idProfesional));
     }
+
+    public ClienteResponse clientePorEmail(String email) {
+    Cliente c = clienteAutenticado(email);
+    return clienteMapper.toResponse(c);
+}
 }

@@ -108,4 +108,11 @@ public class ClienteController {
         clienteService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "Obtener el cliente del usuario autenticado")
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ClienteResponse me(java.security.Principal principal) {
+        return clienteService.clientePorEmail(principal.getName());
+    }
 }
