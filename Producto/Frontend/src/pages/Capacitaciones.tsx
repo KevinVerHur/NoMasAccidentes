@@ -558,6 +558,20 @@ const FORM_VACIO: Omit<AsistenteRequest, 'idCliente'> = {
   rut: '', nombre: '', apellidos: '', cargo: '', area: '', email: '',
 };
 
+function generarRutTecnico(): string {
+  return `TMP${Date.now().toString().slice(-9)}`;
+}
+
+function separarNombreCompleto(nombreCompleto: string) {
+  const partes = nombreCompleto.trim().split(/\s+/);
+
+  return {
+    nombre: partes[0] ?? '',
+    apellidos: partes.slice(1).join(' ') || '-',
+  };
+}
+
+
 function VistaCliente() {
   const { email } = useAuth();
   
@@ -588,6 +602,10 @@ function VistaCliente() {
   const [formAsistente,    setFormAsistente]     = useState(FORM_VACIO);
   const [guardandoAsis,    setGuardandoAsis]     = useState(false);
   const [errorAsis,        setErrorAsis]         = useState<string | null>(null);
+  const [modalAgregarRapido, setModalAgregarRapido] = useState(false);
+  const [nombreRapido,     setNombreRapido]      = useState('');
+  const [guardandoRapido,  setGuardandoRapido]   = useState(false);
+  const [errorRapido,      setErrorRapido]       = useState<string | null>(null);
 
   // ── Carga inicial ───────────────────────────────────────────────────────────
   const cargarCapacitaciones = useCallback(async () => {
@@ -635,6 +653,57 @@ function VistaCliente() {
     finally { setConfirmandoId(null); }
   }
 
+  function abrirAgregarRapido(){
+    setNombreRapido('');
+    setErrorRapido(null);
+    setModalAgregarRapido(true);
+  }
+
+  async function onAgregarRapido(){
+    if (!modalConfirmar || !idCliente) return;
+
+    const nombreCompleto = nombreRapido.trim();
+
+    if (!nombreCompleto) {
+      setErrorRapido('Ingresa el nombre y apellido del asistente.');
+      return;
+    }
+
+    const partesNombre = separarNombreCompleto(nombreCompleto);
+
+    setGuardandoRapido(true);
+    setErrorRapido(null);
+
+    try{
+      const nuevo = await crearAsistente({
+        idCliente, 
+        rut: generarRutTecnico(),
+        nombre: partesNombre.nombre,
+        apellidos: partesNombre.apellidos,
+      });
+
+      await inscribirAsistentes(modalConfirmar.id, {
+        idsAsistentes: [nuevo.id],
+      });
+
+      await cargarAsistentes(idCliente);
+
+      const actualizadas = (await listarCapacitaciones(0, 200)).content;
+      setCapacitaciones(actualizadas);
+
+      const capacitacionActualizada = actualizadas.find(c => c.id === modalConfirmar.id);
+      if (capacitacionActualizada) {
+        setModalConfirmar(capacitacionActualizada);
+      }
+
+      setModalAgregarRapido(false);
+    } catch (e) {
+      setErrorRapido(mensajeError(e, 'No se pudo agregar el asistente.'));
+    } finally {
+      setGuardandoRapido(false);
+    }
+  }
+
   // ── Inscribir asistentes ────────────────────────────────────────────────────
   async function onInscribir() {
     if (!modalInscribir || seleccionados.length === 0) return;
@@ -666,6 +735,8 @@ function VistaCliente() {
     setErrorAsis(null);
     setModalAsistente(true);
   }
+
+
 
   async function onGuardarAsistente() {
     if (!idCliente) return;
@@ -875,57 +946,169 @@ function VistaCliente() {
       </Modal>
 
       {/* ── Modal Confirmar asistentes ── */}
-      <Modal abierto={!!modalConfirmar} titulo={`Confirmar asistentes — ${modalConfirmar?.curso ?? ''}`} ancho="lg" onCerrar={() => setModalConfirmar(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalConfirmar(null)}>Cancelar</button><button className="btn btn-success" onClick={() => setModalConfirmar(null)}>Cerrar</button></>}>
+      <Modal
+        abierto={!!modalConfirmar}
+        titulo={`Confirmar asistentes — ${modalConfirmar?.curso ?? ''}`}
+        ancho="lg"
+        onCerrar={() => setModalConfirmar(null)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalConfirmar(null)}>
+              Cancelar
+            </button>
+            <button className="btn btn-success" onClick={() => setModalConfirmar(null)}>
+              Confirmar asistencia
+            </button>
+          </>
+        }
+      >
         {modalConfirmar && (
           <>
             <div className="info-box">
               Confirma la asistencia de cada trabajador. Firma digitalmente antes de confirmar.
             </div>
+
             <div className="form-grid" style={{ marginBottom: 14 }}>
-              <div className="form-group"><label className="auth-label">Fecha</label><input className="auth-input" value={`${fmtFecha(modalConfirmar.fechaProgramada)} · ${modalConfirmar.horaProgramada}`} readOnly /></div>
-              <div className="form-group"><label className="auth-label">Lugar</label><input className="auth-input" value="Por confirmar" readOnly /></div>
+              <div className="form-group">
+                <label className="auth-label">Fecha</label>
+                <input
+                  className="auth-input"
+                  value={`${fmtFecha(modalConfirmar.fechaProgramada)} · ${modalConfirmar.horaProgramada}`}
+                  readOnly
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="auth-label">Lugar</label>
+                <input className="auth-input" value="Por confirmar" readOnly />
+              </div>
             </div>
 
-            {modalConfirmar.asistencias.length === 0
-              ? (
-                <div className="alert-item alert-item--warn">
-                  ⚠️ No hay trabajadores inscritos. Usa el botón "Inscribir" en la tabla para agregar trabajadores primero.
-                </div>
-              ) : (
-                <div className="check-list">
-                  {modalConfirmar.asistencias.map((a: AsistenciaResponse) => (
-                    <div className="check-row" key={a.idAsistencia}>
-                      <div className="left">
-                        <input type="checkbox" checked={a.confirmado} readOnly />
-                        <div>
-                          <b>{a.nombreAsistente}</b><br />
-                          <span style={{ fontSize: 11, color: '#7a8795' }}>{a.rutAsistente}{a.cargoAsistente ? ` · ${a.cargoAsistente}` : ''}</span>
-                        </div>
-                      </div>
-                      {a.confirmado
-                        ? <Badge variante="green">Confirmado</Badge>
-                        : <button className="btn btn-sm btn-primary" disabled={confirmandoId === a.idAsistencia} onClick={() => onConfirmar(modalConfirmar.id, a.idAsistencia)}>
-                            {confirmandoId === a.idAsistencia ? 'Confirmando...' : 'Confirmar'}
-                          </button>}
-                    </div>
-                  ))}
+            <div className="form-group span2" style={{ marginBottom: 14 }}>
+              <label className="auth-label">Agregar trabajador</label>
+
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  className="auth-input"
+                  placeholder="Ej: Maria Soto Rojas"
+                  value={nombreRapido}
+                  onChange={e => setNombreRapido(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      onAgregarRapido();
+                    }
+                  }}
+                />
+
+                <button
+                  className="btn btn-primary"
+                  onClick={onAgregarRapido}
+                  disabled={guardandoRapido || !nombreRapido.trim()}
+                >
+                  {guardandoRapido ? 'Agregando...' : 'Agregar'}
+                </button>
+              </div>
+
+              {errorRapido && (
+                <div className="auth-alert auth-alert--error" style={{ marginTop: 8 }}>
+                  {errorRapido}
                 </div>
               )}
+            </div>
+            {modalConfirmar.asistencias.length === 0 ? (
+              <div className="alert-item alert-item--warn">
+                No hay trabajadores inscritos. Usa el botón Agregar para sumar asistentes.
+              </div>
+            ) : (
+              <div className="check-list">
+                {modalConfirmar.asistencias.map((a: AsistenciaResponse) => (
+                  <div className="check-row" key={a.idAsistencia}>
+                    <div className="left">
+                      <input type="checkbox" checked={a.confirmado} readOnly />
+                      <div>
+                        <b>{a.nombreAsistente}</b>
+                        {a.cargoAsistente && (
+                          <>
+                            <br />
+                            <span style={{ fontSize: 11, color: '#7a8795' }}>
+                              {a.cargoAsistente}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {a.confirmado ? (
+                      <Badge variante="green">Confirmado</Badge>
+                    ) : (
+                      <button
+                        className="btn btn-sm btn-primary"
+                        disabled={confirmandoId === a.idAsistencia}
+                        onClick={() => onConfirmar(modalConfirmar.id, a.idAsistencia)}
+                      >
+                        {confirmandoId === a.idAsistencia ? 'Confirmando...' : 'Confirmar'}
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="form-grid" style={{ marginTop: 14 }}>
               <div className="form-group span2">
                 <label className="auth-label">Firma digital del contacto</label>
                 <div className={`signature ${firmado ? 'signed' : ''}`} onClick={() => setFirmado(true)}>
-                  {firmado ? `✓ Firma digital registrada por ${email}` : 'Haz clic aquí para firmar digitalmente'}
+                  {firmado ? `Firma digital registrada por ${email}` : 'Haz clic aquí para firmar digitalmente'}
                 </div>
               </div>
+
               <div className="form-group span2">
                 <label className="auth-label">Observación</label>
-                <textarea className="auth-input" rows={2} placeholder="Observaciones opcionales..." value={observacion} onChange={e => setObservacion(e.target.value)} />
+                <textarea
+                  className="auth-input"
+                  rows={2}
+                  placeholder="Observaciones opcionales..."
+                  value={observacion}
+                  onChange={e => setObservacion(e.target.value)}
+                />
               </div>
             </div>
           </>
+        )}
+      </Modal>
+
+      {/* ── Modal Agregar asistente rápido ── */}
+      <Modal
+        abierto={modalAgregarRapido}
+        titulo="Agregar asistente"
+        ancho="sm"
+        onCerrar={() => setModalAgregarRapido(false)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setNombreRapido('')}>
+              Cancelar
+            </button>
+            <button className="btn btn-primary" onClick={onAgregarRapido} disabled={guardandoRapido}>
+              {guardandoRapido ? 'Agregando...' : 'Agregar'}
+            </button>
+          </>
+        }
+      >
+        <div className="form-group">
+          <label className="auth-label">Nombre y apellido *</label>
+          <input
+            className="auth-input"
+            placeholder="Ej: Maria Soto Rojas"
+            value={nombreRapido}
+            onChange={e => setNombreRapido(e.target.value)}
+          />
+        </div>
+
+        {errorRapido && (
+          <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>
+            {errorRapido}
+          </div>
         )}
       </Modal>
 
