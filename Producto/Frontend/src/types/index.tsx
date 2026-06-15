@@ -396,3 +396,38 @@ export interface AsistenteRequest {
   area?: string;
   email?: string;
 }
+export type EstadoActividadPreventiva = 'PENDIENTE' | 'EN_CURSO' | 'CUMPLIDA' | 'VENCIDA';
+
+export interface ActividadPreventivaResponse {
+  id: number;
+  idCliente: number;
+  razonSocialCliente: string;
+  titulo: string;
+  descripcion: string | null;
+  responsable: string | null;
+  fechaPlanificada: string;
+  fechaCompromiso: string;
+  fechaCumplimiento: string | null;
+  estado: EstadoActividadPreventiva;
+  observaciones: string | null;
+  vencida: boolean;
+}
+
+export interface CrearActividadPreventivaRequest {
+  idCliente: number;
+  titulo: string;
+  descripcion?: string;
+  responsable?: string;
+  fechaPlanificada: string;
+  fechaCompromiso: string;
+  observaciones?: string;
+}
+
+export interface ActualizarActividadPreventivaRequest extends CrearActividadPreventivaRequest {
+  estado?: EstadoActividadPreventiva;
+}
+
+export interface CambiarEstadoActividadRequest {
+  estado: EstadoActividadPreventiva;
+  observaciones?: string;
+}
