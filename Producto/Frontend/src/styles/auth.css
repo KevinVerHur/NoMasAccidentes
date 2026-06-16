@@ -113,6 +113,36 @@
     margin-top: 4px;
 }
 
+/* ----mostrar contraseña ----*/
+.auth-password-wrapper {
+    position: relative;
+}
+
+.auth-input--password {
+    padding-right: 42px;
+}
+
+.auth-password-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: var(--color-azul);
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-password-toggle:hover {
+    color: #162d4a;
+}
+
 /* ---- Alertas ---- */
 .auth-alert {
     font-size: 12px;
