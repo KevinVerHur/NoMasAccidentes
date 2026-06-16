@@ -357,3 +357,128 @@ export interface CambiarEstadoActividadRequest {
   estado: EstadoActividadPreventiva;
   observaciones?: string;
 }
+
+// ---- Asesorías (RF22–RF25) ----
+export type TipoAsesoria = 'ACCIDENTE' | 'FISCALIZACION';
+export type EstadoAsesoria = 'SOLICITADA' | 'EN_PROCESO' | 'CERRADA' | 'CANCELADA';
+
+export interface AsesoriaResponse {
+  id: number;
+  idCliente: number;
+  razonSocialCliente: string;
+  idProfesional: number;
+  nombreProfesional: string;
+  fechaSolicitud: string;
+  fechaAtencion: string | null;
+  motivo: string;
+  tipo: TipoAsesoria;
+  estado: EstadoAsesoria;
+  esAsesoriaExtra: boolean;
+}
+
+export interface CrearAsesoriaRequest {
+  idCliente: number;
+  idProfesional: number;
+  tipo: TipoAsesoria;
+  motivo: string;
+}
+
+// Accidentes (RF22, RF35)
+export type GravedadAccidente = 'LEVE' | 'GRAVE' | 'FATAL';
+
+export interface AccidenteResponse {
+  id: number;
+  idAsesoria: number;
+  fechaOcurrencia: string;
+  descripcion: string | null;
+  gravedad: GravedadAccidente;
+  trabajadorAfectado: string | null;
+  diasPerdidos: number | null;
+  fueReportadoSusseso: boolean;
+}
+
+export interface CrearAccidenteRequest {
+  idAsesoria: number;
+  fechaOcurrencia: string;
+  descripcion?: string;
+  gravedad: GravedadAccidente;
+  trabajadorAfectado?: string;
+  diasPerdidos?: number;
+  fueReportadoSusseso: boolean;
+}
+
+// Fiscalizaciones (RF22, RF42–RF44)
+export type EntidadFiscalizadora = 'DIRECCION_TRABAJO' | 'SUSESO' | 'SEREMI_SALUD' | 'MUTUALIDAD' | 'OTRO';
+export type ResultadoFiscalizacion = 'CONFORME' | 'CON_OBSERVACIONES' | 'NO_CONFORME';
+
+export interface FiscalizacionResponse {
+  id: number;
+  idAsesoria: number;
+  fecha: string;
+  entidadFiscalizadora: EntidadFiscalizadora;
+  motivo: string | null;
+  resultado: ResultadoFiscalizacion | null;
+  observaciones: string | null;
+}
+
+export interface CrearFiscalizacionRequest {
+  idAsesoria: number;
+  fecha: string;
+  entidadFiscalizadora: EntidadFiscalizadora;
+  motivo?: string;
+  resultado?: ResultadoFiscalizacion;
+  observaciones?: string;
+}
+
+// Multas (RF42–RF44)
+export type EstadoMulta = 'PENDIENTE' | 'PAGADA' | 'APELADA' | 'ANULADA';
+
+export interface MultaResponse {
+  id: number;
+  idFiscalizacion: number;
+  fechaEmision: string;
+  monto: number;
+  motivo: string | null;
+  normativaInfringida: string | null;
+  estadoPago: EstadoMulta;
+}
+
+export interface CrearMultaRequest {
+  idFiscalizacion: number;
+  fechaEmision: string;
+  monto: number;
+  motivo?: string;
+  normativaInfringida?: string;
+}
+
+// Propuestas de mejora del informe de asesoría (RF25)
+export type EstadoPropuesta = 'PENDIENTE' | 'EN_PROCESO' | 'VERIFICADA' | 'DESCARTADA';
+
+export interface PropuestaMejoraResponse {
+  id: number;
+  idInforme: number;
+  descripcion: string;
+  fechaPropuesta: string;
+  fechaLimite: string | null;
+  fechaVerificacion: string | null;
+  estado: EstadoPropuesta;
+  responsable: string | null;
+}
+
+export interface CrearPropuestaMejoraRequest {
+  idInforme: number;
+  descripcion: string;
+  fechaLimite?: string;
+  responsable?: string;
+}
+
+// Informe de asesoría (RF15 para asesorías, RF25)
+export interface InformeAsesoriaResponse {
+  id: number;
+  idAsesoria: number;
+  fechaEmision: string;
+  estado: EstadoInforme;
+  contenido: string | null;
+  hallazgos: string | null;
+  tieneArchivo: boolean;
+}
