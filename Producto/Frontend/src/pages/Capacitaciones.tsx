@@ -653,11 +653,7 @@ function VistaCliente() {
     finally { setConfirmandoId(null); }
   }
 
-  function abrirAgregarRapido(){
-    setNombreRapido('');
-    setErrorRapido(null);
-    setModalAgregarRapido(true);
-  }
+
 
   async function onAgregarRapido(){
     if (!modalConfirmar || !idCliente) return;
@@ -781,12 +777,7 @@ function VistaCliente() {
         <KpiCard label="Certificados"     value={certificados}     sub="Emitidos a trabajadores" />
       </div>
 
-      {/* Tabs */}
-      <div className="tabs" style={{ marginBottom: 0 }}>
-        <div className={`tab ${tab === 'capacitaciones' ? 'tab--active' : ''}`} onClick={() => setTab('capacitaciones')}>🎓 Capacitaciones</div>
-        <div className={`tab ${tab === 'trabajadores'   ? 'tab--active' : ''}`} onClick={() => setTab('trabajadores')}>👷 Trabajadores ({asistentes.length})</div>
-      </div>
-
+     
       {/* ── TAB CAPACITACIONES ── */}
       {tab === 'capacitaciones' && (
         <>
@@ -1044,10 +1035,10 @@ function VistaCliente() {
                     ) : (
                       <button
                         className="btn btn-sm btn-primary"
-                        disabled={confirmandoId === a.idAsistencia}
-                        onClick={() => onConfirmar(modalConfirmar.id, a.idAsistencia)}
+                        disabled={confirmandoId === a.idAsistente}
+                        onClick={() => onConfirmar(modalConfirmar.id, a.idAsistente)}
                       >
-                        {confirmandoId === a.idAsistencia ? 'Confirmando...' : 'Confirmar'}
+                        {confirmandoId === a.idAsistente ? 'Confirmando...' : 'Confirmar'}
                       </button>
                     )}
                   </div>
