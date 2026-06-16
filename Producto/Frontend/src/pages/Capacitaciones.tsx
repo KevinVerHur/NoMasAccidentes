@@ -653,11 +653,7 @@ function VistaCliente() {
     finally { setConfirmandoId(null); }
   }
 
-  function abrirAgregarRapido(){
-    setNombreRapido('');
-    setErrorRapido(null);
-    setModalAgregarRapido(true);
-  }
+
 
   async function onAgregarRapido(){
     if (!modalConfirmar || !idCliente) return;
@@ -1044,10 +1040,10 @@ function VistaCliente() {
                     ) : (
                       <button
                         className="btn btn-sm btn-primary"
-                        disabled={confirmandoId === a.idAsistencia}
-                        onClick={() => onConfirmar(modalConfirmar.id, a.idAsistencia)}
+                        disabled={confirmandoId === a.idAsistente}
+                        onClick={() => onConfirmar(modalConfirmar.id, a.idAsistente)}
                       >
-                        {confirmandoId === a.idAsistencia ? 'Confirmando...' : 'Confirmar'}
+                        {confirmandoId === a.idAsistente ? 'Confirmando...' : 'Confirmar'}
                       </button>
                     )}
                   </div>
