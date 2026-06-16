@@ -777,12 +777,7 @@ function VistaCliente() {
         <KpiCard label="Certificados"     value={certificados}     sub="Emitidos a trabajadores" />
       </div>
 
-      {/* Tabs */}
-      <div className="tabs" style={{ marginBottom: 0 }}>
-        <div className={`tab ${tab === 'capacitaciones' ? 'tab--active' : ''}`} onClick={() => setTab('capacitaciones')}>🎓 Capacitaciones</div>
-        <div className={`tab ${tab === 'trabajadores'   ? 'tab--active' : ''}`} onClick={() => setTab('trabajadores')}>👷 Trabajadores ({asistentes.length})</div>
-      </div>
-
+     
       {/* ── TAB CAPACITACIONES ── */}
       {tab === 'capacitaciones' && (
         <>
