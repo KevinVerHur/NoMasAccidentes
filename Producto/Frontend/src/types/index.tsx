@@ -322,6 +322,80 @@ export interface InformeResponse {
   tieneArchivo: boolean;
 }
 
+
+export type EstadoCapacitacion = 'PROGRAMADA' | 'EN_CURSO' | 'REALIZADA' | 'CANCELADA';
+ 
+export interface AsistenciaResponse {
+  idAsistencia: number;
+  idAsistente: number;
+  nombreAsistente: string;
+  rutAsistente: string;
+  cargoAsistente: string | null;
+  confirmado: boolean;
+  asistio: boolean;
+  fechaConfirmacion: string | null;
+  observaciones: string | null;
+}
+ 
+export interface CapacitacionResponse {
+  id: number;
+  idCliente: number;
+  cliente: string;
+  curso: string;
+  idRelator: number;
+  relator: string;
+  fechaProgramada: string;
+  horaProgramada: string;
+  cupos: number;
+  objetivo: string | null;
+  fechaRealizacion: string | null;
+  estado: EstadoCapacitacion;
+  esCapacitacionExtra: boolean;
+  cuposDisponibles: number;
+  asistencias: AsistenciaResponse[];
+}
+ 
+export interface CrearCapacitacionRequest {
+  idCliente: number;
+  curso: string;
+  idRelator: number;
+  fechaProgramada: string;
+  horaProgramada: string;
+  cupos: number;
+  objetivo?: string;
+  esCapacitacionExtra: boolean;
+}
+ 
+export interface InscribirAsistentesRequest {
+  idsAsistentes: number[];
+}
+ 
+export interface ConfirmarAsistenciaRequest {
+  observaciones?: string;
+  firmaDigital?: string;
+}
+export interface AsistenteResponse {
+  id: number;
+  idCliente: number;
+  cliente: string;
+  rut: string;
+  nombre: string;
+  apellidos: string;
+  nombreCompleto: string;
+  cargo: string | null;
+  area: string | null;
+  email: string | null;
+}
+ 
+export interface AsistenteRequest {
+  idCliente: number;
+  rut: string;
+  nombre: string;
+  apellidos: string;
+  cargo?: string;
+  area?: string;
+  email?: string;
+}
 export type EstadoActividadPreventiva = 'PENDIENTE' | 'EN_CURSO' | 'CUMPLIDA' | 'VENCIDA';
 
 export interface ActividadPreventivaResponse {

@@ -31,11 +31,13 @@ public class FlywayConfig {
     public Flyway flyway(
             DataSource dataSource,
             @Value("${spring.flyway.locations:classpath:db/migration}") String locations,
-            @Value("${spring.flyway.baseline-on-migrate:false}") boolean baselineOnMigrate) {
+            @Value("${spring.flyway.baseline-on-migrate:false}") boolean baselineOnMigrate,
+            @Value("${spring.flyway.out-of-order:false}") boolean outOfOrder) {
         return Flyway.configure()
                 .dataSource(dataSource)
                 .locations(locations.split(","))
                 .baselineOnMigrate(baselineOnMigrate)
+                .outOfOrder(outOfOrder)
                 .load();
     }
 

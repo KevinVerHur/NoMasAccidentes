@@ -36,3 +36,7 @@ export async function reactivarCliente(id: number): Promise<ClienteResponse> {
 export async function eliminarCliente(id: number): Promise<void> {
   await api.delete(`/api/clientes/${id}`);
 }
+export async function miCliente(): Promise<ClienteResponse> {
+  const res = await api.get<ClienteResponse>('/api/clientes/me');
+  return res.data;
+}
