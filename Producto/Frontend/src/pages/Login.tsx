@@ -140,7 +140,20 @@ export default function Login() {
                             {errors.password && <span className="auth-field-error">{errors.password.message}</span>}
                         </div>
 
-                        {error && <div className="auth-alert auth-alert--error">{error}</div>}
+                        {error && (
+                            <div className="auth-alert auth-alert--error auth-alert--closable">
+                                <span>{error}</span>
+
+                                <button
+                                    type="button"
+                                    className="auth-alert-close"
+                                    onClick={() => setError(null)}
+                                    aria-label="Cerrar mensaje de error"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        )}
 
                         <button type="submit" disabled={cargando} className="auth-btn">
                             {cargando ? 'Ingresando...' : 'Ingresar'}

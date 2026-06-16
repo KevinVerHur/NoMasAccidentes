@@ -16,8 +16,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('nma_token');
-      window.location.href = '/login';
+      const esLogin = error.config?.url?.includes('/api/auth/login');
+
+      if (!esLogin) {
+        localStorage.removeItem('nma_token');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
