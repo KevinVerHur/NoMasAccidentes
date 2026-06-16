@@ -1,4 +1,4 @@
-import type { InformeResponse } from '../types';
+import type { InformeResponse, InformeAsesoriaResponse } from '../types';
 import api from './axiosConfig';
 
 export async function generarInforme(idVisita: number): Promise<InformeResponse> {
@@ -8,6 +8,17 @@ export async function generarInforme(idVisita: number): Promise<InformeResponse>
 
 export async function obtenerInformePorVisita(idVisita: number): Promise<InformeResponse> {
   const res = await api.get<InformeResponse>(`/api/visitas/${idVisita}/informe`);
+  return res.data;
+}
+
+// ---- Informe de asesoría (RF15 para asesorías, RF25) ----
+export async function generarInformeAsesoria(idAsesoria: number): Promise<InformeAsesoriaResponse> {
+  const res = await api.post<InformeAsesoriaResponse>(`/api/asesorias/${idAsesoria}/informe`);
+  return res.data;
+}
+
+export async function obtenerInformeAsesoria(idAsesoria: number): Promise<InformeAsesoriaResponse> {
+  const res = await api.get<InformeAsesoriaResponse>(`/api/asesorias/${idAsesoria}/informe`);
   return res.data;
 }
 

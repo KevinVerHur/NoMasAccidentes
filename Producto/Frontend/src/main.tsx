@@ -15,6 +15,8 @@ import MisPagos from './pages/MisPagos';
 import MisActividades from './pages/MisActividades';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Asesorias from './pages/Asesorias';
+import AsesoriaDetalle from './pages/AsesoriaDetalle';
 import Capacitaciones from './pages/Capacitaciones';
 import './index.css';
 
@@ -72,6 +74,14 @@ const router = createBrowserRouter([
       {
         path: '/capacitaciones',
         element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CLIENTE']}><Capacitaciones /></ProtectedRoute>,
+      },
+      {
+        path: '/asesorias',
+        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><Asesorias /></ProtectedRoute>,
+      },
+      {
+        path: '/asesorias/:id',
+        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><AsesoriaDetalle /></ProtectedRoute>,
       },
     ],
   },
