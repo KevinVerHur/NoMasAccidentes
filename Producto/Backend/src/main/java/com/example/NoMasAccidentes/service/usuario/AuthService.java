@@ -86,6 +86,16 @@ public class AuthService {
     }
 
     /**
+     * Indica si un token de restablecimiento está vigente (existe, no usado y no expirado).
+     * Se usa al abrir la página de restablecimiento para avisar de inmediato si el enlace caducó.
+     */
+    public boolean tokenEsVigente(String token) {
+        return tokenRepository.findByToken(token)
+                .map(PasswordResetToken::estaVigente)
+                .orElse(false);
+    }
+
+    /**
      * Valida el token y actualiza la contraseña del usuario.
      */
     @Transactional

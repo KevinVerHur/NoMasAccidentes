@@ -5,6 +5,7 @@ import com.example.NoMasAccidentes.dto.usuario.LoginRequest;
 import com.example.NoMasAccidentes.dto.usuario.LoginResponse;
 import com.example.NoMasAccidentes.dto.usuario.RestablecerPasswordRequest;
 import com.example.NoMasAccidentes.dto.usuario.SolicitarRecuperacionRequest;
+import com.example.NoMasAccidentes.dto.usuario.ValidacionTokenResponse;
 import com.example.NoMasAccidentes.service.usuario.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,9 +13,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -77,5 +80,18 @@ public class AuthController {
     public ResponseEntity<Void> restablecerPassword(@Valid @RequestBody RestablecerPasswordRequest request) {
         authService.restablecerPassword(request);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+        summary = "Validar token de restablecimiento",
+        description = "Indica si el enlace de restablecimiento sigue vigente. " +
+                      "Permite avisar al usuario apenas abre la página si el enlace ya caducó o fue usado.",
+        responses = {
+            @ApiResponse(responseCode = "200", description = "valido=true si el token está vigente; valido=false en caso contrario")
+        }
+    )
+    @GetMapping("/reset-password/validate")
+    public ResponseEntity<ValidacionTokenResponse> validarToken(@RequestParam String token) {
+        return ResponseEntity.ok(new ValidacionTokenResponse(authService.tokenEsVigente(token)));
     }
 }

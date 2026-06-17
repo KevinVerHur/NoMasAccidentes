@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { restablecerPassword } from '../api/auth';
+import { restablecerPassword, validarTokenReset } from '../api/auth';
+
+type EstadoToken = 'validando' | 'valido' | 'invalido';
 
 interface FormData {
     nuevaPassword: string;
@@ -15,8 +17,29 @@ export default function ResetPassword() {
     const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
     const [error, setError] = useState<string | null>(null);
     const [cargando, setCargando] = useState(false);
+    const [estadoToken, setEstadoToken] = useState<EstadoToken>('validando');
     const [mostrarNuevaPassword, setMostrarNuevaPassword] = useState(false);
     const [mostrarConfirmarPassword, setMostrarConfirmarPassword] = useState(false);
+
+    // Valida el enlace apenas se abre la página, para avisar de inmediato si ya expiró
+    // o fue usado, sin esperar a que el usuario intente cambiar la contraseña.
+    useEffect(() => {
+        if (!token) {
+            setEstadoToken('invalido');
+            return;
+        }
+        let activo = true;
+        validarTokenReset(token)
+            .then((valido) => {
+                if (activo) setEstadoToken(valido ? 'valido' : 'invalido');
+            })
+            .catch(() => {
+                if (activo) setEstadoToken('invalido');
+            });
+        return () => {
+            activo = false;
+        };
+    }, [token]);
 
     const iconoOjoAbierto = (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -81,13 +104,29 @@ const iconoOjoCerrado = (
         }
     }
 
-    if (!token) {
+    if (estadoToken === 'validando') {
         return (
             <div className="auth-page">
                 <div className="auth-container">
                     <div className="auth-card" style={{ textAlign: 'center' }}>
+                        <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
+                            Validando enlace...
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    if (estadoToken === 'invalido') {
+        return (
+            <div className="auth-page">
+                <div className="auth-container">
+                    <div className="auth-card" style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
+                        <p style={{ fontWeight: 'bold', color: '#374151', marginBottom: 6 }}>Enlace no válido</p>
                         <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 16 }}>
-                            Enlace inválido. Solicita un nuevo correo de recuperación.
+                            Este enlace de recuperación expiró o ya fue usado. Solicita un nuevo correo.
                         </p>
                         <Link to="/recuperar-contrasena" className="auth-btn" style={{ display: 'inline-block', width: 'auto', padding: '9px 20px' }}>
                             Solicitar recuperación
@@ -110,7 +149,7 @@ const iconoOjoCerrado = (
 
                 <div className="auth-card">
                     <h2 className="auth-card-title">Nueva contraseña</h2>
-                    <p className="auth-info">Elige una contraseña segura de al menos 6 caracteres.</p>
+                    <p className="auth-info">Elige una contraseña segura de al menos 8 caracteres, con una mayúscula, un número y un símbolo.</p>
 
                     <form onSubmit={handleSubmit(onSubmit)} noValidate>
                         <div className="auth-field">
@@ -123,7 +162,11 @@ const iconoOjoCerrado = (
                                     className={`auth-input auth-input--password ${errors.nuevaPassword ? 'auth-input--error' : ''}`}
                                     {...register('nuevaPassword', {
                                         required: 'La contraseña es obligatoria',
-                                        minLength: { value: 6, message: 'Mínimo 6 caracteres' },
+                                        minLength: { value: 8, message: 'Mínimo 8 caracteres' },
+                                        pattern: {
+                                            value: /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/,
+                                            message: 'Debe incluir una mayúscula, un número y un símbolo',
+                                        },
                                     })}
                                 />
 

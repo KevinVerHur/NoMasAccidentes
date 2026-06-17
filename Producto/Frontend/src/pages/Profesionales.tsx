@@ -243,8 +243,8 @@ export default function Profesionales() {
                         <div style={{ gridColumn: 'span 2' }}>
                             <label className="auth-label">Contraseña temporal *</label>
                             <input type="password" className={`auth-input ${formNuevo.formState.errors.password ? 'auth-input--error' : ''}`}
-                                   placeholder="Mínimo 8 caracteres"
-                                   {...formNuevo.register('password', { required: 'Obligatorio', minLength: { value: 8, message: 'Mínimo 8 caracteres' } })}
+                                   placeholder="Mínimo 8 caracteres, mayúscula, número y símbolo"
+                                   {...formNuevo.register('password', { required: 'Obligatorio', minLength: { value: 8, message: 'Mínimo 8 caracteres' }, pattern: { value: /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/, message: 'Debe incluir una mayúscula, un número y un símbolo' } })}
                             />
                             {formNuevo.formState.errors.password && <span className="auth-field-error">{formNuevo.formState.errors.password.message}</span>}
                             <span style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, display: 'block' }}>El profesional podrá cambiarla al iniciar sesión.</span>

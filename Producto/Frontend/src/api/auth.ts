@@ -23,3 +23,10 @@ export async function solicitarRecuperacion(email: string): Promise<void> {
 export async function restablecerPassword(token: string, nuevaPassword: string): Promise<void> {
   await api.post('/api/auth/reset-password', { token, nuevaPassword });
 }
+
+export async function validarTokenReset(token: string): Promise<boolean> {
+  const response = await api.get<{ valido: boolean }>('/api/auth/reset-password/validate', {
+    params: { token },
+  });
+  return response.data.valido;
+}

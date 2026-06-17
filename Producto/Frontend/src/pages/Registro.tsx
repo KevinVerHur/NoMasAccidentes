@@ -82,12 +82,16 @@ export default function Registro() {
                             <label className="auth-label">Contraseña</label>
                             <input
                                 type="password"
-                                placeholder="Mínimo 8 caracteres"
+                                placeholder="Mínimo 8 caracteres, mayúscula, número y símbolo"
                                 className={`auth-input ${errors.password ? 'auth-input--error' : ''}`}
                                 {...register('password', {
                                     required: 'La contraseña es obligatoria',
                                     minLength: { value: 8, message: 'Mínimo 8 caracteres' },
                                     maxLength: { value: 100, message: 'Máx. 100 caracteres' },
+                                    pattern: {
+                                        value: /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/,
+                                        message: 'Debe incluir una mayúscula, un número y un símbolo',
+                                    },
                                 })}
                             />
                             {errors.password && <span className="auth-field-error">{errors.password.message}</span>}

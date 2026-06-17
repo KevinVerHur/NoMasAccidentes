@@ -39,7 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ClienteService {
 
     private static final String ROL_CLIENTE = "CLIENTE";
-    private static final long INVITACION_VALIDEZ_HORAS = 48;
+    private static final long INVITACION_VALIDEZ_HORAS = 1;
 
     private final ClienteRepository clienteRepository;
     private final ProfesionalRepository profesionalRepository;
