@@ -15,6 +15,58 @@ export default function ResetPassword() {
     const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>();
     const [error, setError] = useState<string | null>(null);
     const [cargando, setCargando] = useState(false);
+    const [mostrarNuevaPassword, setMostrarNuevaPassword] = useState(false);
+    const [mostrarConfirmarPassword, setMostrarConfirmarPassword] = useState(false);
+
+    const iconoOjoAbierto = (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path
+            d="M2 12C3.7 7.9 7.5 5 12 5C16.5 5 20.3 7.9 22 12C20.3 16.1 16.5 19 12 19C7.5 19 3.7 16.1 2 12Z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M12 15C13.7 15 15 13.7 15 12C15 10.3 13.7 9 12 9C10.3 9 9 10.3 9 12C9 13.7 10.3 15 12 15Z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
+
+const iconoOjoCerrado = (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path
+            d="M3 3L21 21"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+        />
+        <path
+            d="M10.6 10.6C10.2 11 10 11.5 10 12C10 13.1 10.9 14 12 14C12.5 14 13 13.8 13.4 13.4"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+        />
+        <path
+            d="M9.9 5.2C10.6 5.1 11.3 5 12 5C16.5 5 20.3 7.9 22 12C21.5 13.2 20.8 14.3 19.9 15.2"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M6.1 6.8C4.4 8 3 9.8 2 12C3.7 16.1 7.5 19 12 19C13.8 19 15.5 18.5 16.9 17.7"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
 
     async function onSubmit(data: FormData) {
         setError(null);
@@ -63,29 +115,55 @@ export default function ResetPassword() {
                     <form onSubmit={handleSubmit(onSubmit)} noValidate>
                         <div className="auth-field">
                             <label className="auth-label">Nueva contraseña</label>
-                            <input
-                                type="password"
-                                placeholder="••••••••"
-                                className={`auth-input ${errors.nuevaPassword ? 'auth-input--error' : ''}`}
-                                {...register('nuevaPassword', {
-                                    required: 'La contraseña es obligatoria',
-                                    minLength: { value: 6, message: 'Mínimo 6 caracteres' },
-                                })}
-                            />
+
+                            <div className="auth-password-wrapper">
+                                <input
+                                    type={mostrarNuevaPassword ? 'text' : 'password'}
+                                    placeholder="••••••••"
+                                    className={`auth-input auth-input--password ${errors.nuevaPassword ? 'auth-input--error' : ''}`}
+                                    {...register('nuevaPassword', {
+                                        required: 'La contraseña es obligatoria',
+                                        minLength: { value: 6, message: 'Mínimo 6 caracteres' },
+                                    })}
+                                />
+
+                                <button
+                                    type="button"
+                                    className="auth-password-toggle"
+                                    onClick={() => setMostrarNuevaPassword(!mostrarNuevaPassword)}
+                                    aria-label={mostrarNuevaPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                                >
+                                    {mostrarNuevaPassword ? iconoOjoCerrado : iconoOjoAbierto}
+                                </button>
+                            </div>
+
                             {errors.nuevaPassword && <span className="auth-field-error">{errors.nuevaPassword.message}</span>}
                         </div>
 
                         <div className="auth-field">
                             <label className="auth-label">Confirmar contraseña</label>
-                            <input
-                                type="password"
-                                placeholder="••••••••"
-                                className={`auth-input ${errors.confirmarPassword ? 'auth-input--error' : ''}`}
-                                {...register('confirmarPassword', {
-                                    required: 'Confirma la contraseña',
-                                    validate: (val) => val === watch('nuevaPassword') || 'Las contraseñas no coinciden',
-                                })}
-                            />
+
+                            <div className="auth-password-wrapper">
+                                <input
+                                    type={mostrarConfirmarPassword ? 'text' : 'password'}
+                                    placeholder="••••••••"
+                                    className={`auth-input auth-input--password ${errors.confirmarPassword ? 'auth-input--error' : ''}`}
+                                    {...register('confirmarPassword', {
+                                        required: 'Confirma la contraseña',
+                                        validate: (val) => val === watch('nuevaPassword') || 'Las contraseñas no coinciden',
+                                    })}
+                                />
+
+                                <button
+                                    type="button"
+                                    className="auth-password-toggle"
+                                    onClick={() => setMostrarConfirmarPassword(!mostrarConfirmarPassword)}
+                                    aria-label={mostrarConfirmarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                                >
+                                    {mostrarConfirmarPassword ? iconoOjoCerrado : iconoOjoAbierto}
+                                </button>
+                            </div>
+
                             {errors.confirmarPassword && <span className="auth-field-error">{errors.confirmarPassword.message}</span>}
                         </div>
 
