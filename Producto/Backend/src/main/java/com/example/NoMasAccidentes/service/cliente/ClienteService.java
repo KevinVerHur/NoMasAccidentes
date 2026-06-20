@@ -160,7 +160,11 @@ public class ClienteService {
         cliente.setEstado(EstadoCliente.SUSPENDIDO);
         
         if (cliente.getUsuario() != null) {
-            cliente.getUsuario().setActivo(false);
+            Long usuarioId = cliente.getUsuario().getId();
+            usuarioRepository.findById(usuarioId).ifPresent(u -> {
+                u.setActivo(false);
+                usuarioRepository.save(u);
+            });
         }
 
         log.info("Cliente suspendido id={} (RF09/RF12)", id);
@@ -169,18 +173,26 @@ public class ClienteService {
 
     /** Reactiva un cliente suspendido (RF09/RF12). */
     @Transactional
-    public ClienteResponse reactivar(Long id) {
-        Cliente cliente = buscarOFallar(id);
+public ClienteResponse reactivar(Long id) {
+    Cliente cliente = buscarOFallar(id);
+    cliente.setEstado(EstadoCliente.ACTIVO);
 
-        cliente.setEstado(EstadoCliente.ACTIVO);
-
-        if(cliente.getUsuario() != null) {
-            cliente.getUsuario().setActivo(true);
-        }
-
-        log.info("Cliente reactivado id={} (RF09/EF12)", id);
-        return clienteMapper.toResponse(cliente);
+    if (cliente.getUsuario() != null) {
+        // Obtenemos el ID del usuario directamente del proxy
+        Long usuarioId = cliente.getUsuario().getId();
+        
+        // Lo buscamos explícitamente a través del repositorio.
+        // Si findById no funciona por el filtro global, 
+        // deberás crear un método en UsuarioRepository con una @Query nativa.
+        usuarioRepository.findById(usuarioId).ifPresent(u -> {
+            u.setActivo(true);
+            usuarioRepository.save(u);
+        });
     }
+
+    log.info("Cliente reactivado id={} (RF09/EF12)", id);
+    return clienteMapper.toResponse(cliente);
+}
 
     @Transactional
     public void eliminar(Long id) {

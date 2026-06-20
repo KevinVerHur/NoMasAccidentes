@@ -46,3 +46,26 @@ export async function confirmarAsistencia(
   );
   return res.data;
 }
+
+export async function registrarAsistenciaEfectiva(
+  idCapacitacion: number,
+  idAsistente: number,
+  asistio: boolean
+): Promise<AsistenciaResponse> {
+  const res = await api.patch<AsistenciaResponse>(
+    `/api/capacitaciones/${idCapacitacion}/asistentes/${idAsistente}/asistio`,
+    null,
+    { params: { asistio } }
+  );
+  return res.data;
+}
+
+export async function iniciarCapacitacion(id: number): Promise<CapacitacionResponse> {
+  const res = await api.patch<CapacitacionResponse>(`/api/capacitaciones/${id}/iniciar`);
+  return res.data;
+}
+
+export async function finalizarCapacitacion(id: number): Promise<CapacitacionResponse> {
+  const res = await api.patch<CapacitacionResponse>(`/api/capacitaciones/${id}/finalizar`);
+  return res.data;
+}
