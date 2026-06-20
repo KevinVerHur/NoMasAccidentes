@@ -22,6 +22,9 @@ import {
   cancelarCapacitacion,
   confirmarAsistencia,
   inscribirAsistentes,
+  registrarAsistenciaEfectiva,
+  iniciarCapacitacion,
+  finalizarCapacitacion,
 } from '../api/capacitaciones';
 import { listarClientes, miCliente } from '../api/clientes';
 import { listarProfesionales } from '../api/profesionales';
@@ -369,6 +372,10 @@ function VistaProfesional() {
   const [modalDetalle,   setModalDetalle]   = useState<CapacitacionResponse | null>(null);
   const [modalAsistencia,setModalAsistencia]= useState<CapacitacionResponse | null>(null);
   const [modalActa,      setModalActa]      = useState<CapacitacionResponse | null>(null);
+  const [iniciandoId,    setIniciandoId]    = useState<number | null>(null);
+  const [marcandoId,     setMarcandoId]     = useState<number | null>(null);
+  const [finalizando,    setFinalizando]    = useState(false);
+  const [errorAsistencia,setErrorAsistencia]= useState<string | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -385,6 +392,39 @@ function VistaProfesional() {
   const confirmados = capacitaciones.reduce((acc, c) => acc + c.asistencias.filter(a => a.confirmado).length, 0);
   const totalAsistentes = capacitaciones.reduce((acc, c) => acc + c.asistencias.length, 0);
   const extras    = capacitaciones.filter(c => c.esCapacitacionExtra).length;
+
+  async function onIniciar(id: number) {
+    setIniciandoId(id);
+    try {
+      await iniciarCapacitacion(id);
+      await cargar();
+    } catch (e) { alert(mensajeError(e, 'No se pudo iniciar la capacitación.')); }
+    finally { setIniciandoId(null); }
+  }
+
+  async function onMarcarAsistio(idCapacitacion: number, idAsistente: number, asistio: boolean) {
+    setMarcandoId(idAsistente);
+    setErrorAsistencia(null);
+    try {
+      await registrarAsistenciaEfectiva(idCapacitacion, idAsistente, asistio);
+      const fresca = (await listarCapacitaciones(0, 200)).content.find(c => c.id === idCapacitacion);
+      if (fresca) setModalAsistencia(fresca);
+      await cargar();
+    } catch (e) { setErrorAsistencia(mensajeError(e, 'No se pudo registrar la asistencia.')); }
+    finally { setMarcandoId(null); }
+  }
+
+  async function onFinalizar() {
+    if (!modalAsistencia) return;
+    setFinalizando(true);
+    setErrorAsistencia(null);
+    try {
+      await finalizarCapacitacion(modalAsistencia.id);
+      setModalAsistencia(null);
+      await cargar();
+    } catch (e) { setErrorAsistencia(mensajeError(e, 'No se pudo finalizar la capacitación.')); }
+    finally { setFinalizando(false); }
+  }
 
   return (
     <>
@@ -439,6 +479,15 @@ function VistaProfesional() {
                     <td>
                       <div className="btn-group">
                         <button className="btn btn-sm btn-outline" onClick={() => setModalDetalle(c)}>Detalle</button>
+                        {c.estado === 'PROGRAMADA' && (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            disabled={iniciandoId === c.id}
+                            onClick={() => onIniciar(c.id)}
+                          >
+                            {iniciandoId === c.id ? 'Iniciando...' : 'Iniciar'}
+                          </button>
+                        )}
                         <button className="btn btn-sm btn-primary" onClick={() => setModalAsistencia(c)}>Registrar asistencia</button>
                       </div>
                     </td>
@@ -494,12 +543,17 @@ function VistaProfesional() {
 
       {/* Modal Registrar asistencia — wireframe profesional p.3 */}
       <Modal abierto={!!modalAsistencia} titulo="Registrar asistencia" ancho="lg" onCerrar={() => setModalAsistencia(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalAsistencia(null)}>Cancelar</button><button className="btn btn-success" onClick={() => { alert('Asistencia registrada correctamente.'); setModalAsistencia(null); }}>Cerrar asistencia</button></>}>
+        footer={<><button className="btn btn-outline" onClick={() => setModalAsistencia(null)}>Cancelar</button><button className="btn btn-success" disabled={finalizando} onClick={onFinalizar}>{finalizando ? 'Cerrando...' : 'Cerrar asistencia'}</button></>}>
         {modalAsistencia && (
           <>
             <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>
               <strong>{modalAsistencia.curso}</strong> · {modalAsistencia.cliente} · {fmtFecha(modalAsistencia.fechaProgramada)}
             </div>
+            {modalAsistencia.estado === 'PROGRAMADA' && (
+              <div className="alert-item alert-item--warn" style={{ marginBottom: 12 }}>
+                ⚠️ Esta capacitación aún no se ha iniciado. Puedes registrar la asistencia, pero te recomendamos iniciarla primero.
+              </div>
+            )}
             {modalAsistencia.asistencias.length === 0 ? (
               <div className="alert-item alert-item--warn">⚠️ No hay asistentes inscritos en esta capacitación.</div>
             ) : (
@@ -511,13 +565,22 @@ function VistaProfesional() {
                       <td style={{ fontWeight: 600 }}>{a.nombreAsistente}</td>
                       <td>{a.cargoAsistente ?? '—'}</td>
                       <td>
-                        <Badge variante={a.asistio ? 'green' : 'gray'}>{a.asistio ? 'Presente' : 'Ausente'}</Badge>
+                        <button
+                          className="btn btn-sm btn-outline"
+                          disabled={marcandoId === a.idAsistente}
+                          onClick={() => onMarcarAsistio(modalAsistencia.id, a.idAsistente, !a.asistio)}
+                        >
+                          {marcandoId === a.idAsistente
+                            ? 'Guardando...'
+                            : <Badge variante={a.asistio ? 'green' : 'gray'}>{a.asistio ? 'Presente' : 'Ausente'}</Badge>}
+                        </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
+            {errorAsistencia && <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>{errorAsistencia}</div>}
             {/* Firma capacitador */}
             <div style={{ marginTop: 16, padding: '12px 16px', background: '#f8fafc', borderRadius: 8, border: '1px dashed #cbd5e1', textAlign: 'center', cursor: 'pointer', fontSize: 12, color: '#6b7280' }}
               onClick={() => alert('Firma digital registrada.')}>

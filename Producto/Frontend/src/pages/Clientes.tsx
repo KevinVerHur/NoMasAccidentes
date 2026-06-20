@@ -31,6 +31,7 @@ export default function Clientes() {
   const [modalEditar, setModalEditar]   = useState<ClienteResponse | null>(null);
   const [modalSuspender, setModalSuspender] = useState<ClienteResponse | null>(null);
   const [modalEliminar, setModalEliminar]   = useState<ClienteResponse | null>(null);
+  const [reactivandoId, setReactivandoId] = useState<number | null>(null);
   const [guardando, setGuardando]       = useState(false);
   const [error, setError]               = useState<string | null>(null);
 
@@ -70,7 +71,7 @@ export default function Clientes() {
       await cargar();
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje;
-      setError(msg ?? 'Error al crear el cliente.');
+      setError(msg ?? 'Error al crear cliente. Ya existe un cliente con ese correo.');
     } finally {
       setGuardando(false);
     }
@@ -121,17 +122,30 @@ export default function Clientes() {
   }
 
   async function onReactivar(id: number) {
-    await reactivarCliente(id);
-    await cargar();
+    setError(null);
+    setReactivandoId(id);
+    try {
+      await reactivarCliente(id);
+      await cargar();
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje;
+      setError(msg ?? 'Error de integridad: El usuario asociado (ID 3) no puede ser cargado o no existe.');
+    } finally {
+      setReactivandoId(null);
+    }
   }
 
   async function onEliminar() {
     if (!modalEliminar) return;
+    setError(null);
     setGuardando(true);
     try {
       await eliminarCliente(modalEliminar.id);
       setModalEliminar(null);
       await cargar();
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje; // Mantener el mensaje de error del backend si existe
+      setError(msg ?? 'Error al eliminar el cliente. Verifique que no tenga registros asociados.');
     } finally {
       setGuardando(false);
     }
@@ -200,7 +214,9 @@ export default function Clientes() {
                     <div className="btn-group">
                       <button className="btn btn-sm btn-outline" onClick={() => abrirEditar(c)}>Editar</button>
                       {c.estado === 'SUSPENDIDO' ? (
-                        <button className="btn btn-sm btn-success" onClick={() => onReactivar(c.id)}>Reactivar</button>
+                        <button className="btn btn-sm btn-success" disabled={reactivandoId === c.id} onClick={() => onReactivar(c.id)}>
+                          {reactivandoId === c.id ? 'Cargando...' : 'Reactivar'}
+                        </button>
                       ) : (
                         <button className="btn btn-sm btn-warn" onClick={() => setModalSuspender(c)}>Suspender</button>
                       )}

@@ -242,6 +242,64 @@ public class CapacitacionService {
     }
 
     /**
+     * Inicia la capacitación: pasa de PROGRAMADA a EN_CURSO.
+     * Se invoca cuando el relator comienza a dictar el curso en la fecha/hora programada.
+     */
+    @Transactional
+    public CapacitacionResponse iniciar(Long id) {
+        Capacitacion capacitacion = buscarOFallar(id);
+
+        if (capacitacion.getEstado() != EstadoCapacitacion.PROGRAMADA) {
+            throw new ConflictoNegocioException(
+                    "Solo se puede iniciar una capacitación en estado PROGRAMADA. Estado actual: "
+                            + capacitacion.getEstado());
+        }
+
+        capacitacion.setEstado(EstadoCapacitacion.EN_CURSO);
+
+        log.info("Capacitación iniciada id={} curso='{}'", id, capacitacion.getCurso());
+        return mapper.toResponse(capacitacion);
+    }
+
+    /**
+     * Finaliza la capacitación: pasa a REALIZADA y fija fechaRealizacion.
+     * Exige que al menos un asistente tenga registrada su asistencia efectiva
+     * (asistio=true), evitando cerrar capacitaciones sin nadie presente
+     * (ver registrarAsistencia / RF-CAP). Solo es posible desde PROGRAMADA o EN_CURSO.
+     */
+    @Transactional
+    public CapacitacionResponse finalizar(Long id) {
+        Capacitacion capacitacion = buscarOFallar(id);
+
+        if (capacitacion.getEstado() == EstadoCapacitacion.REALIZADA) {
+            throw new ConflictoNegocioException("La capacitación ya fue realizada");
+        }
+        if (capacitacion.getEstado() == EstadoCapacitacion.CANCELADA) {
+            throw new ConflictoNegocioException("No se puede finalizar una capacitación cancelada");
+        }
+
+        boolean hayAlMenosUnPresente = capacitacion.getAsistencias().stream()
+                .anyMatch(Asistencia::isAsistio);
+
+        if (!hayAlMenosUnPresente) {
+            throw new ConflictoNegocioException(
+                    "No se puede finalizar la capacitación sin al menos un asistente marcado como presente. "
+                    + "Registre la asistencia efectiva antes de finalizar.");
+        }
+
+        capacitacion.setEstado(EstadoCapacitacion.REALIZADA);
+        capacitacion.setFechaRealizacion(LocalDate.now());
+
+        log.info("Capacitación finalizada id={} curso='{}' presentes={}/{}",
+                id,
+                capacitacion.getCurso(),
+                capacitacion.getAsistencias().stream().filter(Asistencia::isAsistio).count(),
+                capacitacion.getAsistencias().size());
+
+        return mapper.toResponse(capacitacion);
+    }
+
+    /**
      * Cancela una capacitación. Solo es posible si aún no fue realizada.
      */
     @Transactional

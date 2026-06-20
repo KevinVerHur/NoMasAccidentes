@@ -41,6 +41,15 @@ import org.springframework.web.bind.annotation.*;
  *  POST   /api/capacitaciones/{id}/asistentes/{idAsistente}/confirmar
  *      → Confirmar asistencia (RF-CAP3)
  *
+ *  PATCH  /api/capacitaciones/{id}/asistentes/{idAsistente}/asistio
+ *      → Registrar asistencia efectiva (presente/ausente)
+ *
+ *  PATCH  /api/capacitaciones/{id}/iniciar
+ *      → Iniciar la capacitación (PROGRAMADA → EN_CURSO)
+ *
+ *  PATCH  /api/capacitaciones/{id}/finalizar
+ *      → Finalizar la capacitación (→ REALIZADA). Requiere ≥1 asistente con asistio=true.
+ *
  *  PATCH  /api/capacitaciones/{id}/cancelar
  *      → Cancelar una capacitación
  */
@@ -150,6 +159,24 @@ public AsistenciaResponse registrarAsistencia(
         @RequestParam boolean asistio) {
     return capacitacionService.registrarAsistencia(id, idAsistente, asistio);
         }
+    @Operation(summary = "Iniciar la capacitación: pasa a EN_CURSO")
+    @PatchMapping("/{id}/iniciar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
+    public CapacitacionResponse iniciar(@PathVariable Long id) {
+        return capacitacionService.iniciar(id);
+    }
+
+    @Operation(
+        summary = "Finalizar la capacitación: pasa a REALIZADA",
+        description = "Requiere que al menos un asistente tenga registrada su asistencia " +
+                      "efectiva (asistio=true) mediante el endpoint /asistentes/{idAsistente}/asistio."
+    )
+    @PatchMapping("/{id}/finalizar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
+    public CapacitacionResponse finalizar(@PathVariable Long id) {
+        return capacitacionService.finalizar(id);
+    }
+
     @Operation(summary = "Cancelar una capacitación")
     @PatchMapping("/{id}/cancelar")
     @PreAuthorize("hasRole('ADMIN')")
