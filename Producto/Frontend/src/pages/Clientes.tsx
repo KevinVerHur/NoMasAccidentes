@@ -70,8 +70,8 @@ export default function Clientes() {
       formNuevo.reset();
       await cargar();
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje;
-      setError(msg ?? 'Error al crear cliente. Ya existe un cliente con ese correo.');
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(msg ?? 'Error al crear el cliente. Verifique que el RUT y el correo no estén duplicados.');
     } finally {
       setGuardando(false);
     }
@@ -102,7 +102,7 @@ export default function Clientes() {
       setModalEditar(null);
       await cargar();
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje;
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? 'Error al actualizar el cliente.');
     } finally {
       setGuardando(false);
@@ -128,7 +128,7 @@ export default function Clientes() {
       await reactivarCliente(id);
       await cargar();
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje;
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? 'Error de integridad: El usuario asociado (ID 3) no puede ser cargado o no existe.');
     } finally {
       setReactivandoId(null);
@@ -144,7 +144,7 @@ export default function Clientes() {
       setModalEliminar(null);
       await cargar();
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje; // Mantener el mensaje de error del backend si existe
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message; // Mantener el mensaje de error del backend si existe
       setError(msg ?? 'Error al eliminar el cliente. Verifique que no tenga registros asociados.');
     } finally {
       setGuardando(false);
