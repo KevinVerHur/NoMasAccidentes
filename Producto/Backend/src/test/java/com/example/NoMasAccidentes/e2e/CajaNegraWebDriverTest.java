@@ -92,6 +92,45 @@ public class CajaNegraWebDriverTest {
         wait.until(d -> d.getPageSource().contains(texto));
     }
 
+    // Crea un cliente ACTIVO con datos únicos y devuelve su RUT. Requiere sesión admin en /clientes.
+    // Hace el test autosuficiente: no depende de clientes preexistentes ni del orden de ejecución.
+    String crearClienteUnico(String etiqueta) {
+        long unico = System.currentTimeMillis();
+        String rut = (10000000L + unico % 80000000L) + "-0";
+        clicTexto("+ Nuevo cliente");
+        escribir("razonSocial", "Empresa " + etiqueta + " SpA");
+        escribir("rut", rut);
+        escribir("nombreContacto", "Contacto " + etiqueta);
+        escribir("email", etiqueta.toLowerCase() + unico + "@nma.cl");
+        escribir("telefono", "912345678");
+        seleccionar("rubro", "Construcción");
+        seleccionar("plan", "PRO");
+        clicTexto("Guardar cliente");
+        esperarBotonEnFila(rut, "Suspender");   // confirma que se creó y quedó ACTIVO
+        return rut;
+    }
+
+    // Hace clic en un botón (Suspender/Reactivar/Eliminar/Editar) dentro de la fila del cliente
+    // que tiene ese RUT, en vez del primero de la lista compartida.
+    void clicEnFilaPorRut(String rut, String textoBoton) {
+        By selector = By.xpath("//tr[td[normalize-space()='" + rut + "']]//button[contains(normalize-space(), '" + textoBoton + "')]");
+        for (int intento = 0; intento < 3; intento++) {
+            try {
+                wait.until(ExpectedConditions.elementToBeClickable(selector)).click();
+                return;
+            } catch (StaleElementReferenceException e) {
+                // la tabla se re-renderizó; reintentar
+            }
+        }
+        throw new RuntimeException("No se encontró el botón '" + textoBoton + "' en la fila del RUT " + rut);
+    }
+
+    // Espera a que la fila del RUT muestre un botón con ese texto (verifica el estado resultante).
+    void esperarBotonEnFila(String rut, String textoBoton) {
+        By selector = By.xpath("//tr[td[normalize-space()='" + rut + "']]//button[contains(normalize-space(), '" + textoBoton + "')]");
+        wait.until(ExpectedConditions.presenceOfElementLocated(selector));
+    }
+
     void captura(String nombre) throws Exception {
         File src = ((TakesScreenshot) driver).getScreenshotAs(OutputType.FILE);
         Path destino = Path.of("target", "selenium-screenshots", nombre + ".png");
@@ -217,24 +256,40 @@ public class CajaNegraWebDriverTest {
     }
 
     @Test
-    //Primero debe existir un cliente con ese RUT
     void cp09_crearClienteRutDuplicado() throws Exception {
         loginAdmin();
 
         driver.get(BASE_URL + "/clientes");
-        clicTexto("+ Nuevo cliente");
+        esperarTexto("Clientes");
 
-        escribir("razonSocial", "Empresa Rut Duplicado SpA");
-        escribir("rut", "76123456-7");
-        escribir("nombreContacto", "Contacto Duplicado");
-        escribir("email", "rut.duplicado@nma.cl");
+        // Autosuficiente: crea un cliente y luego intenta crear otro con el MISMO RUT (correo distinto).
+        long unico = System.currentTimeMillis();
+        String rutComun = (10000000L + unico % 80000000L) + "-0";
+
+        // 1) Cliente base con el RUT
+        clicTexto("+ Nuevo cliente");
+        escribir("razonSocial", "Empresa RUT Base SpA");
+        escribir("rut", rutComun);
+        escribir("nombreContacto", "Contacto Base");
+        escribir("email", "rutbase" + unico + "@nma.cl");
         escribir("telefono", "912345678");
         seleccionar("rubro", "Construcción");
         seleccionar("plan", "PRO");
-
         clicTexto("Guardar cliente");
-        
-        esperarTexto("RUT");
+        esperarBotonEnFila(rutComun, "Suspender");
+
+        // 2) Segundo cliente con el MISMO RUT → debe rechazarse
+        clicTexto("+ Nuevo cliente");
+        escribir("razonSocial", "Empresa RUT Duplicado SpA");
+        escribir("rut", rutComun);
+        escribir("nombreContacto", "Contacto Duplicado");
+        escribir("email", "rutdup" + unico + "@nma.cl");
+        escribir("telefono", "912345678");
+        seleccionar("rubro", "Construcción");
+        seleccionar("plan", "PRO");
+        clicTexto("Guardar cliente");
+
+        esperarTexto("Ya existe un cliente con RUT");
         captura("CP-09-rut-duplicado");
     }
 
@@ -243,19 +298,39 @@ public class CajaNegraWebDriverTest {
         loginAdmin();
 
         driver.get(BASE_URL + "/clientes");
-        clicTexto("+ Nuevo cliente");
+        esperarTexto("Clientes");
 
-        escribir("razonSocial", "Empresa Email Duplicado SpA");
-        escribir("rut", "76999999-9");
-        escribir("nombreContacto", "Contacto Email");
-        escribir("email", "admin@nma.cl");
+        // Autosuficiente: crea un cliente con un correo y luego intenta crear
+        // otro con el MISMO correo (RUT distinto), forzando el duplicado.
+        long unico = System.currentTimeMillis();
+        String correoComun = "duplicado" + unico + "@nma.cl";
+        String rut1 = (10000000L + unico % 80000000L) + "-0";
+        String rut2 = (10000000L + (unico + 31000000L) % 80000000L) + "-1";
+
+        // 1) Cliente base con el correo
+        clicTexto("+ Nuevo cliente");
+        escribir("razonSocial", "Empresa Correo Base SpA");
+        escribir("rut", rut1);
+        escribir("nombreContacto", "Contacto Base");
+        escribir("email", correoComun);
         escribir("telefono", "912345678");
         seleccionar("rubro", "Construcción");
         seleccionar("plan", "PRO");
-
         clicTexto("Guardar cliente");
-        
-        esperarTexto("correo");
+        esperarBotonEnFila(rut1, "Suspender");
+
+        // 2) Segundo cliente con el MISMO correo → debe rechazarse
+        clicTexto("+ Nuevo cliente");
+        escribir("razonSocial", "Empresa Correo Duplicado SpA");
+        escribir("rut", rut2);
+        escribir("nombreContacto", "Contacto Duplicado");
+        escribir("email", correoComun);
+        escribir("telefono", "912345678");
+        seleccionar("rubro", "Construcción");
+        seleccionar("plan", "PRO");
+        clicTexto("Guardar cliente");
+
+        esperarTexto("Ya existe un cliente con ese correo");
         captura("CP-10-email-duplicado");
     }
 
@@ -281,10 +356,14 @@ public class CajaNegraWebDriverTest {
         driver.get(BASE_URL + "/clientes");
         esperarTexto("Clientes");
 
-        clicTexto("Suspender");
+        // Autosuficiente: crea su propio cliente activo y suspende ESE.
+        String rut = crearClienteUnico("Suspender");
+
+        clicEnFilaPorRut(rut, "Suspender");
         clicTexto("Confirmar");
 
-        esperarTexto("Suspendido");
+        // El resultado se verifica en la fila: ahora muestra "Reactivar" (quedó suspendido).
+        esperarBotonEnFila(rut, "Reactivar");
         captura("CP-12-suspender-cliente");
     }
 
@@ -295,9 +374,17 @@ public class CajaNegraWebDriverTest {
         driver.get(BASE_URL + "/clientes");
         esperarTexto("Clientes");
 
-        clicTexto("Reactivar");
+        // Autosuficiente: crea su cliente, lo suspende y luego lo reactiva.
+        String rut = crearClienteUnico("Reactivar");
 
-        esperarTexto("Activo");
+        clicEnFilaPorRut(rut, "Suspender");
+        clicTexto("Confirmar");
+        esperarBotonEnFila(rut, "Reactivar");
+
+        clicEnFilaPorRut(rut, "Reactivar");
+
+        // El resultado se verifica en la fila: vuelve a mostrar "Suspender" (quedó activo).
+        esperarBotonEnFila(rut, "Suspender");
         captura("CP-13-reactivar-cliente");
     }
 

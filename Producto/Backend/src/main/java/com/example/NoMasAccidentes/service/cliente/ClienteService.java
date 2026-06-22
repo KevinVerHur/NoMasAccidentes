@@ -57,7 +57,7 @@ public class ClienteService {
             throw new ConflictoNegocioException("Ya existe un cliente con RUT " + request.rut());
         }
         if (usuarioRepository.existsByEmail(request.email())) {
-            throw new ConflictoNegocioException("Ya existe un usuario con email " + request.email());
+            throw new ConflictoNegocioException("Ya existe un cliente con ese correo");
         }
 
         Profesional profesional = resolverProfesional(request.idProfesional());
