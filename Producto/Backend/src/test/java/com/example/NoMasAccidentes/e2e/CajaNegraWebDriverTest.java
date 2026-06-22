@@ -5,6 +5,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 
 import java.io.File;
@@ -14,6 +15,8 @@ import java.time.Duration;
 
 
 import static org.junit.jupiter.api.Assertions.*;
+
+// .\mvnw.cmd test "-Dtest=CajaNegraWebDriverTest" 
 
 public class CajaNegraWebDriverTest {
     
@@ -52,13 +55,32 @@ public class CajaNegraWebDriverTest {
     }
 
     void clicTexto(String texto) {
-        driver.findElement(By.xpath("//*[self::button or self::a][contains(normalize-space(), '"+ texto + "')]")).click();
+        By selector = By.xpath("//*[self::button or self::a][contains(normalize-space(), '"+ texto + "')]");
+        // Reintenta si React re-renderiza el DOM entre localizar y hacer clic (StaleElementReference)
+        for (int intento = 0; intento < 3; intento++) {
+            try {
+                wait.until(ExpectedConditions.elementToBeClickable(selector)).click();
+                return;
+            } catch (StaleElementReferenceException e) {
+                // el nodo quedó obsoleto; reintentar
+            }
+        }
+        throw new RuntimeException("No se pudo hacer clic en: " + texto);
     }
 
     void escribir(String name, String valor){
-        WebElement campo = driver.findElement(By.name(name));
-        campo.clear();
-        campo.sendKeys(valor);
+        // Reintenta si React re-renderiza el DOM tras una navegación (StaleElementReference)
+        for (int intento = 0; intento < 3; intento++) {
+            try {
+                WebElement campo = wait.until(ExpectedConditions.presenceOfElementLocated(By.name(name)));
+                campo.clear();
+                campo.sendKeys(valor);
+                return;
+            } catch (StaleElementReferenceException e) {
+                // el nodo quedó obsoleto; reintentar
+            }
+        }
+        throw new RuntimeException("No se pudo escribir en el campo: " + name);
     }
 
     void seleccionar(String name, String textoVisible) {
@@ -132,9 +154,9 @@ public class CajaNegraWebDriverTest {
     }
 
     @Test
-    //Este necesita un usuario CLIENTE o PROFESIONAL real. Cambiar los datos de ser necesario
+    //Usa el cliente de prueba sembrado en la migración V18 (rol CLIENTE, no-ADMIN).
     void cp06_usuarioSinPermisoRolAdmin() throws Exception {
-        login("nicosick028@gmail.com", "Nico2021$.");
+        login("cliente.test@nma.cl", "123456");
 
         wait.until(d -> d.getCurrentUrl().contains("/dashboard"));
 
@@ -153,16 +175,22 @@ public class CajaNegraWebDriverTest {
 
         clicTexto("+ Nuevo cliente");
 
+        // Datos únicos por ejecución para no chocar con RUT/correo ya existentes.
+        // El RUT solo se valida por formato (^\d{7,8}-[\dkK]$), no por dígito verificador.
+        long unico = System.currentTimeMillis();
+        String rutUnico = (10000000L + unico % 80000000L) + "-0";
+        String emailUnico = "selenium.demo" + unico + "@nma.cl";
+
         escribir("razonSocial", "Empresa Selenium SpA");
-        escribir("rut", "76123456-7");
+        escribir("rut", rutUnico);
         escribir("nombreContacto", "Prueba Selenium");
-        escribir("email", "selenium.demo01@nma.cl");
+        escribir("email", emailUnico);
         escribir("telefono", "912345678");
         seleccionar("rubro", "Construcción");
         seleccionar("plan", "PRO");
 
         clicTexto("Guardar cliente");
-        
+
         esperarTexto("Empresa Selenium SpA");
         captura("CP-07-crear-cliente-valido");
     }
@@ -311,7 +339,7 @@ public class CajaNegraWebDriverTest {
     @Test
     //Aqui hay que pegar el enlace recibido por correo en 'URL_INVITACION'
     void cp16_activarCuentaDesdeInvitacion() throws Exception {
-        String URL_INVITACION = "http://localhost:5173/restablecer-contrasena?token=12bb568f-3134-4caa-99d7-df5a8c0c7b3b";
+        String URL_INVITACION = "http://localhost:5173/restablecer-contrasena?token=2d60ce85-7726-472e-818e-8c3f317a40dd";
 
         driver.get(URL_INVITACION);
 
@@ -344,7 +372,7 @@ public class CajaNegraWebDriverTest {
     @Test
     //Aqui hay que pegar el enlace recibido en 'URL_RECUPERACION'
     void cp18_restablecerPasswordEnlaceValido() throws Exception {
-        String URL_RECUPERACION = "http://localhost:5173/restablecer-contrasena?token=e5a56d02-cfdd-4e4a-a493-26ab4938eb08";
+        String URL_RECUPERACION = "http://localhost:5173/restablecer-contrasena?token=6920d283-4326-4591-b301-a575bec930ff";
 
         driver.get(URL_RECUPERACION);
 
@@ -377,8 +405,9 @@ public class CajaNegraWebDriverTest {
     }
 
     @Test
+    //Aqui hay que pegar el enlace recibido en 'URL_RECUPERACION'
     void cp20_validarNuevaPassword() throws Exception {
-        String URL_RECUPERACION = "http://localhost:5173/restablecer-contrasena?token=e5a56d02-cfdd-4e4a-a493-26ab4938eb08";
+        String URL_RECUPERACION = "http://localhost:5173/restablecer-contrasena?token=6920d283-4326-4591-b301-a575bec930ff";
 
         driver.get(URL_RECUPERACION);
 
