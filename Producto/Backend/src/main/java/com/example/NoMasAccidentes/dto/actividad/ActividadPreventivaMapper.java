@@ -18,6 +18,7 @@ public class ActividadPreventivaMapper {
                 a.getCliente().getRazonSocial(),
                 a.getTitulo(),
                 a.getDescripcion(),
+                a.getNormativa(),
                 a.getResponsable(),
                 a.getFechaPlanificada(),
                 a.getFechaCompromiso(),

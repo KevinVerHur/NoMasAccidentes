@@ -9,6 +9,7 @@ public record ActividadPreventivaResponse(
     String razonSocialCliente,
     String titulo, 
     String descripcion, 
+    String normativa,
     String responsable,
     LocalDate fechaPlanificada,
     LocalDate fechaCompromiso,

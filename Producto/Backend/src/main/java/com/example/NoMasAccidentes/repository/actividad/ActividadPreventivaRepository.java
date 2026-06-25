@@ -23,6 +23,15 @@ public interface ActividadPreventivaRepository extends JpaRepository<ActividadPr
 
     long countByEstado(EstadoActividadPreventiva estado);
 
+    @Query("""
+            select a from ActividadPreventiva a
+            join fetch a.cliente c
+            where a.alertaEnviada = false
+                and a.fechaCompromiso < :hoy
+                and a.estado <> com.example.NoMasAccidentes.model.actividad.EstadoActividadPreventiva.CUMPLIDA
+            """)
+    List<ActividadPreventiva> findVencidasSinAlerta(LocalDate hoy);
+
     @Modifying
     @Query("""
             update ActividadPreventiva a

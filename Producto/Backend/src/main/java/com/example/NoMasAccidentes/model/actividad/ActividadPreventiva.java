@@ -35,6 +35,9 @@ public class ActividadPreventiva extends BaseEntity{
     private String descripcion;
 
     @Column(length = 120)
+    private String normativa;
+
+    @Column(length = 120)
     private String responsable;
 
     @Column(name = "fecha_planificada", nullable = false)
@@ -53,6 +56,10 @@ public class ActividadPreventiva extends BaseEntity{
 
     @Column(length = 1000)
     private String observaciones;
+
+    @Column(name = "alerta_enviada", nullable = false)
+    @Builder.Default
+    private boolean alertaEnviada = false;
 
     @Column(nullable = false)
     @Builder.Default
