@@ -6,6 +6,7 @@ import com.example.NoMasAccidentes.model.actividad.*;
 import com.example.NoMasAccidentes.model.cliente.Cliente;
 import com.example.NoMasAccidentes.repository.actividad.ActividadPreventivaRepository;
 import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.service.usuario.CorreoService;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class ActividadPreventivaService {
     private final ActividadPreventivaRepository repository;
     private final ClienteRepository clienteRepository;
     private final ActividadPreventivaMapper mapper;
+    private final CorreoService correoService;
 
     @Transactional 
     public ActividadPreventivaResponse crear(CrearActividadPreventivaRequest r) {
@@ -34,6 +36,7 @@ public class ActividadPreventivaService {
                 .cliente(cliente)
                 .titulo(r.titulo())
                 .descripcion(r.descripcion())
+                .normativa(r.normativa())
                 .responsable(r.responsable())
                 .fechaPlanificada(r.fechaPlanificada())
                 .fechaCompromiso(r.fechaCompromiso())
@@ -75,6 +78,7 @@ public class ActividadPreventivaService {
         ActividadPreventiva a = buscar(id);
         a.setTitulo(r.titulo());
         a.setDescripcion(r.descripcion());
+        a.setNormativa(r.normativa());
         a.setResponsable(r.responsable());
         a.setFechaPlanificada(r.fechaPlanificada());
         a.setFechaCompromiso(r.fechaCompromiso());
@@ -108,6 +112,27 @@ public class ActividadPreventivaService {
                 .toList();
     }
 
+
+
+    @Transactional
+    public int procesarVencidasYAlertar() {
+        List<ActividadPreventiva> vencidas = repository.findVencidasSinAlerta(LocalDate.now());
+
+        vencidas.forEach(actividad -> {
+            actividad.setEstado(EstadoActividadPreventiva.VENCIDA);
+            correoService.enviarAlertaActividadPreventivaVencida(
+                    actividad.getCliente().getRazonSocial(),
+                    actividad.getTitulo(),
+                    actividad.getNormativa(),
+                    actividad.getResponsable(),
+                    actividad.getFechaCompromiso().toString()
+            );
+            actividad.setAlertaEnviada(true);
+        });
+
+        return vencidas.size();
+    }
+  
     @Transactional
     private ActividadPreventiva buscar(Long id) {
         return repository.findById(id)

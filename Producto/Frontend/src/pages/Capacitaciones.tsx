@@ -643,7 +643,7 @@ function VistaCliente() {
   const [capacitaciones, setCapacitaciones] = useState<CapacitacionResponse[]>([]);
   const [asistentes,     setAsistentes]     = useState<AsistenteResponse[]>([]);
   const [cargando,       setCargando]       = useState(true);
-  const [tab,            setTab]            = useState<'capacitaciones' | 'trabajadores'>('capacitaciones');
+  const [tab,            ]            = useState<'capacitaciones' | 'trabajadores'>('capacitaciones');
 
   // ── Modales capacitaciones ──────────────────────────────────────────────────
   const [modalDetalle,   setModalDetalle]   = useState<CapacitacionResponse | null>(null);

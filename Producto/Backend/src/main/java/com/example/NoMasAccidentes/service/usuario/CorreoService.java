@@ -24,6 +24,9 @@ public class CorreoService {
     @Value("${app.frontend-url:http://localhost:5173}")
     private String frontendUrl;
 
+    @Value("${app.admin.email:${spring.mail.username}}")
+    private String adminEmail;
+
     /**
      * Envía el correo de recuperación de contraseña de forma asíncrona.
      * El enlace tiene validez de 1 hora.
@@ -105,6 +108,26 @@ public class CorreoService {
         }
     }
 
+
+
+    @Async
+    public void enviarAlertaActividadPreventivaVencida(String cliente, String actividad, String normativa, String responsable, String vencimiento){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(adminEmail);
+            helper.setSubject("No Mas Accidentes - Actividad preventiva vencida");
+            helper.setText(construirHtmlActividadPreventivaVencida(cliente, actividad, normativa, responsable, vencimiento), true);
+
+            mailSender.send(mensaje);
+            log.info("Alerta de actividad preventiva vencida enviada al administrador por cliente {}", cliente);
+        } catch (Exception e) {
+            log.error("Error al enviar alerta de actividad preventiva vencida al administrador: {}", e.getMessage());
+        }
+    }
+
     private String construirHtmlInvitacion(String token) {
         String enlace = frontendUrl + "/restablecer-contrasena?token=" + token;
         return """
@@ -170,5 +193,24 @@ public class CorreoService {
         """.formatted(cliente, vencimiento, monto);
     }
 
+
+
+
+    private String construirHtmlActividadPreventivaVencida(String cliente, String actividad, String normativa, String responsable, String vencimiento){
+        String normativaTexto = normativa == null || normativa.isBlank() ? "No especificada" : normativa;
+        String responsableTexto = responsable == null || responsable.isBlank() ? "No especificado" : responsable;
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;background:#fff7ed;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Se detecto una actividad preventiva vencida.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Cliente:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Actividad:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Normativa:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Responsable:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha compromiso:</strong> %s</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(cliente, actividad, normativaTexto, responsableTexto, vencimiento);
+    }
 
 }

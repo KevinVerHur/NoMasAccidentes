@@ -82,6 +82,7 @@ export default function SeguimientoPreventivo() {
     return !texto
       || a.razonSocialCliente.toLowerCase().includes(texto)
       || a.titulo.toLowerCase().includes(texto)
+      || (a.normativa ?? '').toLowerCase().includes(texto)
       || (a.responsable ?? '').toLowerCase().includes(texto);
   });
 
@@ -95,6 +96,7 @@ export default function SeguimientoPreventivo() {
       idCliente: undefined as unknown as number,
       titulo: '',
       descripcion: '',
+      normativa: '',
       responsable: '',
       fechaPlanificada: new Date().toISOString().slice(0, 10),
       fechaCompromiso: '',
@@ -201,6 +203,7 @@ export default function SeguimientoPreventivo() {
               <tr>
                 <th>Cliente</th>
                 <th>Actividad preventiva</th>
+                <th>Normativa</th>
                 <th>Responsable</th>
                 <th>Fecha limite</th>
                 <th>Estado</th>
@@ -216,6 +219,7 @@ export default function SeguimientoPreventivo() {
                     <div style={{ fontWeight: 600, color: '#1a3a5c' }}>{a.titulo}</div>
                     <div style={{ fontSize: 11, color: '#6b7280' }}>{a.descripcion ?? '-'}</div>
                   </td>
+                  <td>{a.normativa ?? '-'}</td>
                   <td>{a.responsable ?? '-'}</td>
                   <td>{fmtFecha(a.fechaCompromiso)}</td>
                   <td>
@@ -301,6 +305,15 @@ export default function SeguimientoPreventivo() {
                 rows={3}
                 placeholder="Detalle de la actividad, evidencia esperada o instrucción..."
                 {...formNueva.register('descripcion')}
+              />
+            </div>
+
+            <div>
+              <label className="auth-label">Normativa</label>
+              <input
+                className="auth-input"
+                placeholder="Ley 16.744, DS N°40..."
+                {...formNueva.register('normativa')}
               />
             </div>
 

@@ -404,6 +404,7 @@ export interface ActividadPreventivaResponse {
   razonSocialCliente: string;
   titulo: string;
   descripcion: string | null;
+  normativa: string | null;
   responsable: string | null;
   fechaPlanificada: string;
   fechaCompromiso: string;
@@ -417,6 +418,7 @@ export interface CrearActividadPreventivaRequest {
   idCliente: number;
   titulo: string;
   descripcion?: string;
+  normativa?: string;
   responsable?: string;
   fechaPlanificada: string;
   fechaCompromiso: string;

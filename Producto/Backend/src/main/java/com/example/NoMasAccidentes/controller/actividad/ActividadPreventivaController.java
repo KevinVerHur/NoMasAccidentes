@@ -54,7 +54,7 @@ public class ActividadPreventivaController {
     }
 
     @PatchMapping("/{id}/estado")
-    @PreAuthorize("hasAnyRol('ADMIN', 'PROFESIONAL')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public ActividadPreventivaResponse cambiarEstado(
             @PathVariable Long id,
             @Valid @RequestBody CambiarEstadoActividadRequest request){
