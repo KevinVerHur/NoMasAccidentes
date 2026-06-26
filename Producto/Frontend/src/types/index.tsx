@@ -346,6 +346,7 @@ export interface CapacitacionResponse {
   relator: string;
   fechaProgramada: string;
   horaProgramada: string;
+  lugar:string;
   cupos: number;
   objetivo: string | null;
   fechaRealizacion: string | null;
@@ -361,6 +362,7 @@ export interface CrearCapacitacionRequest {
   idRelator: number;
   fechaProgramada: string;
   horaProgramada: string;
+  lugar:string
   cupos: number;
   objetivo?: string;
   esCapacitacionExtra: boolean;
