@@ -94,6 +94,16 @@ public class Capacitacion extends BaseEntity {
     @Builder.Default
     private EstadoCapacitacion estado = EstadoCapacitacion.PROGRAMADA;
 
+    /** RF30: marca que ya se envió el recordatorio al cliente (evita reenvíos). */
+    @Column(name = "recordatorio_enviado", nullable = false)
+    @Builder.Default
+    private boolean recordatorioEnviado = false;
+
+    /** RF32: marca que ya se avisó al admin del incumplimiento (evita reenvíos). */
+    @Column(name = "incumplimiento_notificado", nullable = false)
+    @Builder.Default
+    private boolean incumplimientoNotificado = false;
+
     /**
      * Indica si la capacitación es adicional al plan del cliente
      * y por tanto genera un cobro extra (RF-CAP4).
