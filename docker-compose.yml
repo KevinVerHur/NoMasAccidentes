@@ -19,6 +19,15 @@ services:
       retries: 10
       start_period: 30s
 
+  # Servidor SMTP falso para desarrollo: atrapa TODOS los correos salientes
+  # (sin entregarlos) y los muestra en su web UI en http://localhost:8025.
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"   # interfaz web
+      - "${MAILPIT_SMTP_PORT:-1025}:1025" # SMTP
+
   backend:
     build:
       context: ./Producto/Backend
@@ -27,7 +36,12 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
+      # Mailpit no requiere autenticación ni TLS; se desactivan para SMTP local.
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "false"
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "false"
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-no_mas_accidentes}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Santiago&createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-nma_user}

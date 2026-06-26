@@ -110,6 +110,48 @@ public class CorreoService {
 
 
 
+    /**
+     * RF30: recuerda al cliente una capacitación programada (se envía 3 días antes).
+     */
+    @Async
+    public void enviarRecordatorioCapacitacion(String destinatario, String cliente, String curso, String fecha, String hora){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Recordatorio de capacitacion");
+            helper.setText(construirHtmlRecordatorioCapacitacion(cliente, curso, fecha, hora), true);
+
+            mailSender.send(mensaje);
+            log.info("Recordatorio de capacitacion enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar recordatorio de capacitacion a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    /**
+     * RF32: avisa al administrador que una capacitación programada no se realizó.
+     */
+    @Async
+    public void enviarAlertaCapacitacionNoRealizada(String cliente, String curso, String fechaProgramada){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(adminEmail);
+            helper.setSubject("No Mas Accidentes - Capacitacion no realizada");
+            helper.setText(construirHtmlCapacitacionNoRealizada(cliente, curso, fechaProgramada), true);
+
+            mailSender.send(mensaje);
+            log.info("Alerta de capacitacion no realizada enviada al administrador por cliente {}", cliente);
+        } catch (Exception e) {
+            log.error("Error al enviar alerta de capacitacion no realizada al administrador: {}", e.getMessage());
+        }
+    }
+
     @Async
     public void enviarAlertaActividadPreventivaVencida(String cliente, String actividad, String normativa, String responsable, String vencimiento){
         try {
@@ -195,6 +237,33 @@ public class CorreoService {
 
 
 
+
+    private String construirHtmlRecordatorioCapacitacion(String cliente, String curso, String fecha, String hora){
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Hola, te recordamos que tienes una capacitacion programada en los proximos 3 dias.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Cliente:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Curso:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Hora:</strong> %s</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(cliente, curso, fecha, hora);
+    }
+
+    private String construirHtmlCapacitacionNoRealizada(String cliente, String curso, String fechaProgramada){
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;background:#fff7ed;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Se detecto una capacitacion programada que no se realizo en la fecha prevista.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Cliente:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Curso:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha programada:</strong> %s</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(cliente, curso, fechaProgramada);
+    }
 
     private String construirHtmlActividadPreventivaVencida(String cliente, String actividad, String normativa, String responsable, String vencimiento){
         String normativaTexto = normativa == null || normativa.isBlank() ? "No especificada" : normativa;
