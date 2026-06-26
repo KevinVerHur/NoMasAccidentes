@@ -108,6 +108,7 @@ public class CapacitacionService {
                 .relator(relator)
                 .fechaProgramada(request.fechaProgramada())
                 .horaProgramada(LocalTime.parse(request.horaProgramada()))
+                .lugar(request.lugar())
                 .cupos(request.cupos())
                 .objetivo(request.objetivo())
                 .estado(EstadoCapacitacion.PROGRAMADA)

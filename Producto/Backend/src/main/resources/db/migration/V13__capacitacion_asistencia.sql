@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS capacitacion (
     id_relator            BIGINT        NOT NULL,
     fecha_programada      DATE          NOT NULL,
     hora_programada       TIME          NOT NULL,
+    lugar VARCHAR(150) NOT NULL,
     cupos                 INT           NOT NULL,
     objetivo              VARCHAR(500),
     fecha_realizacion     DATE,

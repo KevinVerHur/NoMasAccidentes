@@ -2,6 +2,7 @@ package com.example.NoMasAccidentes.model.capacitacion;
 
 import com.example.NoMasAccidentes.common.BaseEntity;
 import com.example.NoMasAccidentes.model.asistencia.Asistencia;
+import com.example.NoMasAccidentes.model.asistente.Asistente;
 import com.example.NoMasAccidentes.model.cliente.Cliente;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
 import jakarta.persistence.*;
@@ -71,6 +72,10 @@ public class Capacitacion extends BaseEntity {
     /** Hora de inicio (campo "Hora" del formulario, ej. 09:30). */
     @Column(name = "hora_programada", nullable = false)
     private LocalTime horaProgramada;
+
+    /** Lugar donde se realizará la capacitación. */
+    @Column(name = "lugar", nullable = false, length = 150)
+    private String lugar;
 
     /** Cantidad máxima de asistentes permitidos (campo "Cupos"). */
     @Column(name = "cupos", nullable = false)

@@ -25,6 +25,7 @@ import {
   registrarAsistenciaEfectiva,
   iniciarCapacitacion,
   finalizarCapacitacion,
+  descargarActaCapacitacion,
 } from '../api/capacitaciones';
 import { listarClientes, miCliente } from '../api/clientes';
 import { listarProfesionales } from '../api/profesionales';
@@ -62,6 +63,27 @@ function fechaMinima(): string {
   const d = new Date();
   d.setDate(d.getDate() + 15);
   return d.toISOString().split('T')[0];
+}
+
+async function descargarActaPdf(idCapacitacion: number) {
+  try {
+    const blob = await descargarActaCapacitacion(idCapacitacion);
+
+    const url = window.URL.createObjectURL(
+      new Blob([blob], { type: 'application/pdf' })
+    );
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `acta-capacitacion-${idCapacitacion}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch {
+    alert('Error al descargar el acta de capacitación.');
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -175,7 +197,7 @@ function VistaAdmin() {
                     )}
                   </div>
                   <div style={{ fontSize: 12, color: '#6b7280' }}>
-                    {fmtFecha(c.fechaProgramada)} · {c.horaProgramada} · {c.cliente} · {c.relator} · {confirmados}/{c.cupos} confirmados
+                    {fmtFecha(c.fechaProgramada)} · {c.horaProgramada} · {c.lugar} · {c.cliente} · {c.relator} · {confirmados}/{c.cupos} confirmados
                   </div>
                   {esProgramada && confirmados === 0 && (
                     <div style={{ marginTop: 6, fontSize: 11, color: '#92400e', background: '#fffbeb', borderRadius: 6, padding: '4px 10px', display: 'inline-block' }}>
@@ -236,6 +258,18 @@ function VistaAdmin() {
               {formNueva.formState.errors.horaProgramada && <span className="auth-field-error">{formNueva.formState.errors.horaProgramada.message}</span>}
             </div>
             <div>
+              <label className="auth-label">Lugar *</label>
+              <input
+                className={`auth-input ${formNueva.formState.errors.lugar ? 'auth-input--error' : ''}`}
+                placeholder="Sala 2, Online, Bodega central..."
+                {...formNueva.register('lugar', {
+                  required: 'Obligatorio',
+                  maxLength: { value: 150, message: 'El lugar no puede superar 150 caracteres' },
+                })}
+              />
+              {formNueva.formState.errors.lugar && <span className="auth-field-error">{formNueva.formState.errors.lugar.message}</span>}
+            </div>
+            <div>
               <label className="auth-label">Cupos</label>
               <input type="number" min={1} className="auth-input" placeholder="20" {...formNueva.register('cupos', { valueAsNumber: true })} />
             </div>
@@ -264,6 +298,7 @@ function VistaAdmin() {
               <p><strong>Relator:</strong> {modalDetalle.relator}</p>
               <p><strong>Fecha:</strong> {fmtFecha(modalDetalle.fechaProgramada)}</p>
               <p><strong>Hora:</strong> {modalDetalle.horaProgramada}</p>
+              <p><strong>Lugar:</strong> {modalDetalle.lugar}</p>
               <p><strong>Confirmados:</strong> {modalDetalle.asistencias.filter(a => a.confirmado).length}/{modalDetalle.cupos}</p>
               <p><strong>Cupos disp.:</strong> {modalDetalle.cuposDisponibles}</p>
             </div>
@@ -282,7 +317,7 @@ function VistaAdmin() {
         footer={<><button className="btn btn-outline" onClick={() => setModalAsistentes(null)}>Cancelar</button><button className="btn btn-primary" onClick={() => setModalAsistentes(null)}>Guardar</button></>}>
         {modalAsistentes && (
           <>
-            <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}><strong>{modalAsistentes.curso}</strong> · {fmtFecha(modalAsistentes.fechaProgramada)} · {modalAsistentes.horaProgramada}</div>
+            <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}><strong>{modalAsistentes.curso}</strong> · {fmtFecha(modalAsistentes.fechaProgramada)} · {modalAsistentes.horaProgramada} · {modalAsistentes.lugar}</div>
             {modalAsistentes.asistencias.length === 0 ? (
               <div className="alert-item alert-item--warn">⚠️ No hay asistentes inscritos aún.</div>
             ) : (
@@ -312,13 +347,14 @@ function VistaAdmin() {
 
       {/* Modal Acta */}
       <Modal abierto={!!modalActa} titulo="Ver Acta" ancho="sm" onCerrar={() => setModalActa(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-primary" onClick={() => alert('Descargando acta...')}>Descargar acta</button></>}>
+        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-primary" onClick={() => modalActa && descargarActaPdf(modalActa.id)}>Descargar acta</button></>}>
         {modalActa && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
             <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>Acta — {modalActa.curso}</p>
             <p><strong>Fecha:</strong> {fmtFecha(modalActa.fechaRealizacion ?? modalActa.fechaProgramada)}</p>
             <p><strong>Cliente:</strong> {modalActa.cliente}</p>
             <p><strong>Relator:</strong> {modalActa.relator}</p>
+            <p><strong>Lugar:</strong> {modalActa.lugar}</p>
             <p><strong>Asistencia:</strong> {modalActa.asistencias.filter(a => a.asistio).length}/{modalActa.asistencias.length} presentes</p>
             <div style={{ marginTop: 10, background: '#f0fdf4', borderLeft: '4px solid #27ae60', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>Resultado: capacitación realizada correctamente.</div>
           </div>
@@ -449,6 +485,7 @@ function VistaProfesional() {
               <tr>
                 <th>Fecha</th>
                 <th>Cliente</th>
+                <th>Lugar</th>
                 <th>Tema</th>
                 <th>Tipo</th>
                 <th>Asistentes</th>
@@ -465,6 +502,7 @@ function VistaProfesional() {
                       <div style={{ fontSize: 11, color: '#9ca3af' }}>{c.horaProgramada}</div>
                     </td>
                     <td>{c.cliente}</td>
+                    <td>{c.lugar}</td>
                     <td style={{ fontWeight: 600, color: '#1a3a5c' }}>{c.curso}</td>
                     <td>
                       <Badge variante={c.esCapacitacionExtra ? 'yellow' : 'blue'}>
@@ -531,6 +569,7 @@ function VistaProfesional() {
             <p><strong>Cliente:</strong> {modalDetalle.cliente}</p>
             <p><strong>Tema:</strong> {modalDetalle.curso}</p>
             <p><strong>Fecha:</strong> {fmtFecha(modalDetalle.fechaProgramada)} · {modalDetalle.horaProgramada}</p>
+            <p><strong>Lugar:</strong> {modalDetalle.lugar}</p>
             <p><strong>Asistentes confirmados:</strong> {modalDetalle.asistencias.filter(a => a.confirmado).length}/{modalDetalle.cupos} — {modalDetalle.asistencias.filter(a => a.confirmado).length === 0 ? 'pendiente confirmación del cliente.' : 'confirmados.'}</p>
             {modalDetalle.objetivo && (
               <div style={{ marginTop: 10, background: '#f8fafc', borderLeft: '3px solid #cbd5e1', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>
@@ -547,7 +586,7 @@ function VistaProfesional() {
         {modalAsistencia && (
           <>
             <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>
-              <strong>{modalAsistencia.curso}</strong> · {modalAsistencia.cliente} · {fmtFecha(modalAsistencia.fechaProgramada)}
+              <strong>{modalAsistencia.curso}</strong> · {modalAsistencia.cliente} · {fmtFecha(modalAsistencia.fechaProgramada)} · {modalAsistencia.lugar}
             </div>
             {modalAsistencia.estado === 'PROGRAMADA' && (
               <div className="alert-item alert-item--warn" style={{ marginBottom: 12 }}>
@@ -596,11 +635,12 @@ function VistaProfesional() {
 
       {/* Modal Acta */}
       <Modal abierto={!!modalActa} titulo="Acta de capacitación" ancho="sm" onCerrar={() => setModalActa(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-primary" onClick={() => alert('Descargando acta...')}>Descargar acta</button></>}>
+        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-primary" onClick={() => modalActa && descargarActaPdf(modalActa.id)}>Descargar acta</button></>}>
         {modalActa && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
             <p><strong>Cliente:</strong> {modalActa.cliente}</p>
             <p><strong>Fecha:</strong> {fmtFecha(modalActa.fechaRealizacion ?? modalActa.fechaProgramada)}</p>
+            <p><strong>Lugar:</strong> {modalActa.lugar}</p>
             <p><strong>Asistencia:</strong> {modalActa.asistencias.filter(a => a.asistio).length}/{modalActa.asistencias.length}</p>
             <div style={{ marginTop: 10, background: '#f0fdf4', borderLeft: '4px solid #27ae60', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>
               Resultado: Capacitación dictada correctamente.
@@ -862,7 +902,7 @@ function VistaCliente() {
                         <tr key={c.id}>
                           <td><div style={{ fontWeight: 600 }}>{fmtFecha(c.fechaProgramada)}</div><div style={{ fontSize: 11, color: '#9ca3af' }}>{c.horaProgramada}</div></td>
                           <td style={{ fontWeight: 600, color: '#1a3a5c' }}>{c.curso}</td>
-                          <td>Por confirmar</td>
+                          <td>{c.lugar}</td>
                           <td>{c.relator}</td>
                           <td>
                             <Badge variante={confirmados === 0 ? 'yellow' : 'blue'}>
@@ -957,6 +997,7 @@ function VistaCliente() {
           <div className="doc-preview">
             <p><strong>Tema:</strong> {modalDetalle.curso}</p>
             <p><strong>Fecha:</strong> {fmtFecha(modalDetalle.fechaProgramada)} · {modalDetalle.horaProgramada}</p>
+            <p><strong>Lugar:</strong> {modalDetalle.lugar}</p>
             <p><strong>Capacitador:</strong> {modalDetalle.relator}</p>
             {modalDetalle.objetivo && <p><strong>Objetivo:</strong> {modalDetalle.objetivo}</p>}
             <p><strong>Requisitos:</strong> sala habilitada, listado de asistentes y disponibilidad en turno.</p>
@@ -1034,7 +1075,7 @@ function VistaCliente() {
 
               <div className="form-group">
                 <label className="auth-label">Lugar</label>
-                <input className="auth-input" value="Por confirmar" readOnly />
+                <input className="auth-input" value={modalConfirmar.lugar} readOnly />
               </div>
             </div>
 
@@ -1168,11 +1209,12 @@ function VistaCliente() {
 
       {/* ── Modal Acta ── */}
       <Modal abierto={!!modalActa} titulo="Acta de capacitación" ancho="lg" onCerrar={() => setModalActa(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-success" onClick={() => alert('Descargando acta...')}>Descargar acta</button></>}>
+        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-success" onClick={() => modalActa && descargarActaPdf(modalActa.id)}>Descargar acta</button></>}>
         {modalActa && (
           <div className="doc-preview">
             <h3 style={{ color: '#1a3a5c', marginBottom: 8 }}>Acta — {modalActa.curso}</h3>
             <p><strong>Fecha:</strong> {fmtFecha(modalActa.fechaRealizacion ?? modalActa.fechaProgramada)}</p>
+            <p><strong>Lugar:</strong> {modalActa.lugar}</p>
             <p><strong>Asistencia:</strong> {modalActa.asistencias.filter(a => a.asistio).length}/{modalActa.asistencias.length} trabajadores</p>
             <p><strong>Resultado:</strong> Capacitación realizada correctamente. Certificados emitidos para asistentes confirmados.</p>
             {modalActa.asistencias.some(a => !a.asistio) && (
@@ -1244,7 +1286,7 @@ function VistaCliente() {
 
 export default function Capacitaciones() {
   const { rol } = useAuth();
-  console.log('rol actual:', rol); // ← agrega estoQ
+  console.log('rol actual:', rol);
 
   if (rol === 'PROFESIONAL' || rol === 'CAPACITADOR') return <VistaProfesional />;
   if (rol === 'CLIENTE') return <VistaCliente />;

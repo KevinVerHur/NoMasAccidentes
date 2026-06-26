@@ -4,7 +4,6 @@ import com.example.NoMasAccidentes.model.capacitacion.EstadoCapacitacion;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 /**
@@ -24,11 +23,13 @@ public record CapacitacionResponse(
         String relator,              // "Nombre Apellido" del Profesional
 
      
-@JsonFormat(pattern = "yyyy-MM-dd")
-LocalDate fechaProgramada,
+        @JsonFormat(pattern = "yyyy-MM-dd")
+        LocalDate fechaProgramada,
+        
+        String lugar,
 
-@JsonFormat(pattern = "HH:mm")
-String horaProgramada,
+        @JsonFormat(pattern = "HH:mm")
+        String horaProgramada,
         Integer cupos,
         String objetivo,
 

@@ -2,7 +2,6 @@ package com.example.NoMasAccidentes.dto.capacitacion;
 
 import jakarta.validation.constraints.*;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 
@@ -34,12 +33,16 @@ public record CrearCapacitacionRequest(
         @JsonFormat(pattern = "yyyy-MM-dd")
 
         LocalDate fechaProgramada,
-
+        
         /** Campo hora "Hora *" (formato HH:mm desde el frontend) */
         // DESPUÉS
         @NotBlank(message = "La hora es obligatoria")
         @Pattern(regexp = "^([01]\\d|2[0-3]):([0-5]\\d)$", message = "Formato de hora inválido (HH:mm)")
         String horaProgramada,  
+ 
+        @NotBlank(message = "El lugar es obligatorio")
+        @Size(max = 150, message = "El lugar no puede superar 150 caracteres")
+        String lugar,
 
         /** Campo numérico "Cupos" */
         @NotNull(message = "Los cupos son obligatorios")

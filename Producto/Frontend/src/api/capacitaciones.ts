@@ -69,3 +69,11 @@ export async function finalizarCapacitacion(id: number): Promise<CapacitacionRes
   const res = await api.patch<CapacitacionResponse>(`/api/capacitaciones/${id}/finalizar`);
   return res.data;
 }
+
+export async function descargarActaCapacitacion(id: number) {
+  const response = await api.get(`/api/capacitaciones/${id}/acta-pdf`, {
+    responseType: 'blob',
+  });
+
+  return response.data;
+}
