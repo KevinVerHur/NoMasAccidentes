@@ -1,0 +1,67 @@
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-no_mas_accidentes}
+      MYSQL_USER: ${DB_USER:-nma_user}
+      MYSQL_PASSWORD: ${DB_PASS:-nma_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      TZ: America/Santiago
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./Producto/Backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-no_mas_accidentes}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Santiago&createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-nma_user}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-nma_password}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-cambiar-en-produccion-minimo-256-bits-de-largo-1234567890}
+      SPRING_MAIL_USERNAME: ${MAIL_USER:-}
+      SPRING_MAIL_PASSWORD: ${MAIL_PASS:-}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASS: ${MAIL_PASS:-}
+      APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:-}
+      APP_FRONTEND_URL: ${APP_FRONTEND_URL:-http://localhost:5173}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      INFORMES_LOCAL_DIR: /app/informes-pdf
+      APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - backend_informes:/app/informes-pdf
+
+  frontend:
+    build:
+      context: ./Producto/Frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+
+volumes:
+  mysql_data:
+  backend_informes:
