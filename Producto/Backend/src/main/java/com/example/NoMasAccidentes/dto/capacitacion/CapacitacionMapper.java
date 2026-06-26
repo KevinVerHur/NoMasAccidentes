@@ -27,6 +27,7 @@ public class CapacitacionMapper {
                 nombreRelator,
                 c.getFechaProgramada(),
                 c.getHoraProgramada().toString(),
+                c.getLugar(),
                 c.getCupos(),
                 c.getObjetivo(),
                 c.getFechaRealizacion(),
