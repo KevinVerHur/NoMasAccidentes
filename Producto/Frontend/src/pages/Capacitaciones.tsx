@@ -25,6 +25,7 @@ import {
   registrarAsistenciaEfectiva,
   iniciarCapacitacion,
   finalizarCapacitacion,
+  descargarActaCapacitacion,
 } from '../api/capacitaciones';
 import { listarClientes, miCliente } from '../api/clientes';
 import { listarProfesionales } from '../api/profesionales';
@@ -62,6 +63,27 @@ function fechaMinima(): string {
   const d = new Date();
   d.setDate(d.getDate() + 15);
   return d.toISOString().split('T')[0];
+}
+
+async function descargarActaPdf(idCapacitacion: number) {
+  try {
+    const blob = await descargarActaCapacitacion(idCapacitacion);
+
+    const url = window.URL.createObjectURL(
+      new Blob([blob], { type: 'application/pdf' })
+    );
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `acta-capacitacion-${idCapacitacion}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch {
+    alert('Error al descargar el acta de capacitación.');
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -312,7 +334,7 @@ function VistaAdmin() {
 
       {/* Modal Acta */}
       <Modal abierto={!!modalActa} titulo="Ver Acta" ancho="sm" onCerrar={() => setModalActa(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-primary" onClick={() => alert('Descargando acta...')}>Descargar acta</button></>}>
+        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-primary" onClick={() => modalActa && descargarActaPdf(modalActa.id)}>Descargar acta</button></>}>
         {modalActa && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
             <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>Acta — {modalActa.curso}</p>
@@ -596,7 +618,7 @@ function VistaProfesional() {
 
       {/* Modal Acta */}
       <Modal abierto={!!modalActa} titulo="Acta de capacitación" ancho="sm" onCerrar={() => setModalActa(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-primary" onClick={() => alert('Descargando acta...')}>Descargar acta</button></>}>
+        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-primary" onClick={() => modalActa && descargarActaPdf(modalActa.id)}>Descargar acta</button></>}>
         {modalActa && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
             <p><strong>Cliente:</strong> {modalActa.cliente}</p>
@@ -1168,7 +1190,7 @@ function VistaCliente() {
 
       {/* ── Modal Acta ── */}
       <Modal abierto={!!modalActa} titulo="Acta de capacitación" ancho="lg" onCerrar={() => setModalActa(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-success" onClick={() => alert('Descargando acta...')}>Descargar acta</button></>}>
+        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-success" onClick={() => modalActa && descargarActaPdf(modalActa.id)}>Descargar acta</button></>}>
         {modalActa && (
           <div className="doc-preview">
             <h3 style={{ color: '#1a3a5c', marginBottom: 8 }}>Acta — {modalActa.curso}</h3>
@@ -1244,7 +1266,7 @@ function VistaCliente() {
 
 export default function Capacitaciones() {
   const { rol } = useAuth();
-  console.log('rol actual:', rol); // ← agrega estoQ
+  console.log('rol actual:', rol);
 
   if (rol === 'PROFESIONAL' || rol === 'CAPACITADOR') return <VistaProfesional />;
   if (rol === 'CLIENTE') return <VistaCliente />;
