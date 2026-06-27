@@ -1,35 +1,61 @@
 package com.example.NoMasAccidentes.e2e;
 
-import org.junit.jupiter.api.*;
-import org.openqa.selenium.*;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.io.File;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-// .\mvnw.cmd test "-Dtest=CajaNegraWebDriverTest" 
-
+// Ejecutar:
+// .\mvnw.cmd test "-Dtest=CajaNegraWebDriverTest"
+// Requiere frontend en http://localhost:5173 y Mailpit en http://localhost:8025.
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@ActiveProfiles("e2e")
 public class CajaNegraWebDriverTest {
-    
+
+    private static final String BASE_URL = "http://localhost:5173";
+    private static final String MAILPIT_URL = "http://localhost:8025";
+    private static final String ADMIN_EMAIL = "admin@nma.cl";
+    private static final String ADMIN_PASSWORD = "123456";
+
+    private final HttpClient http = HttpClient.newHttpClient();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     WebDriver driver;
     WebDriverWait wait;
 
-    final String BASE_URL = "http://localhost:5173";
+    record ClientePrueba(String rut, String email, String razonSocial) {}
 
     @BeforeEach
     void iniciar() {
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--window-size=1366, 768");
+        options.addArguments("--window-size=1366,768");
 
         driver = new ChromeDriver(options);
         wait = new WebDriverWait(driver, Duration.ofSeconds(10));
@@ -42,93 +68,130 @@ public class CajaNegraWebDriverTest {
         }
     }
 
-    void login(String email, String password){
+    void login(String email, String password) {
         driver.get(BASE_URL + "/login");
-        driver.findElement(By.name("email")).sendKeys(email);
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.name("email"))).sendKeys(email);
         driver.findElement(By.name("password")).sendKeys(password);
         driver.findElement(By.cssSelector("button[type='submit']")).click();
     }
 
     void loginAdmin() {
-        login("admin@nma.cl", "123456");
+        login(ADMIN_EMAIL, ADMIN_PASSWORD);
         wait.until(d -> d.getCurrentUrl().contains("/dashboard"));
     }
 
+    void cerrarSesionLocal() {
+        ((JavascriptExecutor) driver).executeScript("localStorage.removeItem('nma_token');");
+    }
+
     void clicTexto(String texto) {
-        By selector = By.xpath("//*[self::button or self::a][contains(normalize-space(), '"+ texto + "')]");
-        // Reintenta si React re-renderiza el DOM entre localizar y hacer clic (StaleElementReference)
+        By selector = By.xpath("//*[self::button or self::a][contains(normalize-space(), '" + texto + "')]");
         for (int intento = 0; intento < 3; intento++) {
             try {
                 wait.until(ExpectedConditions.elementToBeClickable(selector)).click();
                 return;
-            } catch (StaleElementReferenceException e) {
-                // el nodo quedó obsoleto; reintentar
+            } catch (StaleElementReferenceException ignored) {
             }
         }
         throw new RuntimeException("No se pudo hacer clic en: " + texto);
     }
 
-    void escribir(String name, String valor){
-        // Reintenta si React re-renderiza el DOM tras una navegación (StaleElementReference)
+    void escribir(String name, String valor) {
         for (int intento = 0; intento < 3; intento++) {
             try {
                 WebElement campo = wait.until(ExpectedConditions.presenceOfElementLocated(By.name(name)));
                 campo.clear();
                 campo.sendKeys(valor);
                 return;
-            } catch (StaleElementReferenceException e) {
-                // el nodo quedó obsoleto; reintentar
+            } catch (StaleElementReferenceException ignored) {
             }
         }
         throw new RuntimeException("No se pudo escribir en el campo: " + name);
     }
 
     void seleccionar(String name, String textoVisible) {
-    WebElement campo = driver.findElement(By.name(name));
-    new Select(campo).selectByVisibleText(textoVisible);
+        WebElement campo = wait.until(ExpectedConditions.presenceOfElementLocated(By.name(name)));
+        new Select(campo).selectByVisibleText(textoVisible);
     }
 
     void esperarTexto(String texto) {
         wait.until(d -> d.getPageSource().contains(texto));
     }
 
-    // Crea un cliente ACTIVO con datos únicos y devuelve su RUT. Requiere sesión admin en /clientes.
-    // Hace el test autosuficiente: no depende de clientes preexistentes ni del orden de ejecución.
-    String crearClienteUnico(String etiqueta) {
-        long unico = System.currentTimeMillis();
-        String rut = (10000000L + unico % 80000000L) + "-0";
+    String sufijoUnico() {
+        return String.valueOf(System.currentTimeMillis());
+    }
+
+    String rutUnico(String sufijo) {
+        long base = Long.parseLong(sufijo.substring(Math.max(0, sufijo.length() - 7)));
+        return (10000000L + base % 80000000L) + "-0";
+    }
+
+    ClientePrueba crearClienteDesdeFormulario(String etiqueta) {
+        String sufijo = sufijoUnico();
+        String rut = rutUnico(sufijo);
+        String razonSocial = "Empresa " + etiqueta + " Selenium SpA";
+        String email = etiqueta.toLowerCase() + "." + sufijo + "@nma.cl";
+
         clicTexto("+ Nuevo cliente");
-        escribir("razonSocial", "Empresa " + etiqueta + " SpA");
+        escribir("razonSocial", razonSocial);
         escribir("rut", rut);
         escribir("nombreContacto", "Contacto " + etiqueta);
-        escribir("email", etiqueta.toLowerCase() + unico + "@nma.cl");
+        escribir("email", email);
         escribir("telefono", "912345678");
         seleccionar("rubro", "Construcción");
         seleccionar("plan", "PRO");
         clicTexto("Guardar cliente");
-        esperarBotonEnFila(rut, "Suspender");   // confirma que se creó y quedó ACTIVO
-        return rut;
+
+        esperarBotonEnFila(rut, "Suspender");
+        return new ClientePrueba(rut, email, razonSocial);
     }
 
-    // Hace clic en un botón (Suspender/Reactivar/Eliminar/Editar) dentro de la fila del cliente
-    // que tiene ese RUT, en vez del primero de la lista compartida.
+    ClientePrueba crearClienteConInvitacion(String etiqueta) throws Exception {
+        limpiarMailpit();
+
+        loginAdmin();
+        driver.get(BASE_URL + "/clientes");
+        esperarTexto("Clientes");
+
+        return crearClienteDesdeFormulario(etiqueta);
+    }
+
+    ClientePrueba crearYActivarCliente(String etiqueta, String password) throws Exception {
+        ClientePrueba cliente = crearClienteConInvitacion(etiqueta);
+        String urlInvitacion = leerLinkMailpit(cliente.email(), "Activa tu cuenta");
+
+        driver.get(urlInvitacion);
+        escribir("nuevaPassword", password);
+        escribir("confirmarPassword", password);
+        clicTexto("Guardar nueva");
+
+        wait.until(d -> d.getCurrentUrl().contains("/login"));
+        cerrarSesionLocal();
+
+        return cliente;
+    }
+
     void clicEnFilaPorRut(String rut, String textoBoton) {
         By selector = By.xpath("//tr[td[normalize-space()='" + rut + "']]//button[contains(normalize-space(), '" + textoBoton + "')]");
         for (int intento = 0; intento < 3; intento++) {
             try {
                 wait.until(ExpectedConditions.elementToBeClickable(selector)).click();
                 return;
-            } catch (StaleElementReferenceException e) {
-                // la tabla se re-renderizó; reintentar
+            } catch (StaleElementReferenceException ignored) {
             }
         }
         throw new RuntimeException("No se encontró el botón '" + textoBoton + "' en la fila del RUT " + rut);
     }
 
-    // Espera a que la fila del RUT muestre un botón con ese texto (verifica el estado resultante).
     void esperarBotonEnFila(String rut, String textoBoton) {
         By selector = By.xpath("//tr[td[normalize-space()='" + rut + "']]//button[contains(normalize-space(), '" + textoBoton + "')]");
         wait.until(ExpectedConditions.presenceOfElementLocated(selector));
+    }
+
+    void esperarFilaAusente(String rut) {
+        By selector = By.xpath("//tr[td[normalize-space()='" + rut + "']]");
+        wait.until(ExpectedConditions.invisibilityOfElementLocated(selector));
     }
 
     void captura(String nombre) throws Exception {
@@ -138,9 +201,90 @@ public class CajaNegraWebDriverTest {
         Files.copy(src.toPath(), destino, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
     }
 
+    void limpiarMailpit() throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(MAILPIT_URL + "/api/v1/messages"))
+                .DELETE()
+                .build();
+
+        http.send(request, HttpResponse.BodyHandlers.ofString());
+    }
+
+    String leerLinkMailpit(String destinatario, String textoAsunto) throws Exception {
+        long fin = System.currentTimeMillis() + 15_000;
+
+        while (System.currentTimeMillis() < fin) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(MAILPIT_URL + "/api/v1/messages"))
+                    .GET()
+                    .build();
+
+            String body = http.send(request, HttpResponse.BodyHandlers.ofString()).body();
+            JsonNode root = mapper.readTree(body);
+            JsonNode mensajes = root.has("messages") ? root.get("messages") : root.get("Messages");
+
+            if (mensajes != null && mensajes.isArray()) {
+                for (JsonNode mensaje : mensajes) {
+                    String id = texto(mensaje, "ID", "Id", "id");
+                    String subject = texto(mensaje, "Subject", "subject");
+
+                    if (id != null
+                            && subject != null
+                            && subject.contains(textoAsunto)
+                            && mensaje.toString().contains(destinatario)) {
+                        String detalle = leerMensajeMailpit(id);
+                        String link = extraerLinkRestablecimiento(detalle);
+
+                        if (link != null) {
+                            return normalizarUrlMailpit(link);
+                        }
+                    }
+                }
+            }
+
+            Thread.sleep(500);
+        }
+
+        throw new AssertionError("No llegó correo a Mailpit para " + destinatario + " con asunto " + textoAsunto);
+    }
+
+    String leerMensajeMailpit(String id) throws Exception {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(MAILPIT_URL + "/api/v1/message/" + id))
+                .GET()
+                .build();
+
+        return http.send(request, HttpResponse.BodyHandlers.ofString()).body();
+    }
+
+    String extraerLinkRestablecimiento(String contenido) {
+        var matcher = Pattern
+                .compile("http://localhost:5173/restablecer-contrasena\\?token=[a-f0-9\\-]+")
+                .matcher(contenido);
+
+        return matcher.find() ? matcher.group() : null;
+    }
+
+    String normalizarUrlMailpit(String url) {
+        return url
+                .replace("\\u0026", "&")
+                .replace("\\/", "/")
+                .replace("&amp;", "&");
+    }
+
+    String texto(JsonNode node, String... nombres) {
+        for (String nombre : nombres) {
+            JsonNode valor = node.get(nombre);
+            if (valor != null && !valor.isNull()) {
+                return valor.asText();
+            }
+        }
+        return null;
+    }
+
     @Test
     void cp01_loginValido() throws Exception {
-        login("admin@nma.cl", "123456");
+        login(ADMIN_EMAIL, ADMIN_PASSWORD);
 
         wait.until(d -> d.getCurrentUrl().contains("/dashboard"));
         esperarTexto("Dashboard General");
@@ -150,7 +294,7 @@ public class CajaNegraWebDriverTest {
 
     @Test
     void cp02_loginPasswordIncorrecta() throws Exception {
-        login("admin@nma.cl", "clave-mala");
+        login(ADMIN_EMAIL, "clave-mala");
 
         esperarTexto("Credenciales incorrectas");
         assertTrue(driver.getCurrentUrl().contains("/login"));
@@ -176,7 +320,6 @@ public class CajaNegraWebDriverTest {
 
         esperarTexto("El email es obligatorio");
         esperarTexto("obligatoria");
-        
 
         captura("CP-04-login-campos-obligatorios");
     }
@@ -187,16 +330,15 @@ public class CajaNegraWebDriverTest {
 
         wait.until(d -> d.getCurrentUrl().contains("/login"));
 
-        
         assertTrue(driver.getCurrentUrl().contains("/login"));
         captura("CP-05-ruta-protegida-sin-sesion");
     }
 
     @Test
-    //Usa el cliente de prueba sembrado en la migración V18 (rol CLIENTE, no-ADMIN).
     void cp06_usuarioSinPermisoRolAdmin() throws Exception {
-        login("cliente.test@nma.cl", "123456");
+        ClientePrueba cliente = crearYActivarCliente("SinPermiso", "!Cliente123");
 
+        login(cliente.email(), "!Cliente123");
         wait.until(d -> d.getCurrentUrl().contains("/dashboard"));
 
         driver.get(BASE_URL + "/clientes");
@@ -212,25 +354,9 @@ public class CajaNegraWebDriverTest {
         driver.get(BASE_URL + "/clientes");
         esperarTexto("Clientes");
 
-        clicTexto("+ Nuevo cliente");
+        ClientePrueba cliente = crearClienteDesdeFormulario("Valido");
 
-        // Datos únicos por ejecución para no chocar con RUT/correo ya existentes.
-        // El RUT solo se valida por formato (^\d{7,8}-[\dkK]$), no por dígito verificador.
-        long unico = System.currentTimeMillis();
-        String rutUnico = (10000000L + unico % 80000000L) + "-0";
-        String emailUnico = "selenium.demo" + unico + "@nma.cl";
-
-        escribir("razonSocial", "Empresa Selenium SpA");
-        escribir("rut", rutUnico);
-        escribir("nombreContacto", "Prueba Selenium");
-        escribir("email", emailUnico);
-        escribir("telefono", "912345678");
-        seleccionar("rubro", "Construcción");
-        seleccionar("plan", "PRO");
-
-        clicTexto("Guardar cliente");
-
-        esperarTexto("Empresa Selenium SpA");
+        esperarTexto(cliente.razonSocial());
         captura("CP-07-crear-cliente-valido");
     }
 
@@ -244,13 +370,13 @@ public class CajaNegraWebDriverTest {
         escribir("razonSocial", "Empresa Rut Invalido SpA");
         escribir("rut", "761234567");
         escribir("nombreContacto", "Contacto Test");
-        escribir("email", "rut.invalido@nma.cl");
+        escribir("email", "rut.invalido." + sufijoUnico() + "@nma.cl");
         escribir("telefono", "912345678");
         seleccionar("rubro", "Construcción");
         seleccionar("plan", "PRO");
 
         clicTexto("Guardar cliente");
-        
+
         esperarTexto("RUT");
         captura("CP-08-validar-formato-rut");
     }
@@ -262,28 +388,25 @@ public class CajaNegraWebDriverTest {
         driver.get(BASE_URL + "/clientes");
         esperarTexto("Clientes");
 
-        // Autosuficiente: crea un cliente y luego intenta crear otro con el MISMO RUT (correo distinto).
-        long unico = System.currentTimeMillis();
-        String rutComun = (10000000L + unico % 80000000L) + "-0";
+        String sufijo = sufijoUnico();
+        String rutComun = rutUnico(sufijo);
 
-        // 1) Cliente base con el RUT
         clicTexto("+ Nuevo cliente");
         escribir("razonSocial", "Empresa RUT Base SpA");
         escribir("rut", rutComun);
         escribir("nombreContacto", "Contacto Base");
-        escribir("email", "rutbase" + unico + "@nma.cl");
+        escribir("email", "rutbase" + sufijo + "@nma.cl");
         escribir("telefono", "912345678");
         seleccionar("rubro", "Construcción");
         seleccionar("plan", "PRO");
         clicTexto("Guardar cliente");
         esperarBotonEnFila(rutComun, "Suspender");
 
-        // 2) Segundo cliente con el MISMO RUT → debe rechazarse
         clicTexto("+ Nuevo cliente");
         escribir("razonSocial", "Empresa RUT Duplicado SpA");
         escribir("rut", rutComun);
         escribir("nombreContacto", "Contacto Duplicado");
-        escribir("email", "rutdup" + unico + "@nma.cl");
+        escribir("email", "rutdup" + sufijo + "@nma.cl");
         escribir("telefono", "912345678");
         seleccionar("rubro", "Construcción");
         seleccionar("plan", "PRO");
@@ -300,14 +423,11 @@ public class CajaNegraWebDriverTest {
         driver.get(BASE_URL + "/clientes");
         esperarTexto("Clientes");
 
-        // Autosuficiente: crea un cliente con un correo y luego intenta crear
-        // otro con el MISMO correo (RUT distinto), forzando el duplicado.
-        long unico = System.currentTimeMillis();
-        String correoComun = "duplicado" + unico + "@nma.cl";
-        String rut1 = (10000000L + unico % 80000000L) + "-0";
-        String rut2 = (10000000L + (unico + 31000000L) % 80000000L) + "-1";
+        String sufijo = sufijoUnico();
+        String correoComun = "duplicado" + sufijo + "@nma.cl";
+        String rut1 = rutUnico(sufijo);
+        String rut2 = (20000000L + Long.parseLong(sufijo.substring(Math.max(0, sufijo.length() - 7))) % 70000000L) + "-1";
 
-        // 1) Cliente base con el correo
         clicTexto("+ Nuevo cliente");
         escribir("razonSocial", "Empresa Correo Base SpA");
         escribir("rut", rut1);
@@ -319,7 +439,6 @@ public class CajaNegraWebDriverTest {
         clicTexto("Guardar cliente");
         esperarBotonEnFila(rut1, "Suspender");
 
-        // 2) Segundo cliente con el MISMO correo → debe rechazarse
         clicTexto("+ Nuevo cliente");
         escribir("razonSocial", "Empresa Correo Duplicado SpA");
         escribir("rut", rut2);
@@ -356,14 +475,12 @@ public class CajaNegraWebDriverTest {
         driver.get(BASE_URL + "/clientes");
         esperarTexto("Clientes");
 
-        // Autosuficiente: crea su propio cliente activo y suspende ESE.
-        String rut = crearClienteUnico("Suspender");
+        ClientePrueba cliente = crearClienteDesdeFormulario("Suspender");
 
-        clicEnFilaPorRut(rut, "Suspender");
+        clicEnFilaPorRut(cliente.rut(), "Suspender");
         clicTexto("Confirmar");
 
-        // El resultado se verifica en la fila: ahora muestra "Reactivar" (quedó suspendido).
-        esperarBotonEnFila(rut, "Reactivar");
+        esperarBotonEnFila(cliente.rut(), "Reactivar");
         captura("CP-12-suspender-cliente");
     }
 
@@ -374,17 +491,15 @@ public class CajaNegraWebDriverTest {
         driver.get(BASE_URL + "/clientes");
         esperarTexto("Clientes");
 
-        // Autosuficiente: crea su cliente, lo suspende y luego lo reactiva.
-        String rut = crearClienteUnico("Reactivar");
+        ClientePrueba cliente = crearClienteDesdeFormulario("Reactivar");
 
-        clicEnFilaPorRut(rut, "Suspender");
+        clicEnFilaPorRut(cliente.rut(), "Suspender");
         clicTexto("Confirmar");
-        esperarBotonEnFila(rut, "Reactivar");
+        esperarBotonEnFila(cliente.rut(), "Reactivar");
 
-        clicEnFilaPorRut(rut, "Reactivar");
+        clicEnFilaPorRut(cliente.rut(), "Reactivar");
 
-        // El resultado se verifica en la fila: vuelve a mostrar "Suspender" (quedó activo).
-        esperarBotonEnFila(rut, "Suspender");
+        esperarBotonEnFila(cliente.rut(), "Suspender");
         captura("CP-13-reactivar-cliente");
     }
 
@@ -395,49 +510,39 @@ public class CajaNegraWebDriverTest {
         driver.get(BASE_URL + "/clientes");
         esperarTexto("Clientes");
 
-        clicTexto("Eliminar");
+        ClientePrueba cliente = crearClienteDesdeFormulario("Eliminar");
+
+        clicEnFilaPorRut(cliente.rut(), "Eliminar");
         clicTexto("Confirmar");
 
+        esperarFilaAusente(cliente.rut());
         captura("CP-14-eliminar-cliente");
     }
 
     @Test
-    //Selenium automatiza la creacion de cliente. La revisión del correo se evidencia con captura manual del email recibido.
     void cp15_envioCorreoInvitacion() throws Exception {
-        loginAdmin();
+        ClientePrueba cliente = crearClienteConInvitacion("Invitacion");
 
-        driver.get(BASE_URL + "/clientes");
-        clicTexto("+ Nuevo cliente");
+        String urlInvitacion = leerLinkMailpit(cliente.email(), "Activa tu cuenta");
 
-        escribir("razonSocial", "Empresa Invitacion Selenium SpA");
-        escribir("rut", "76888777-8");
-        escribir("nombreContacto", "Cliente Invitado");
-        escribir("email", "n.lavin.loyola+selenium15@gmail.com");
-        escribir("telefono", "912345678");
-        seleccionar("rubro", "Servicios");
-        seleccionar("plan", "PRO");
-
-        clicTexto("Guardar cliente");
-
-        esperarTexto("Empresa Invitacion Selenium SpA");
+        assertTrue(urlInvitacion.contains("/restablecer-contrasena?token="));
         captura("CP-15-cliente-creado-correo-invitacion");
     }
 
     @Test
-    //Aqui hay que pegar el enlace recibido por correo en 'URL_INVITACION'
     void cp16_activarCuentaDesdeInvitacion() throws Exception {
-        String URL_INVITACION = "http://localhost:5173/restablecer-contrasena?token=2d60ce85-7726-472e-818e-8c3f317a40dd";
+        ClientePrueba cliente = crearClienteConInvitacion("Activacion");
+        String urlInvitacion = leerLinkMailpit(cliente.email(), "Activa tu cuenta");
 
-        driver.get(URL_INVITACION);
+        driver.get(urlInvitacion);
 
         escribir("nuevaPassword", "!Prueba123");
         escribir("confirmarPassword", "!Prueba123");
-
         clicTexto("Guardar nueva");
 
         wait.until(d -> d.getCurrentUrl().contains("/login"));
 
-        login("n.lavin.loyola+selenium15@gmail.com", "!Prueba123");
+        login(cliente.email(), "!Prueba123");
 
         wait.until(d -> d.getCurrentUrl().contains("/dashboard"));
         captura("CP-16-activar-cuenta-invitacion");
@@ -445,46 +550,70 @@ public class CajaNegraWebDriverTest {
 
     @Test
     void cp17_solicitarRecuperacionCorreoExistente() throws Exception {
+        limpiarMailpit();
+
         driver.get(BASE_URL + "/login");
 
         clicTexto("Olvidaste");
 
-        escribir("email", "n.lavin.loyola@gmail.com");
+        escribir("email", ADMIN_EMAIL);
         clicTexto("Enviar enlace");
 
         esperarTexto("Correo enviado");
+
+        String urlRecuperacion = leerLinkMailpit(ADMIN_EMAIL, "Recuperaci");
+        assertTrue(urlRecuperacion.contains("/restablecer-contrasena?token="));
+
         captura("CP-17-recuperacion-correo-existente");
     }
 
     @Test
-    //Aqui hay que pegar el enlace recibido en 'URL_RECUPERACION'
     void cp18_restablecerPasswordEnlaceValido() throws Exception {
-        String URL_RECUPERACION = "http://localhost:5173/restablecer-contrasena?token=6920d283-4326-4591-b301-a575bec930ff";
+        String passwordInicial = "!Inicial123";
+        String passwordNueva = "!Nueva456";
 
-        driver.get(URL_RECUPERACION);
+        ClientePrueba cliente = crearYActivarCliente("ResetValido", passwordInicial);
 
-        escribir("nuevaPassword", "!Prueba456");
-        escribir("confirmarPassword", "!Prueba456");
+        limpiarMailpit();
 
+        driver.get(BASE_URL + "/login");
+        clicTexto("Olvidaste");
+
+        escribir("email", cliente.email());
+        clicTexto("Enviar enlace");
+
+        esperarTexto("Correo enviado");
+
+        String urlRecuperacion = leerLinkMailpit(cliente.email(), "Recuperaci");
+
+        driver.get(urlRecuperacion);
+
+        escribir("nuevaPassword", passwordNueva);
+        escribir("confirmarPassword", passwordNueva);
         clicTexto("Guardar nueva");
 
         wait.until(d -> d.getCurrentUrl().contains("/login"));
         esperarTexto("actualizada");
 
+        login(cliente.email(), passwordNueva);
+        wait.until(d -> d.getCurrentUrl().contains("/dashboard"));
+
         captura("CP-18-restablecer-password");
     }
-    
+
     @Test
     void cp19_enlaceExpiradoSolicitarNuevo() throws Exception {
-        String URL_EXPIRADA = BASE_URL + "/restablecer-contrasena?token=token-invalido-selenium";
+        limpiarMailpit();
 
-        driver.get(URL_EXPIRADA);
+        String urlExpirada = BASE_URL + "/restablecer-contrasena?token=token-invalido-selenium";
+
+        driver.get(urlExpirada);
 
         esperarTexto("Enlace no");
 
         clicTexto("Solicitar");
 
-        escribir("email", "n.lavin.loyola@gmail.com");
+        escribir("email", ADMIN_EMAIL);
         clicTexto("Enviar enlace");
 
         esperarTexto("Correo enviado");
@@ -492,11 +621,21 @@ public class CajaNegraWebDriverTest {
     }
 
     @Test
-    //Aqui hay que pegar el enlace recibido en 'URL_RECUPERACION'
     void cp20_validarNuevaPassword() throws Exception {
-        String URL_RECUPERACION = "http://localhost:5173/restablecer-contrasena?token=6920d283-4326-4591-b301-a575bec930ff";
+        limpiarMailpit();
 
-        driver.get(URL_RECUPERACION);
+        driver.get(BASE_URL + "/login");
+
+        clicTexto("Olvidaste");
+
+        escribir("email", ADMIN_EMAIL);
+        clicTexto("Enviar enlace");
+
+        esperarTexto("Correo enviado");
+
+        String urlRecuperacion = leerLinkMailpit(ADMIN_EMAIL, "Recuperaci");
+
+        driver.get(urlRecuperacion);
 
         escribir("nuevaPassword", "1234");
         escribir("confirmarPassword", "1234");
@@ -514,6 +653,8 @@ public class CajaNegraWebDriverTest {
 
     @Test
     void cp21_recuperacionCorreoNoRegistrado() throws Exception {
+        limpiarMailpit();
+
         driver.get(BASE_URL + "/login");
 
         clicTexto("Olvidaste");
