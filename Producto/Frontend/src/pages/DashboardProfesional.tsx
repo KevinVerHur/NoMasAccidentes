@@ -11,10 +11,12 @@ import { useAuth } from '../context/AuthContext';
 import { registrarMiUbicacion } from '../api/ubicaciones';
 import { obtenerMiPerfilProfesional, actualizarMiEstadoProfesional } from '../api/profesionales';
 import { finalizarMiVisita, iniciarMiVisita, listarMisVisitas } from '../api/visitas';
+import { obtenerDashboardProfesional } from '../api/dashboard';
 import type {
+  DashboardClienteAsignado,
+  DashboardProfesionalResponse,
   EstadoProfesional,
   EstadoVisitaBackend,
-  MiClienteAsignado,
   ProfesionalResponse,
   VarianteBadge,
   VisitaResponse,
@@ -29,12 +31,12 @@ interface UbicacionActual {
 
 const PRECISION_MAXIMA_METROS = 3000;
 
-const clientes: MiClienteAsignado[] = [
-  { razonSocial: 'Minera Andes', rubro: 'Mineria', ultimaVisita: '08 Abr', estado: 'ACTIVO' },
-  { razonSocial: 'Constructora LM', rubro: 'Construccion', ultimaVisita: '12 Abr', estado: 'ACTIVO' },
-  { razonSocial: 'Agricola Del Valle', rubro: 'Agricola', ultimaVisita: '15 Mar', estado: 'MOROSO' },
-  { razonSocial: 'Transporte Sur', rubro: 'Transporte', ultimaVisita: '19 Abr', estado: 'SUSPENDIDO' },
-];
+const fmtUltimaVisita = (iso: string | null) =>
+  iso
+    ? new Date(`${iso}T00:00:00`).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })
+    : '—';
+
+const mesActual = new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
 
 const badgePorEstadoVisita: Record<EstadoVisitaBackend, VarianteBadge> = {
   PROGRAMADA: 'blue',
@@ -50,7 +52,7 @@ const labelEstadoVisita: Record<EstadoVisitaBackend, string> = {
   CANCELADA: 'Cancelada',
 };
 
-const badgePorEstadoCliente: Record<MiClienteAsignado['estado'], VarianteBadge> = {
+const badgePorEstadoCliente: Record<DashboardClienteAsignado['estado'], VarianteBadge> = {
   ACTIVO: 'green',
   MOROSO: 'yellow',
   SUSPENDIDO: 'red',
@@ -210,6 +212,7 @@ export default function DashboardProfesional() {
   const [cargandoVisitas, setCargandoVisitas] = useState(true);
   const [operandoVisitaId, setOperandoVisitaId] = useState<number | null>(null);
   const [mensajeVisita, setMensajeVisita] = useState<string | null>(null);
+  const [resumenClientes, setResumenClientes] = useState<DashboardProfesionalResponse | null>(null);
 
   const watchIdRef = useRef<number | null>(null);
   const ultimaUbicacionEnviadaRef = useRef<UbicacionActual | null>(null);
@@ -269,6 +272,12 @@ export default function DashboardProfesional() {
   useEffect(() => {
     cargarMisVisitas();
   }, [cargarMisVisitas]);
+
+  useEffect(() => {
+    obtenerDashboardProfesional()
+      .then(setResumenClientes)
+      .catch(() => setResumenClientes(null));
+  }, []);
 
   async function cambiarMiEstado(estado: EstadoProfesional) {
     try {
@@ -438,7 +447,9 @@ export default function DashboardProfesional() {
   return (
     <>
       <div className="page-title">Mi Panel</div>
-      <div className="page-subtitle">{email} - Prevencionista de riesgos - Abril 2026</div>
+      <div className="page-subtitle" style={{ textTransform: 'capitalize' }}>
+        {email} - Prevencionista de riesgos - {mesActual}
+      </div>
 
       <div className="kpi-row">
         <KpiCard
@@ -458,7 +469,16 @@ export default function DashboardProfesional() {
           sub="Asignadas a mi usuario"
         />
 
-        <KpiCard label="Mis clientes asignados" value={4} sub="1 moroso, 1 suspendido" />
+        <KpiCard
+          label="Mis clientes asignados"
+          value={resumenClientes?.clientesAsignados ?? 0}
+          sub={
+            resumenClientes && resumenClientes.clientesMorosos > 0
+              ? `${resumenClientes.clientesMorosos} moroso(s) / suspendido(s)`
+              : 'Todos al día'
+          }
+          variante={resumenClientes && resumenClientes.clientesMorosos > 0 ? 'warn' : undefined}
+        />
 
         <KpiCard
           label="Mi estado"
@@ -619,32 +639,34 @@ export default function DashboardProfesional() {
         </Panel>
       </div>
 
-      <Panel
-        titulo="Mis clientes asignados"
-        accion={<button className="btn btn-sm btn-outline">Ver todos</button>}
-      >
+      <Panel titulo="Mis clientes asignados">
         <table className="app-table">
           <thead>
             <tr>
-              {['Cliente', 'Rubro', 'Ultima visita', 'Estado', 'Accion'].map((h) => (
+              {['Cliente', 'Rubro', 'Ultima visita', 'Estado'].map((h) => (
                 <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {clientes.map((c, i) => (
-              <tr key={i}>
-                <td>{c.razonSocial}</td>
-                <td>{c.rubro}</td>
-                <td>{c.ultimaVisita}</td>
-                <td>
-                  <Badge variante={badgePorEstadoCliente[c.estado]}>{c.estado}</Badge>
-                </td>
-                <td>
-                  <button className="btn btn-sm btn-outline">Ver ficha</button>
+            {(resumenClientes?.clientes ?? []).length === 0 ? (
+              <tr>
+                <td colSpan={4} style={{ textAlign: 'center', color: '#9ca3af', padding: 16 }}>
+                  No tienes clientes asignados.
                 </td>
               </tr>
-            ))}
+            ) : (
+              resumenClientes!.clientes.map((c) => (
+                <tr key={c.idCliente}>
+                  <td>{c.razonSocial}</td>
+                  <td>{c.rubro}</td>
+                  <td>{fmtUltimaVisita(c.ultimaVisita)}</td>
+                  <td>
+                    <Badge variante={badgePorEstadoCliente[c.estado]}>{c.estado}</Badge>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </Panel>

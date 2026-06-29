@@ -40,4 +40,13 @@ public interface VisitaRepository extends JpaRepository<Visita, Long> {
     /** Visitas programadas a un profesional en el periodo (base de % de cumplimiento, RF41). */
     long countByProfesionalIdAndFechaProgramadaBetween(
             Long idProfesional, LocalDate desde, LocalDate hasta);
+
+    /** KPI dashboard: visitas en un estado programadas dentro del rango (semana en curso). */
+    long countByEstadoAndFechaProgramadaBetween(EstadoVisita estado, LocalDate desde, LocalDate hasta);
+
+    /** Dashboard: últimas visitas registradas, de la más reciente a la más antigua. */
+    java.util.List<Visita> findTop6ByOrderByFechaProgramadaDesc();
+
+    /** Alertas dashboard: visitas aún en un estado pese a que su fecha ya pasó (incumplidas). */
+    java.util.List<Visita> findByEstadoAndFechaProgramadaLessThan(EstadoVisita estado, LocalDate fecha);
 }
