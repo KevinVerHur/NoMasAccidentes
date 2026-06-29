@@ -3,6 +3,7 @@ package com.example.NoMasAccidentes.dto.cliente;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 public record CrearClienteRequest(
@@ -29,6 +30,9 @@ public record CrearClienteRequest(
 
     @NotBlank @Size(max = 40)
     String plan,
+
+    @PositiveOrZero
+    Integer cantidadTrabajadores,
 
     Long idProfesional
 ) {}

@@ -17,4 +17,10 @@ public interface AsesoriaRepository extends JpaRepository<Asesoria, Long> {
     /** Asesorías contabilizables del cliente en el rango (excluye el estado dado). Apoya RF23. */
     long countByClienteIdAndFechaSolicitudBetweenAndEstadoNot(
             Long idCliente, LocalDate desde, LocalDate hasta, EstadoAsesoria estado);
+
+    /** Asesorías atendidas (con fecha de atención) del cliente en el periodo (reporte mensual, RF39). */
+    long countByClienteIdAndFechaAtencionBetween(Long idCliente, LocalDate desde, LocalDate hasta);
+
+    /** Asesorías atendidas por un profesional en el periodo (rendimiento, RF41). */
+    long countByProfesionalIdAndFechaAtencionBetween(Long idProfesional, LocalDate desde, LocalDate hasta);
 }

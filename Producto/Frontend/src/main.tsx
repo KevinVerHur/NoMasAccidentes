@@ -18,6 +18,7 @@ import ResetPassword from './pages/ResetPassword';
 import Asesorias from './pages/Asesorias';
 import AsesoriaDetalle from './pages/AsesoriaDetalle';
 import Capacitaciones from './pages/Capacitaciones';
+import Reportes from './pages/Reportes';
 import './index.css';
 
 
@@ -74,6 +75,10 @@ const router = createBrowserRouter([
       {
         path: '/capacitaciones',
         element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CLIENTE']}><Capacitaciones /></ProtectedRoute>,
+      },
+      {
+        path: '/reportes',
+        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CLIENTE']}><Reportes /></ProtectedRoute>,
       },
       {
         path: '/asesorias',

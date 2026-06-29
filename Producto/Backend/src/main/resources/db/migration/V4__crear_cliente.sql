@@ -11,6 +11,7 @@ CREATE TABLE cliente (
     telefono            VARCHAR(20),
     rubro               VARCHAR(80)  NOT NULL,
     plan                VARCHAR(40)  NOT NULL DEFAULT 'BASICO',
+    cantidad_trabajadores INT,
     estado              VARCHAR(20)  NOT NULL DEFAULT 'ACTIVO',
     id_profesional      BIGINT,
     activo              BOOLEAN      NOT NULL DEFAULT TRUE,

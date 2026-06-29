@@ -438,6 +438,9 @@ export default function AsesoriaDetalle() {
                           onChange={e => onCambiarEstadoPropuesta(p, e.target.value as EstadoPropuesta)}>
                           {ESTADOS_PROPUESTA.map(es => <option key={es} value={es}>{labelEstadoPropuesta[es]}</option>)}
                         </select>
+                        <div style={{ marginTop: 4 }}>
+                          <Badge variante={badgeEstadoPropuesta[p.estado]}>{labelEstadoPropuesta[p.estado]}</Badge>
+                        </div>
                       </td>
                     </tr>
                   ))}

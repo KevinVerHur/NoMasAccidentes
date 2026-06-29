@@ -23,6 +23,14 @@ public interface CapacitacionRepository extends JpaRepository<Capacitacion, Long
     /** Capacitaciones que dicta un relator específico. */
     List<Capacitacion> findByRelatorId(Long idRelator);
 
+    /** Capacitaciones realizadas por el cliente en el periodo (reporte mensual, RF39). */
+    long countByClienteIdAndEstadoAndFechaRealizacionBetween(
+            Long idCliente, EstadoCapacitacion estado, LocalDate desde, LocalDate hasta);
+
+    /** Capacitaciones dictadas por un relator en el periodo (rendimiento, RF41). */
+    long countByRelatorIdAndEstadoAndFechaRealizacionBetween(
+            Long idRelator, EstadoCapacitacion estado, LocalDate desde, LocalDate hasta);
+
     /**
      * RF30: capacitaciones PROGRAMADAS para la fecha dada (hoy+3) a las que aún
      * no se les envió el recordatorio. El cliente se trae con join fetch para

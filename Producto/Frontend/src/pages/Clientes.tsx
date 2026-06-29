@@ -86,6 +86,7 @@ export default function Clientes() {
       telefono:       c.telefono ?? '',
       rubro:          c.rubro,
       plan:           c.plan,
+      cantidadTrabajadores: c.cantidadTrabajadores ?? undefined,
       idProfesional:  c.idProfesional ?? undefined,
       estado:         c.estado,
     });
@@ -300,6 +301,12 @@ export default function Clientes() {
               </select>
               {formNuevo.formState.errors.plan && <span className="auth-field-error">{formNuevo.formState.errors.plan.message}</span>}
             </div>
+            <div>
+              <label className="auth-label">N° de trabajadores</label>
+              <input type="number" min="0" className="auth-input" placeholder="Ej: 50"
+                {...formNuevo.register('cantidadTrabajadores', { valueAsNumber: true, min: { value: 0, message: 'No puede ser negativo' } })} />
+              {formNuevo.formState.errors.cantidadTrabajadores && <span className="auth-field-error">{formNuevo.formState.errors.cantidadTrabajadores.message}</span>}
+            </div>
           </div>
           {error && <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>{error}</div>}
         </form>
@@ -370,6 +377,12 @@ export default function Clientes() {
                 {PLANES.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
               {formEditar.formState.errors.plan && <span className="auth-field-error">{formEditar.formState.errors.plan.message}</span>}
+            </div>
+            <div>
+              <label className="auth-label">N° de trabajadores</label>
+              <input type="number" min="0" className="auth-input"
+                {...formEditar.register('cantidadTrabajadores', { valueAsNumber: true, min: { value: 0, message: 'No puede ser negativo' } })} />
+              {formEditar.formState.errors.cantidadTrabajadores && <span className="auth-field-error">{formEditar.formState.errors.cantidadTrabajadores.message}</span>}
             </div>
             <div>
               <label className="auth-label">Estado *</label>

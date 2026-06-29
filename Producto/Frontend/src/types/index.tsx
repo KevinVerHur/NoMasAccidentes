@@ -123,6 +123,7 @@ export interface ClienteResponse {
   telefono: string | null;
   rubro: string;
   plan: string;
+  cantidadTrabajadores: number | null;
   estado: EstadoCliente;
   idProfesional: number | null;
   nombreProfesional: string | null;
@@ -137,11 +138,48 @@ export interface CrearClienteRequest {
   telefono?: string;
   rubro: string;
   plan: string;
+  cantidadTrabajadores?: number | null;
   idProfesional?: number | null;
 }
 
 export interface ActualizarClienteRequest extends CrearClienteRequest {
   estado: EstadoCliente;
+}
+
+// ---- Reportes e indicadores (RF38–RF42) ----
+export interface ReporteMensualResponse {
+  id: number;
+  idCliente: number;
+  razonSocialCliente: string;
+  mes: number;
+  anio: number;
+  fechaEmision: string;
+  totalVisitas: number;
+  totalCapacitaciones: number;
+  totalAsesorias: number;
+  totalLlamados: number;
+  totalAccidentes: number;
+  totalMultas: number;
+  costosExtra: number;
+  esActualizacionExtra: boolean;
+  tieneArchivo: boolean;
+}
+
+export interface AccidentabilidadMensualResponse {
+  mes: number;
+  totalAccidentes: number;
+  diasPerdidos: number;
+  tasa: number | null;
+}
+
+export interface RendimientoProfesionalResponse {
+  idProfesional: number;
+  nombreProfesional: string;
+  visitasRealizadas: number;
+  visitasProgramadas: number;
+  asesoriasAtendidas: number;
+  capacitacionesDictadas: number;
+  cumplimientoVisitas: number | null;
 }
 
 // ---- Profesional ----
