@@ -1,8 +1,12 @@
 package com.example.NoMasAccidentes.service.usuario;
 
+import java.time.Month;
+import java.time.format.TextStyle;
+import java.util.Locale;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -168,6 +172,58 @@ public class CorreoService {
         } catch (Exception e) {
             log.error("Error al enviar alerta de actividad preventiva vencida al administrador: {}", e.getMessage());
         }
+    }
+
+    /**
+     * RF46/RF38: envía al cliente su reporte mensual de gestión con el PDF adjunto,
+     * tras el cierre mensual automático.
+     */
+    @Async
+    public void enviarReporteMensual(String destinatario, String cliente, int mes, int anio, byte[] pdf){
+        String periodo = nombrePeriodo(mes, anio);
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Reporte mensual " + periodo);
+            helper.setText(construirHtmlReporteMensual(cliente, periodo), true);
+            helper.addAttachment(
+                    String.format("reporte-%d-%02d.pdf", anio, mes),
+                    new ByteArrayResource(pdf),
+                    "application/pdf");
+
+            mailSender.send(mensaje);
+            log.info("Reporte mensual {} enviado a {}", periodo, destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar reporte mensual a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    private String nombrePeriodo(int mes, int anio){
+        if (mes < 1 || mes > 12) {
+            return mes + "/" + anio;
+        }
+        String nombre = Month.of(mes).getDisplayName(TextStyle.FULL, new Locale("es", "CL"));
+        return nombre.substring(0, 1).toUpperCase() + nombre.substring(1) + " " + anio;
+    }
+
+    private String construirHtmlReporteMensual(String cliente, String periodo){
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Hola %s, tu reporte mensual de gestion ya esta disponible.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Periodo:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px">Adjuntamos el documento PDF con el resumen de las actividades realizadas durante el periodo (visitas, capacitaciones, asesorias, llamados, accidentes, multas y costos extra).</p>
+              <div style="margin-top:24px;padding-top:14px;border-top:1px solid #e2e8f0;color:#3d4856;font-size:13px">
+                <p style="margin:0">Atentamente,</p>
+                <p style="margin:4px 0 0;font-weight:bold;color:#18395a">No Más Accidentes — Prevención de Riesgos Laborales</p>
+                <p style="margin:2px 0 0;color:#6b7280">contacto@nomasaccidentes.cl · +56 2 2345 6789</p>
+              </div>
+              <p style="color:#8b95a1;font-size:12px;margin-top:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(cliente, periodo);
     }
 
     private String construirHtmlInvitacion(String token) {

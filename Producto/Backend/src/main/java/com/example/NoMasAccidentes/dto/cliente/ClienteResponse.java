@@ -11,6 +11,7 @@ public record ClienteResponse(
     String telefono,
     String rubro,
     String plan,
+    Integer cantidadTrabajadores,
     EstadoCliente estado,
     Long idProfesional,
     String nombreProfesional,

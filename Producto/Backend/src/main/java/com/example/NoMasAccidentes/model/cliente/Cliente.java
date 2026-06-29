@@ -57,6 +57,10 @@ public class Cliente extends BaseEntity {
     @Column(name = "plan", nullable = false, length = 40)
     private String plan;
 
+    /** Nº de trabajadores de la empresa cliente; insumo de la tasa de accidentabilidad (RF40). */
+    @Column(name = "cantidad_trabajadores")
+    private Integer cantidadTrabajadores;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "estado", nullable = false, length = 20)
     @Builder.Default

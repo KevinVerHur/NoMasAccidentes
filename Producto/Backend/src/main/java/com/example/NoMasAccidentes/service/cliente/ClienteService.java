@@ -71,6 +71,7 @@ public class ClienteService {
                 .telefono(request.telefono())
                 .rubro(request.rubro())
                 .plan(request.plan())
+                .cantidadTrabajadores(request.cantidadTrabajadores())
                 .estado(EstadoCliente.ACTIVO)
                 .profesional(profesional)
                 .usuario(usuario)
@@ -142,6 +143,7 @@ public class ClienteService {
         cliente.setTelefono(request.telefono());
         cliente.setRubro(request.rubro());
         cliente.setPlan(request.plan());
+        cliente.setCantidadTrabajadores(request.cantidadTrabajadores());
         cliente.setEstado(request.estado());
         cliente.setProfesional(resolverProfesional(request.idProfesional()));
 

@@ -16,6 +16,7 @@ CREATE TABLE cliente_aud (
     telefono VARCHAR(20),
     rubro VARCHAR(80),
     plan VARCHAR(40),
+    cantidad_trabajadores INT,
     estado VARCHAR(20),
     id_profesional BIGINT,
     id_usuario BIGINT,
