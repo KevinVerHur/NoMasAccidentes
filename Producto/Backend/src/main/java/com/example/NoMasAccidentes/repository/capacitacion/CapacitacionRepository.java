@@ -31,6 +31,12 @@ public interface CapacitacionRepository extends JpaRepository<Capacitacion, Long
     long countByRelatorIdAndEstadoAndFechaRealizacionBetween(
             Long idRelator, EstadoCapacitacion estado, LocalDate desde, LocalDate hasta);
 
+    /** KPI dashboard: capacitaciones programadas dentro del mes en curso. */
+    long countByFechaProgramadaBetween(LocalDate desde, LocalDate hasta);
+
+    /** Alertas dashboard: capacitaciones aún en un estado pese a que su fecha ya pasó. */
+    List<Capacitacion> findByEstadoAndFechaProgramadaLessThan(EstadoCapacitacion estado, LocalDate fecha);
+
     /**
      * RF30: capacitaciones PROGRAMADAS para la fecha dada (hoy+3) a las que aún
      * no se les envió el recordatorio. El cliente se trae con join fetch para

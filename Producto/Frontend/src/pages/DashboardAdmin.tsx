@@ -8,61 +8,38 @@ import Badge from '../components/ui/Badge';
 import Panel from '../components/ui/Panel';
 import Modal from '../components/ui/Modal';
 import { listarUbicacionesActivas } from '../api/ubicaciones';
+import { obtenerDashboardAdmin } from '../api/dashboard';
 import type {
-  VisitaResumen,
-  AlertaDashboard,
-  PagoResumen,
-  AccidentabilidadResumen,
+  DashboardAdminResponse,
+  EstadoVisita,
   VarianteBadge,
   VarianteAlerta,
+  VarianteBarra,
   EstadoProfesional,
   UbicacionProfesionalResponse,
 } from '../types';
 
 const CENTRO_FALLBACK: [number, number] = [-33.4489, -70.6693];
 
-const visitas: VisitaResumen[] = [
-  { cliente: 'Constructora LM', profesional: 'E. Pérez', fecha: '18 Abr', estado: 'Realizada' },
-  { cliente: 'Transporte Sur', profesional: 'N. Lavín', fecha: '19 Abr', estado: 'Realizada' },
-  { cliente: 'Minera Andes', profesional: 'K. Vergara', fecha: '21 Abr', estado: 'Pendiente' },
-  { cliente: 'Agrícola Del Valle', profesional: 'E. Pérez', fecha: '22 Abr', estado: 'Pendiente' },
-  { cliente: 'Fábrica MetalPro', profesional: 'N. Lavín', fecha: '15 Abr', estado: 'No realizada' },
-];
-
-const alertas: AlertaDashboard[] = [
-  { tipo: 'peligro', icono: '🔴', destacado: 'Transporte Sur', texto: ' lleva 2 meses sin pago. Servicio en riesgo de suspensión.' },
-  { tipo: 'peligro', icono: '🔴', destacado: 'Fábrica MetalPro', texto: ' incumplió visita planificada del 15 Abr.' },
-  { tipo: 'warn', icono: '🟡', destacado: 'Minera Andes', texto: ' usó 9/10 asesorías incluidas en el plan.' },
-  { tipo: 'warn', icono: '🟡', destacado: 'Capacitación "Manejo manual de cargas"', texto: ' sin confirmar asistentes.' },
-  { tipo: 'info', icono: '🔵', destacado: 'Reporte mensual de Agrícola Del Valle', texto: ' listo para enviar.' },
-];
-
-const accidentabilidad: AccidentabilidadResumen[] = [
-  { cliente: 'Minera Andes', porcentaje: 82, tasa: '3.8%', variante: 'peligro' },
-  { cliente: 'Agrícola Valle', porcentaje: 65, tasa: '3.5%', variante: 'warn' },
-  { cliente: 'Transporte Sur', porcentaje: 55, tasa: '3.3%', variante: 'warn' },
-  { cliente: 'Constructora LM', porcentaje: 45, tasa: '3.1%', variante: 'default' },
-  { cliente: 'MetalPro', porcentaje: 28, tasa: '1.9%', variante: 'ok' },
-];
-
-const pagos: PagoResumen[] = [
-  { cliente: 'Constructora LM', planMensual: '$350.000', ultimoPago: '01 Abr 2026', mesesAdeudados: 0, estado: 'Al día' },
-  { cliente: 'Minera Andes', planMensual: '$480.000', ultimoPago: '01 Abr 2026', mesesAdeudados: 0, estado: 'Al día' },
-  { cliente: 'Agrícola Del Valle', planMensual: '$290.000', ultimoPago: '15 Mar 2026', mesesAdeudados: 1, estado: 'Atrasado' },
-  { cliente: 'Transporte Sur', planMensual: '$320.000', ultimoPago: '01 Feb 2026', mesesAdeudados: 2, estado: 'Moroso' },
-  { cliente: 'Fábrica MetalPro', planMensual: '$260.000', ultimoPago: '20 Mar 2026', mesesAdeudados: 1, estado: 'Atrasado' },
-];
-
-const badgePorEstadoVisita: Record<VisitaResumen['estado'], VarianteBadge> = {
-  Realizada: 'green',
-  Pendiente: 'yellow',
-  'No realizada': 'red',
+const badgePorEstadoVisita: Record<EstadoVisita, VarianteBadge> = {
+  PROGRAMADA: 'yellow',
+  EN_CURSO: 'blue',
+  REALIZADA: 'green',
+  CANCELADA: 'red',
 };
 
-const badgePorEstadoPago: Record<PagoResumen['estado'], VarianteBadge> = {
-  'Al día': 'green',
-  Atrasado: 'yellow',
-  Moroso: 'red',
+const labelEstadoVisita: Record<EstadoVisita, string> = {
+  PROGRAMADA: 'Pendiente',
+  EN_CURSO: 'En curso',
+  REALIZADA: 'Realizada',
+  CANCELADA: 'No realizada',
+};
+
+const iconoAlerta: Record<VarianteAlerta, string> = {
+  peligro: '🔴',
+  warn: '🟡',
+  info: '🔵',
+  ok: '🟢',
 };
 
 const claseAlerta: Record<VarianteAlerta, string> = {
@@ -72,18 +49,39 @@ const claseAlerta: Record<VarianteAlerta, string> = {
   ok: 'alert-item alert-item--ok',
 };
 
-const colorBarra: Record<AccidentabilidadResumen['variante'], string> = {
+const colorBarra: Record<VarianteBarra, string> = {
   default: 'bg-azul',
   warn: 'bg-warn',
   ok: 'bg-ok',
   peligro: 'bg-peligro',
 };
 
-const accionPago: Record<PagoResumen['estado'], { label: string; clase: string }> = {
-  'Al día': { label: 'Ver detalle', clase: 'btn btn-sm btn-outline' },
-  Atrasado: { label: 'Notificar', clase: 'btn btn-sm btn-warn' },
-  Moroso: { label: 'Suspender', clase: 'btn btn-sm btn-danger' },
-};
+function varianteTasa(tasa: number | null): VarianteBarra {
+  if (tasa === null) return 'default';
+  if (tasa >= 5) return 'peligro';
+  if (tasa >= 3) return 'warn';
+  if (tasa === 0) return 'ok';
+  return 'default';
+}
+
+function badgePorEstadoPago(estado: string): VarianteBadge {
+  if (estado === 'Al día') return 'green';
+  if (estado === 'Atrasado') return 'yellow';
+  return 'red'; // Moroso / Suspendido
+}
+
+const fmtCLP = (v: number | null) => (v === null ? '—' : `$${v.toLocaleString('es-CL')}`);
+
+const fmtFecha = (iso: string | null) =>
+  iso
+    ? new Date(`${iso}T00:00:00`).toLocaleDateString('es-CL', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '—';
+
+const mesActual = new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
 
 const labelEstado: Record<EstadoProfesional, string> = {
   DISPONIBLE: 'Disponible',
@@ -250,6 +248,14 @@ export default function DashboardAdmin() {
   const [cargandoMapa, setCargandoMapa] = useState(false);
   const [errorMapa, setErrorMapa] = useState<string | null>(null);
   const [ultimaActualizacionMapa, setUltimaActualizacionMapa] = useState<Date | null>(null);
+  const [datos, setDatos] = useState<DashboardAdminResponse | null>(null);
+  const [errorDatos, setErrorDatos] = useState<string | null>(null);
+
+  useEffect(() => {
+    obtenerDashboardAdmin()
+      .then(setDatos)
+      .catch(() => setErrorDatos('No se pudieron cargar los datos del panel.'));
+  }, []);
 
   const cargarMapa = useCallback(async () => {
     setCargandoMapa(true);
@@ -277,23 +283,39 @@ export default function DashboardAdmin() {
   const profesionalesActualizados = ubicaciones.filter((u) => !estaDesactualizada(u)).length;
   const profesionalesDesactualizados = ubicaciones.filter(estaDesactualizada).length;
 
+  const kpis = datos?.kpis;
+  const visitas = datos?.visitasRecientes ?? [];
+  const alertas = datos?.alertas ?? [];
+  const accidentabilidad = datos?.accidentabilidad ?? [];
+  const pagos = datos?.controlPagos ?? [];
+
+  // Magnitud de la barra de accidentabilidad: usa la tasa si hay nº de trabajadores; si no, los accidentes.
+  const magnitud = (a: { tasa: number | null; accidentes: number }) => a.tasa ?? a.accidentes;
+  const maxMagnitud = Math.max(1, ...accidentabilidad.map(magnitud));
+
   return (
     <>
       <div className="page-title">Dashboard General</div>
-      <div className="page-subtitle">Resumen operativo — Abril 2026</div>
+      <div className="page-subtitle" style={{ textTransform: 'capitalize' }}>
+        Resumen operativo — {mesActual}
+      </div>
+
+      {errorDatos && (
+        <div className="alert-item alert-item--peligro" style={{ marginBottom: 12 }}>
+          <span>🔴</span>
+          <div>{errorDatos}</div>
+        </div>
+      )}
 
       <div className="kpi-row">
-        <KpiCard label="Clientes activos" value={24} sub="+2 este mes" variante="ok" />
-        <KpiCard label="Visitas pendientes" value={7} sub="Semana en curso" variante="warn" />
-        <KpiCard label="Clientes morosos" value={3} sub="Servicio suspendido: 1" variante="peligro" />
-        <KpiCard label="Capacitaciones este mes" value={5} sub="Próxima: 25 Abr" />
+        <KpiCard label="Clientes activos" value={kpis?.clientesActivos ?? 0} sub="Total vigentes" variante="ok" />
+        <KpiCard label="Visitas pendientes" value={kpis?.visitasPendientesSemana ?? 0} sub="Semana en curso" variante="warn" />
+        <KpiCard label="Clientes morosos" value={kpis?.clientesMorosos ?? 0} sub="Morosos / suspendidos" variante="peligro" />
+        <KpiCard label="Capacitaciones este mes" value={kpis?.capacitacionesMes ?? 0} sub="Mes en curso" />
       </div>
 
       <div className="grid-2">
-        <Panel
-          titulo="📅 Visitas recientes"
-          accion={<button className="btn btn-sm btn-primary">+ Nueva visita</button>}
-        >
+        <Panel titulo="📅 Visitas recientes">
           <table className="app-table">
             <thead>
               <tr>
@@ -303,34 +325,44 @@ export default function DashboardAdmin() {
               </tr>
             </thead>
             <tbody>
-              {visitas.map((v, i) => (
-                <tr key={i}>
-                  <td>{v.cliente}</td>
-                  <td>{v.profesional}</td>
-                  <td>{v.fecha}</td>
-                  <td>
-                    <Badge variante={badgePorEstadoVisita[v.estado]}>{v.estado}</Badge>
+              {visitas.length === 0 ? (
+                <tr>
+                  <td colSpan={4} style={{ textAlign: 'center', color: '#9ca3af', padding: 16 }}>
+                    Sin visitas registradas.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                visitas.map((v, i) => (
+                  <tr key={i}>
+                    <td>{v.cliente}</td>
+                    <td>{v.profesional}</td>
+                    <td>{fmtFecha(v.fecha)}</td>
+                    <td>
+                      <Badge variante={badgePorEstadoVisita[v.estado]}>{labelEstadoVisita[v.estado]}</Badge>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </Panel>
 
-        <Panel
-          titulo="🔔 Alertas del sistema"
-          accion={<button className="btn btn-sm btn-outline">Ver todas</button>}
-        >
+        <Panel titulo="🔔 Alertas del sistema">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}>
-            {alertas.map((a, i) => (
-              <div key={i} className={claseAlerta[a.tipo]}>
-                <span>{a.icono}</span>
-                <div>
-                  <b>{a.destacado}</b>
-                  {a.texto}
-                </div>
+            {alertas.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#9ca3af', padding: 16 }}>
+                Sin alertas activas. 🎉
               </div>
-            ))}
+            ) : (
+              alertas.map((a, i) => (
+                <div key={i} className={claseAlerta[a.severidad]}>
+                  <span>{iconoAlerta[a.severidad]}</span>
+                  <div>
+                    <b>{a.titulo}</b> {a.detalle}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </Panel>
       </div>
@@ -374,64 +406,72 @@ export default function DashboardAdmin() {
           </div>
         </Panel>
 
-        <Panel
-          titulo="📈 Accidentabilidad por cliente"
-          accion={<button className="btn btn-sm btn-outline">Ver reportes</button>}
-        >
+        <Panel titulo="📈 Accidentabilidad por cliente">
           <div style={{ padding: '14px 16px' }}>
-            {accidentabilidad.map((a, i) => (
-              <div
-                key={i}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  marginBottom: 10,
-                  fontSize: 11,
-                }}
-              >
-                <span style={{ width: 110, textAlign: 'right', color: '#6b7280', flexShrink: 0 }}>
-                  {a.cliente}
-                </span>
-                <div style={{ flex: 1, background: '#e5e7eb', borderRadius: 6, height: 14, overflow: 'hidden' }}>
-                  <div className={`h-full rounded ${colorBarra[a.variante]}`} style={{ width: `${a.porcentaje}%` }} />
-                </div>
-                <span style={{ width: 36, fontWeight: 'bold', color: '#374151' }}>{a.tasa}</span>
+            {accidentabilidad.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#9ca3af', padding: 16, fontSize: 12 }}>
+                Sin datos de accidentabilidad.
               </div>
-            ))}
+            ) : (
+              accidentabilidad.map((a) => (
+                <div
+                  key={a.idCliente}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    marginBottom: 10,
+                    fontSize: 11,
+                  }}
+                >
+                  <span style={{ width: 110, textAlign: 'right', color: '#6b7280', flexShrink: 0 }}>
+                    {a.cliente}
+                  </span>
+                  <div style={{ flex: 1, background: '#e5e7eb', borderRadius: 6, height: 14, overflow: 'hidden' }}>
+                    <div
+                      className={`h-full rounded ${colorBarra[varianteTasa(a.tasa)]}`}
+                      style={{ width: `${(magnitud(a) / maxMagnitud) * 100}%` }}
+                    />
+                  </div>
+                  <span style={{ width: 48, fontWeight: 'bold', color: '#374151', textAlign: 'right' }}>
+                    {a.tasa !== null ? `${a.tasa.toFixed(1)}%` : `${a.accidentes} acc.`}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </Panel>
       </div>
 
-      <Panel
-        titulo="💰 Control de pagos y morosidades"
-        accion={<button className="btn btn-sm btn-primary">Registrar pago</button>}
-      >
+      <Panel titulo="💰 Control de pagos y morosidades">
         <table className="app-table">
           <thead>
             <tr>
-              {['Cliente', 'Plan mensual', 'Último pago', 'Meses adeudados', 'Estado', 'Acción'].map((h) => (
+              {['Cliente', 'Plan mensual', 'Último pago', 'Meses adeudados', 'Estado'].map((h) => (
                 <th key={h}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {pagos.map((p, i) => (
-              <tr key={i}>
-                <td>{p.cliente}</td>
-                <td>{p.planMensual}</td>
-                <td>{p.ultimoPago}</td>
-                <td>{p.mesesAdeudados}</td>
-                <td>
-                  <Badge variante={badgePorEstadoPago[p.estado]}>{p.estado}</Badge>
-                </td>
-                <td>
-                  <button className={accionPago[p.estado].clase}>
-                    {accionPago[p.estado].label}
-                  </button>
+            {pagos.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ textAlign: 'center', color: '#9ca3af', padding: 16 }}>
+                  Sin clientes con planes de pago.
                 </td>
               </tr>
-            ))}
+            ) : (
+              pagos.map((p) => (
+                <tr key={p.idCliente}>
+                  <td>{p.cliente}</td>
+                  <td>{fmtCLP(p.planMensual)}</td>
+                  <td>{fmtFecha(p.ultimoPago)}</td>
+                  <td>{p.mesesAdeudados}</td>
+                  <td>
+                    <Badge variante={badgePorEstadoPago(p.estado)}>{p.estado}</Badge>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </Panel>

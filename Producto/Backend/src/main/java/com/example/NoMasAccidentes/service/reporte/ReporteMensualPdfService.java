@@ -64,7 +64,7 @@ public class ReporteMensualPdfService {
         doc.add(tablaTotales(r));
         doc.add(espacio());
 
-        doc.add(seccion("Composición del periodo"));
+        doc.add(seccion("Resumen de composición por periodo"));
         int[] valores = {
                 r.getTotalVisitas(), r.getTotalCapacitaciones(), r.getTotalAsesorias(),
                 r.getTotalLlamados(), r.getTotalAccidentes(), r.getTotalMultas(),

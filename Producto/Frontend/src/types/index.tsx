@@ -61,6 +61,106 @@ export interface AccidentabilidadResumen {
   variante: VarianteBarra;
 }
 
+// ---- Dashboard Admin (datos reales, RF45) ----
+export interface DashboardAdminKpis {
+  clientesActivos: number;
+  visitasPendientesSemana: number;
+  clientesMorosos: number;
+  capacitacionesMes: number;
+}
+
+export interface DashboardVisitaReciente {
+  idCliente: number;
+  cliente: string;
+  profesional: string;
+  fecha: string;
+  estado: EstadoVisita;
+}
+
+export interface DashboardAlerta {
+  severidad: VarianteAlerta;
+  titulo: string;
+  detalle: string;
+}
+
+export interface DashboardAccidentabilidad {
+  idCliente: number;
+  cliente: string;
+  accidentes: number;
+  trabajadores: number | null;
+  tasa: number | null;
+}
+
+export interface DashboardControlPago {
+  idCliente: number;
+  cliente: string;
+  planMensual: number | null;
+  ultimoPago: string | null;
+  mesesAdeudados: number;
+  estado: string;
+}
+
+export interface DashboardAdminResponse {
+  kpis: DashboardAdminKpis;
+  visitasRecientes: DashboardVisitaReciente[];
+  alertas: DashboardAlerta[];
+  accidentabilidad: DashboardAccidentabilidad[];
+  controlPagos: DashboardControlPago[];
+}
+
+// ---- Dashboard Cliente (datos reales) ----
+export interface DashboardClienteKpis {
+  visitasRealizadasMes: number;
+  visitasProgramadasMes: number;
+  capacitacionesPendientes: number;
+  asesoriasUsadas: number;
+  asesoriasLimite: number;
+  estadoPago: string;
+  proximoVencimiento: string | null;
+}
+
+export interface DashboardClienteAccion {
+  severidad: VarianteAlerta;
+  titulo: string;
+  detalle: string;
+}
+
+export interface DashboardClienteActividad {
+  fecha: string;
+  actividad: string;
+  profesional: string;
+  estado: string;
+}
+
+export interface DashboardClienteResumen {
+  accidentesMes: number;
+  diasPerdidosMes: number;
+  accidentesAnio: number;
+  capacitacionesRealizadasAnio: number;
+}
+
+export interface DashboardClienteResponse {
+  kpis: DashboardClienteKpis;
+  accionesImportantes: DashboardClienteAccion[];
+  proximasActividades: DashboardClienteActividad[];
+  resumen: DashboardClienteResumen;
+}
+
+// ---- Dashboard Profesional (clientes asignados, datos reales) ----
+export interface DashboardClienteAsignado {
+  idCliente: number;
+  razonSocial: string;
+  rubro: string;
+  ultimaVisita: string | null;
+  estado: 'ACTIVO' | 'MOROSO' | 'SUSPENDIDO';
+}
+
+export interface DashboardProfesionalResponse {
+  clientesAsignados: number;
+  clientesMorosos: number;
+  clientes: DashboardClienteAsignado[];
+}
+
 // ---- Dashboard Profesional (mock) ----
 export interface MiVisita {
   cliente: string;
