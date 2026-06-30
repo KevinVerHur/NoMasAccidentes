@@ -3,6 +3,8 @@ package com.example.NoMasAccidentes.controller.capacitacion;
 import com.example.NoMasAccidentes.dto.capacitacion.*;
 import com.example.NoMasAccidentes.service.capacitacion.ActaCapacitacionPdfService;
 import com.example.NoMasAccidentes.service.capacitacion.CapacitacionService;
+import com.example.NoMasAccidentes.service.capacitacion.CertificadoCapacitacionPdfService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,6 +28,7 @@ public class CapacitacionController {
 
     private final CapacitacionService capacitacionService;
     private final ActaCapacitacionPdfService actaCapacitacionPdfService;
+    private final CertificadoCapacitacionPdfService certificadoCapacitacionPdfService;
 
     @Operation(summary = "Listar todas las capacitaciones paginadas")
     @GetMapping
@@ -140,9 +143,12 @@ public class CapacitacionController {
     @Operation(summary = "Finalizar la capacitación")
     @PatchMapping("/{id}/finalizar")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
-    public CapacitacionResponse finalizar(@PathVariable Long id) {
-        return capacitacionService.finalizar(id);
-    }
+    public CapacitacionResponse finalizar(
+        @PathVariable Long id,
+        @RequestBody(required = false) FinalizarCapacitacionRequest request) {
+
+        return capacitacionService.finalizar(id, request);
+}
 
     @Operation(summary = "Cancelar una capacitación")
     @PatchMapping("/{id}/cancelar")
@@ -150,4 +156,46 @@ public class CapacitacionController {
     public CapacitacionResponse cancelar(@PathVariable Long id) {
         return capacitacionService.cancelar(id);
     }
+
+    @Operation(summary = "Generar certificados de capacitación en PDF")
+    @GetMapping("/{id}/certificados-pdf")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL','CLIENTE')")
+    public ResponseEntity<byte[]> generarCertificadosPdf(@PathVariable Long id) {
+
+        byte[] pdf = certificadoCapacitacionPdfService.generarCertificadosPdf(id);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(
+            ContentDisposition.attachment()
+                    .filename("certificados-capacitacion-" + id + ".pdf")
+                    .build()
+    );
+
+    return ResponseEntity.ok()
+            .headers(headers)
+            .body(pdf);
+    }
+
+    @Operation(summary = "Generar certificado individual de capacitación en PDF")
+    @GetMapping("/{id}/certificados/{idAsistente}/pdf")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL','CLIENTE')")
+    public ResponseEntity<byte[]> generarCertificadoIndividualPdf(
+        @PathVariable Long id,
+        @PathVariable Long idAsistente) {
+
+        byte[] pdf = certificadoCapacitacionPdfService.generarCertificadoPdf(id, idAsistente);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(
+            ContentDisposition.attachment()
+                    .filename("certificado-capacitacion-" + id + "-asistente-" + idAsistente + ".pdf")
+                    .build()
+    );
+
+    return ResponseEntity.ok()
+            .headers(headers)
+            .body(pdf);
+}
 }

@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS capacitacion (
     fecha_realizacion     DATE,
     estado                VARCHAR(20)   NOT NULL DEFAULT 'PROGRAMADA',
     es_capacitacion_extra BOOLEAN       NOT NULL DEFAULT FALSE,
+    observacion_acta VARCHAR(1000),
     activo                BOOLEAN       NOT NULL DEFAULT TRUE,
     fecha_creacion        DATETIME,
     fecha_actualizacion   DATETIME,

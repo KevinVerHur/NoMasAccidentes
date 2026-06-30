@@ -26,10 +26,11 @@ public record CapacitacionResponse(
         @JsonFormat(pattern = "yyyy-MM-dd")
         LocalDate fechaProgramada,
         
-        String lugar,
 
         @JsonFormat(pattern = "HH:mm")
         String horaProgramada,
+        
+        String lugar,
         Integer cupos,
         String objetivo,
 
@@ -37,7 +38,7 @@ public record CapacitacionResponse(
         LocalDate fechaRealizacion,
         EstadoCapacitacion estado,
         boolean esCapacitacionExtra,
-
+        String observacionActa,
         /** Cupos disponibles = cupos - asistentes inscritos confirmados */
         int cuposDisponibles,
 

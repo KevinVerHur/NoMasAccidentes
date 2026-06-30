@@ -33,6 +33,7 @@ public class CapacitacionMapper {
                 c.getFechaRealizacion(),
                 c.getEstado(),
                 c.isEsCapacitacionExtra(),
+                c.getObservacionActa(),
                 cuposDisponibles,
                 c.getAsistencias().stream().map(this::toAsistenciaResponse).toList()
         );

@@ -269,7 +269,7 @@ public class CapacitacionService {
      * (ver registrarAsistencia / RF-CAP). Solo es posible desde PROGRAMADA o EN_CURSO.
      */
     @Transactional
-    public CapacitacionResponse finalizar(Long id) {
+    public CapacitacionResponse finalizar(Long id, FinalizarCapacitacionRequest request) {
         Capacitacion capacitacion = buscarOFallar(id);
 
         if (capacitacion.getEstado() == EstadoCapacitacion.REALIZADA) {
@@ -290,6 +290,10 @@ public class CapacitacionService {
 
         capacitacion.setEstado(EstadoCapacitacion.REALIZADA);
         capacitacion.setFechaRealizacion(LocalDate.now());
+
+        if (request != null) {
+            capacitacion.setObservacionActa(request.observacionActa());
+        }
 
         log.info("Capacitación finalizada id={} curso='{}' presentes={}/{}",
                 id,
