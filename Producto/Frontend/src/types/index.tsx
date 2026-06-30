@@ -390,6 +390,7 @@ export interface CapacitacionResponse {
   fechaRealizacion: string | null;
   estado: EstadoCapacitacion;
   esCapacitacionExtra: boolean;
+  observacionActa?: string | null;
   cuposDisponibles: number;
   asistencias: AsistenciaResponse[];
 }
@@ -435,6 +436,10 @@ export interface AsistenteRequest {
   cargo?: string;
   area?: string;
   email?: string;
+
+}
+export interface FinalizarCapacitacionRequest {
+  observacionActa?: string;
 }
 export type EstadoActividadPreventiva = 'PENDIENTE' | 'EN_CURSO' | 'CUMPLIDA' | 'VENCIDA';
 

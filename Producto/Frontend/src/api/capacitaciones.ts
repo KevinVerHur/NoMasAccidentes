@@ -3,6 +3,7 @@ import type {
   CrearCapacitacionRequest,
   InscribirAsistentesRequest,
   ConfirmarAsistenciaRequest,
+  FinalizarCapacitacionRequest,
   AsistenciaResponse,
 } from '../types';
 import api from './axiosConfig';
@@ -65,8 +66,16 @@ export async function iniciarCapacitacion(id: number): Promise<CapacitacionRespo
   return res.data;
 }
 
-export async function finalizarCapacitacion(id: number): Promise<CapacitacionResponse> {
-  const res = await api.patch<CapacitacionResponse>(`/api/capacitaciones/${id}/finalizar`);
+export async function finalizarCapacitacion(
+  id: number,
+  data?: FinalizarCapacitacionRequest
+): Promise<CapacitacionResponse> {
+
+  const res = await api.patch<CapacitacionResponse>(
+    `/api/capacitaciones/${id}/finalizar`,
+    data ?? {}
+  );
+
   return res.data;
 }
 
@@ -74,6 +83,28 @@ export async function descargarActaCapacitacion(id: number) {
   const response = await api.get(`/api/capacitaciones/${id}/acta-pdf`, {
     responseType: 'blob',
   });
+
+  return response.data;
+}
+
+export async function descargarCertificadosCapacitacion(id: number) {
+  const response = await api.get(`/api/capacitaciones/${id}/certificados-pdf`, {
+    responseType: 'blob',
+  });
+
+  return response.data;
+}
+
+export async function descargarCertificadoAsistente(
+  idCapacitacion: number,
+  idAsistente: number
+) {
+  const response = await api.get(
+    `/api/capacitaciones/${idCapacitacion}/certificados/${idAsistente}/pdf`,
+    {
+      responseType: 'blob',
+    }
+  );
 
   return response.data;
 }

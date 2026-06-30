@@ -61,6 +61,7 @@ public class ActaCapacitacionPdfService {
             document.add(linea("Fecha programada: ", c.getFechaProgramada() != null ? c.getFechaProgramada().format(F_FECHA) : "—"));
             document.add(linea("Fecha realización: ", c.getFechaRealizacion() != null ? c.getFechaRealizacion().format(F_FECHA) : "—"));
             document.add(linea("Hora: ", c.getHoraProgramada() != null ? c.getHoraProgramada().format(F_HORA) : "—"));
+            document.add(linea("Lugar: ", c.getLugar()));
             document.add(linea("Relator: ", obtenerNombreRelator(c)));
             document.add(linea("Estado: ", c.getEstado() != null ? c.getEstado().name() : "—"));
 
@@ -79,9 +80,13 @@ public class ActaCapacitacionPdfService {
             document.add(espacio());
 
             document.add(seccion("Observaciones"));
-            document.add(new Paragraph("____________________________________________________________", NORMAL));
-            document.add(new Paragraph("____________________________________________________________", NORMAL));
-            document.add(new Paragraph("____________________________________________________________", NORMAL));
+            String observacion = c.getObservacionActa();
+
+            if (observacion != null && !observacion.isBlank()) {
+                document.add(new Paragraph(observacion, NORMAL));
+            } else {
+                document.add(new Paragraph("Sin observaciones registradas.", NORMAL));
+            }
 
             document.add(espacio());
             document.add(espacio());

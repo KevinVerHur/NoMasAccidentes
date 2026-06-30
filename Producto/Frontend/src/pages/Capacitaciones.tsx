@@ -26,6 +26,8 @@ import {
   iniciarCapacitacion,
   finalizarCapacitacion,
   descargarActaCapacitacion,
+  descargarCertificadosCapacitacion,
+  descargarCertificadoAsistente,
 } from '../api/capacitaciones';
 import { listarClientes, miCliente } from '../api/clientes';
 import { listarProfesionales } from '../api/profesionales';
@@ -86,36 +88,94 @@ async function descargarActaPdf(idCapacitacion: number) {
   }
 }
 
+async function descargarCertificadosPdf(idCapacitacion: number) {
+  try {
+    const blob = await descargarCertificadosCapacitacion(idCapacitacion);
+
+    const url = window.URL.createObjectURL(
+      new Blob([blob], { type: 'application/pdf' })
+    );
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `certificados-capacitacion-${idCapacitacion}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch {
+    alert('Error al descargar los certificados de capacitación.');
+  }
+}
+
+async function descargarCertificadoIndividualPdf(
+  idCapacitacion: number,
+  idAsistente: number,
+  nombreAsistente: string
+) {
+  try {
+    const blob = await descargarCertificadoAsistente(idCapacitacion, idAsistente);
+
+    const url = window.URL.createObjectURL(
+      new Blob([blob], { type: 'application/pdf' })
+    );
+
+    const nombreArchivo = nombreAsistente
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-zA-Z0-9ÁÉÍÓÚáéíóúÑñ-]/g, '');
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `certificado-${nombreArchivo || idAsistente}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch {
+    alert('Error al descargar el certificado del asistente.');
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════════
 //  VISTA ADMIN — gestión completa
 // ══════════════════════════════════════════════════════════════════════════════
 
 function VistaAdmin() {
   const [capacitaciones, setCapacitaciones] = useState<CapacitacionResponse[]>([]);
-  const [clientes,       setClientes]       = useState<ClienteResponse[]>([]);
-  const [profesionales,  setProfesionales]  = useState<ProfesionalResponse[]>([]);
-  const [cargando,       setCargando]       = useState(true);
-  const [busqueda,       setBusqueda]       = useState('');
+  const [clientes, setClientes] = useState<ClienteResponse[]>([]);
+  const [profesionales, setProfesionales] = useState<ProfesionalResponse[]>([]);
+  const [cargando, setCargando] = useState(true);
+  const [busqueda, setBusqueda] = useState('');
 
-  const [modalNueva,        setModalNueva]        = useState(false);
-  const [modalDetalle,      setModalDetalle]      = useState<CapacitacionResponse | null>(null);
-  const [modalAsistentes,   setModalAsistentes]   = useState<CapacitacionResponse | null>(null);
-  const [modalCancelar,     setModalCancelar]     = useState<CapacitacionResponse | null>(null);
+  const [modalNueva, setModalNueva] = useState(false);
+  const [modalDetalle, setModalDetalle] = useState<CapacitacionResponse | null>(null);
+  const [modalAsistentes, setModalAsistentes] = useState<CapacitacionResponse | null>(null);
+  const [modalCancelar, setModalCancelar] = useState<CapacitacionResponse | null>(null);
   const [modalCertificados, setModalCertificados] = useState<CapacitacionResponse | null>(null);
-  const [modalActa,         setModalActa]         = useState<CapacitacionResponse | null>(null);
-  const [guardando,         setGuardando]         = useState(false);
-  const [error,             setError]             = useState<string | null>(null);
-  const [confirmandoId,     setConfirmandoId]     = useState<number | null>(null);
+  const [modalActa, setModalActa] = useState<CapacitacionResponse | null>(null);
+
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const formNueva = useForm<CrearCapacitacionRequest>();
 
   const cargar = useCallback(async () => {
     setCargando(true);
-    try { const d = await listarCapacitaciones(0, 200); setCapacitaciones(d.content); }
-    finally { setCargando(false); }
+    try {
+      const d = await listarCapacitaciones(0, 200);
+      setCapacitaciones(d.content);
+    } finally {
+      setCargando(false);
+    }
   }, []);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
+
   useEffect(() => {
     listarClientes(0, 200).then(d => setClientes(d.content)).catch(() => {});
     listarProfesionales(0, 200).then(d => setProfesionales(d.content)).catch(() => {});
@@ -123,140 +183,350 @@ function VistaAdmin() {
 
   const filtradas = capacitaciones.filter(c => {
     const t = busqueda.toLowerCase();
-    return !t || c.curso.toLowerCase().includes(t) || c.cliente.toLowerCase().includes(t) || c.relator.toLowerCase().includes(t);
+    return (
+      !t ||
+      c.curso.toLowerCase().includes(t) ||
+      c.cliente.toLowerCase().includes(t) ||
+      c.relator.toLowerCase().includes(t)
+    );
   });
 
-  const programadas   = capacitaciones.filter(c => c.estado === 'PROGRAMADA').length;
-  const realizadas    = capacitaciones.filter(c => c.estado === 'REALIZADA').length;
+  const programadas = capacitaciones.filter(c => c.estado === 'PROGRAMADA').length;
+  const realizadas = capacitaciones.filter(c => c.estado === 'REALIZADA').length;
+
+  async function refrescarCapacitacion(idCapacitacion: number) {
+    const actualizadas = (await listarCapacitaciones(0, 200)).content;
+    setCapacitaciones(actualizadas);
+
+    const fresca = actualizadas.find(c => c.id === idCapacitacion);
+    if (fresca) setModalAsistentes(fresca);
+  }
 
   async function onCrear(data: CrearCapacitacionRequest) {
-    setError(null); setGuardando(true);
-    try { await crearCapacitacion(data); setModalNueva(false); formNueva.reset(); await cargar(); }
-    catch (e) { setError(mensajeError(e, 'Error al programar la capacitación.')); }
-    finally { setGuardando(false); }
+    setError(null);
+    setGuardando(true);
+
+    try {
+      await crearCapacitacion(data);
+      setModalNueva(false);
+      formNueva.reset();
+      await cargar();
+    } catch (e) {
+      setError(mensajeError(e, 'Error al programar la capacitación.'));
+    } finally {
+      setGuardando(false);
+    }
   }
 
   async function onCancelar() {
     if (!modalCancelar) return;
+
     setGuardando(true);
-    try { await cancelarCapacitacion(modalCancelar.id); setModalCancelar(null); await cargar(); }
-    catch (e) { setError(mensajeError(e, 'Error al cancelar.')); }
-    finally { setGuardando(false); }
+
+    try {
+      await cancelarCapacitacion(modalCancelar.id);
+      setModalCancelar(null);
+      await cargar();
+    } catch (e) {
+      setError(mensajeError(e, 'Error al cancelar.'));
+    } finally {
+      setGuardando(false);
+    }
   }
 
-  async function onConfirmar(idCap: number, idAsistente: number) {
-    setConfirmandoId(idAsistente);
+  async function onGuardarConfirmacionAsistentes() {
+    if (!modalAsistentes) return;
+
+    const pendientes = modalAsistentes.asistencias.filter(a => !a.confirmado);
+
+    if (modalAsistentes.asistencias.length === 0) {
+      alert('No hay asistentes inscritos para confirmar.');
+      return;
+    }
+
+    if (pendientes.length === 0) {
+      setModalAsistentes(null);
+      return;
+    }
+
+    setGuardando(true);
+
     try {
-      await confirmarAsistencia(idCap, idAsistente);
-      const fresca = (await listarCapacitaciones(0, 200)).content.find(c => c.id === idCap);
-      if (fresca) setModalAsistentes(fresca);
-      await cargar();
-    } catch (e) { alert(mensajeError(e, 'No se pudo confirmar.')); }
-    finally { setConfirmandoId(null); }
+      for (const a of pendientes) {
+        await confirmarAsistencia(modalAsistentes.id, a.idAsistente);
+      }
+
+      await refrescarCapacitacion(modalAsistentes.id);
+      alert('Asistentes confirmados correctamente.');
+    } catch (e) {
+      alert(mensajeError(e, 'No se pudieron confirmar los asistentes.'));
+    } finally {
+      setGuardando(false);
+    }
   }
 
   return (
     <>
       <div className="page-title">Capacitaciones</div>
-      <div className="page-subtitle">Gestión de cursos y talleres — {capacitaciones.length} registros</div>
+      <div className="page-subtitle">
+        Gestión de cursos y talleres — {capacitaciones.length} registros
+      </div>
 
       <div className="kpi-row">
-        <KpiCard label="Sin cap. 90d" value={5}              variante="peligro" />
-        <KpiCard label="Programadas"  value={programadas}    variante="warn" />
-        <KpiCard label="Realizadas"   value={realizadas}     variante="ok" />
-        <KpiCard label="Asistencia"   value="87%"            sub="promedio" />
+        <KpiCard label="Sin cap. 90d" value={5} variante="peligro" />
+        <KpiCard label="Programadas" value={programadas} variante="warn" />
+        <KpiCard label="Realizadas" value={realizadas} variante="ok" />
+        <KpiCard label="Asistencia" value="87%" sub="promedio" />
       </div>
 
       <Panel
         titulo="🎓 Cursos y asistencia"
         accion={
-          <button className="btn btn-sm btn-primary" onClick={() => { formNueva.reset(); setError(null); setModalNueva(true); }}>
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={() => {
+              formNueva.reset();
+              setError(null);
+              setModalNueva(true);
+            }}
+          >
             + Nueva capacitación
           </button>
         }
       >
         <div className="searchbar">
-          <input placeholder="Buscar por curso, cliente o relator..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+          <input
+            placeholder="Buscar por curso, cliente o relator..."
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+          />
         </div>
 
-        {cargando ? <div className="placeholder">Cargando capacitaciones...</div>
-        : filtradas.length === 0 ? <div className="placeholder">No hay capacitaciones registradas.</div>
-        : filtradas.map((c, i) => {
-          const confirmados  = c.asistencias.filter(a => a.confirmado).length;
-          const esProgramada = c.estado === 'PROGRAMADA';
-          const esRealizada  = c.estado === 'REALIZADA';
-          return (
-            <div key={c.id} style={{ padding: '16px 20px', borderBottom: i < filtradas.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#1a3a5c' }}>{c.curso}</span>
-                    <Badge variante={badgePorEstado[c.estado]}>{labelEstado[c.estado]}</Badge>
-                    {c.esCapacitacionExtra && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: '#e07b00', background: '#fffbeb', borderRadius: 4, padding: '2px 6px', border: '1px solid #fde68a' }}>⚡ Extra</span>
+        {cargando ? (
+          <div className="placeholder">Cargando capacitaciones...</div>
+        ) : filtradas.length === 0 ? (
+          <div className="placeholder">No hay capacitaciones registradas.</div>
+        ) : (
+          filtradas.map((c, i) => {
+            const confirmados = c.asistencias.filter(a => a.confirmado).length;
+            const esProgramada = c.estado === 'PROGRAMADA';
+            const esRealizada = c.estado === 'REALIZADA';
+
+            return (
+              <div
+                key={c.id}
+                style={{
+                  padding: '16px 20px',
+                  borderBottom: i < filtradas.length - 1 ? '1px solid #f3f4f6' : 'none',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#1a3a5c' }}>
+                        {c.curso}
+                      </span>
+
+                      <Badge variante={badgePorEstado[c.estado]}>
+                        {labelEstado[c.estado]}
+                      </Badge>
+
+                      {c.esCapacitacionExtra && (
+                        <span
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            color: '#e07b00',
+                            background: '#fffbeb',
+                            borderRadius: 4,
+                            padding: '2px 6px',
+                            border: '1px solid #fde68a',
+                          }}
+                        >
+                          ⚡ Extra
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>
+                      {fmtFecha(c.fechaProgramada)} · {c.horaProgramada} · {c.lugar} ·{' '}
+                      {c.cliente} · {c.relator} · {confirmados}/{c.cupos} confirmados
+                    </div>
+
+                    {esProgramada && confirmados === 0 && (
+                      <div
+                        style={{
+                          marginTop: 6,
+                          fontSize: 11,
+                          color: '#92400e',
+                          background: '#fffbeb',
+                          borderRadius: 6,
+                          padding: '4px 10px',
+                          display: 'inline-block',
+                        }}
+                      >
+                        ⚠️ Sin confirmar asistentes
+                      </div>
                     )}
                   </div>
-                  <div style={{ fontSize: 12, color: '#6b7280' }}>
-                    {fmtFecha(c.fechaProgramada)} · {c.horaProgramada} · {c.lugar} · {c.cliente} · {c.relator} · {confirmados}/{c.cupos} confirmados
+
+                  <div className="btn-group" style={{ flexShrink: 0 }}>
+                    <button className="btn btn-sm btn-outline" onClick={() => setModalDetalle(c)}>
+                      Ver detalles
+                    </button>
+
+                    {esProgramada && (
+                      <button className="btn btn-sm btn-primary" onClick={() => setModalAsistentes(c)}>
+                        Confirmar asistentes
+                      </button>
+                    )}
+
+                    {esRealizada && (
+                      <>
+                        <button className="btn btn-sm btn-outline" onClick={() => setModalActa(c)}>
+                          Ver acta
+                        </button>
+
+                        <button className="btn btn-sm btn-success" onClick={() => setModalCertificados(c)}>
+                          Descargar certificados
+                        </button>
+                      </>
+                    )}
+
+                    {(esProgramada || c.estado === 'EN_CURSO') && (
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => {
+                          setError(null);
+                          setModalCancelar(c);
+                        }}
+                      >
+                        Cancelar
+                      </button>
+                    )}
                   </div>
-                  {esProgramada && confirmados === 0 && (
-                    <div style={{ marginTop: 6, fontSize: 11, color: '#92400e', background: '#fffbeb', borderRadius: 6, padding: '4px 10px', display: 'inline-block' }}>
-                      ⚠️ Sin confirmar asistentes
-                    </div>
-                  )}
-                </div>
-                <div className="btn-group" style={{ flexShrink: 0, marginTop: 2 }}>
-                  <button className="btn btn-sm btn-outline" onClick={() => setModalDetalle(c)}>Ver detalles</button>
-                  {esProgramada && <button className="btn btn-sm btn-primary" onClick={() => setModalAsistentes(c)}>Confirmar asistentes</button>}
-                  {esRealizada && <>
-                    <button className="btn btn-sm btn-outline" onClick={() => setModalActa(c)}>Ver acta</button>
-                    <button className="btn btn-sm btn-success" onClick={() => setModalCertificados(c)}>Descargar certificados</button>
-                  </>}
-                  {(esProgramada || c.estado === 'EN_CURSO') && (
-                    <button className="btn btn-sm btn-danger" onClick={() => { setError(null); setModalCancelar(c); }}>Cancelar</button>
-                  )}
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </Panel>
 
-      {/* Modal Nueva */}
-      <Modal abierto={modalNueva} titulo="Nueva Capacitación" onCerrar={() => setModalNueva(false)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalNueva(false)}>Cancelar</button><button className="btn btn-primary" form="form-cap-nueva" type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar'}</button></>}>
+      <Modal
+        abierto={modalNueva}
+        titulo="Nueva Capacitación"
+        onCerrar={() => setModalNueva(false)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalNueva(false)}>
+              Cancelar
+            </button>
+
+            <button
+              className="btn btn-primary"
+              form="form-cap-nueva"
+              type="submit"
+              disabled={guardando}
+            >
+              {guardando ? 'Guardando...' : 'Guardar'}
+            </button>
+          </>
+        }
+      >
         <form id="form-cap-nueva" onSubmit={formNueva.handleSubmit(onCrear)} noValidate>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div>
               <label className="auth-label">Cliente *</label>
-              <select className={`auth-input ${formNueva.formState.errors.idCliente ? 'auth-input--error' : ''}`} {...formNueva.register('idCliente', { required: 'Obligatorio', valueAsNumber: true })}>
-                <option value="">Seleccionar...</option>{clientes.map(c => <option key={c.id} value={c.id}>{c.razonSocial}</option>)}
+              <select
+                className={`auth-input ${formNueva.formState.errors.idCliente ? 'auth-input--error' : ''}`}
+                {...formNueva.register('idCliente', {
+                  required: 'Obligatorio',
+                  valueAsNumber: true,
+                })}
+              >
+                <option value="">Seleccionar...</option>
+                {clientes.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.razonSocial}
+                  </option>
+                ))}
               </select>
-              {formNueva.formState.errors.idCliente && <span className="auth-field-error">{formNueva.formState.errors.idCliente.message}</span>}
+              {formNueva.formState.errors.idCliente && (
+                <span className="auth-field-error">
+                  {formNueva.formState.errors.idCliente.message}
+                </span>
+              )}
             </div>
+
             <div>
               <label className="auth-label">Curso *</label>
-              <input className={`auth-input ${formNueva.formState.errors.curso ? 'auth-input--error' : ''}`} placeholder="Manejo manual de cargas" {...formNueva.register('curso', { required: 'Obligatorio' })} />
-              {formNueva.formState.errors.curso && <span className="auth-field-error">{formNueva.formState.errors.curso.message}</span>}
+              <input
+                className={`auth-input ${formNueva.formState.errors.curso ? 'auth-input--error' : ''}`}
+                placeholder="Manejo manual de cargas"
+                {...formNueva.register('curso', { required: 'Obligatorio' })}
+              />
+              {formNueva.formState.errors.curso && (
+                <span className="auth-field-error">
+                  {formNueva.formState.errors.curso.message}
+                </span>
+              )}
             </div>
+
             <div>
               <label className="auth-label">Relator *</label>
-              <select className={`auth-input ${formNueva.formState.errors.idRelator ? 'auth-input--error' : ''}`} {...formNueva.register('idRelator', { required: 'Obligatorio', valueAsNumber: true })}>
-                <option value="">Seleccionar...</option>{profesionales.map(p => <option key={p.id} value={p.id}>{p.nombreCompleto}</option>)}
+              <select
+                className={`auth-input ${formNueva.formState.errors.idRelator ? 'auth-input--error' : ''}`}
+                {...formNueva.register('idRelator', {
+                  required: 'Obligatorio',
+                  valueAsNumber: true,
+                })}
+              >
+                <option value="">Seleccionar...</option>
+                {profesionales.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombreCompleto}
+                  </option>
+                ))}
               </select>
-              {formNueva.formState.errors.idRelator && <span className="auth-field-error">{formNueva.formState.errors.idRelator.message}</span>}
+              {formNueva.formState.errors.idRelator && (
+                <span className="auth-field-error">
+                  {formNueva.formState.errors.idRelator.message}
+                </span>
+              )}
             </div>
+
             <div>
               <label className="auth-label">Fecha *</label>
-              <input type="date" min={fechaMinima()} className={`auth-input ${formNueva.formState.errors.fechaProgramada ? 'auth-input--error' : ''}`} {...formNueva.register('fechaProgramada', { required: 'Obligatorio' })} />
-              {formNueva.formState.errors.fechaProgramada && <span className="auth-field-error">{formNueva.formState.errors.fechaProgramada.message}</span>}
-              <span style={{ fontSize: 11, color: '#9ca3af', display: 'block', marginTop: 2 }}>Mínimo 15 días de anticipación</span>
+              <input
+                type="date"
+                min={fechaMinima()}
+                className={`auth-input ${formNueva.formState.errors.fechaProgramada ? 'auth-input--error' : ''}`}
+                {...formNueva.register('fechaProgramada', { required: 'Obligatorio' })}
+              />
+              {formNueva.formState.errors.fechaProgramada && (
+                <span className="auth-field-error">
+                  {formNueva.formState.errors.fechaProgramada.message}
+                </span>
+              )}
+              <span style={{ fontSize: 11, color: '#9ca3af', display: 'block', marginTop: 2 }}>
+                Mínimo 15 días de anticipación
+              </span>
             </div>
+
             <div>
               <label className="auth-label">Hora *</label>
-              <input type="time" className={`auth-input ${formNueva.formState.errors.horaProgramada ? 'auth-input--error' : ''}`} {...formNueva.register('horaProgramada', { required: 'Obligatorio' })} />
-              {formNueva.formState.errors.horaProgramada && <span className="auth-field-error">{formNueva.formState.errors.horaProgramada.message}</span>}
+              <input
+                type="time"
+                className={`auth-input ${formNueva.formState.errors.horaProgramada ? 'auth-input--error' : ''}`}
+                {...formNueva.register('horaProgramada', { required: 'Obligatorio' })}
+              />
+              {formNueva.formState.errors.horaProgramada && (
+                <span className="auth-field-error">
+                  {formNueva.formState.errors.horaProgramada.message}
+                </span>
+              )}
             </div>
+
             <div>
               <label className="auth-label">Lugar *</label>
               <input
@@ -264,134 +534,343 @@ function VistaAdmin() {
                 placeholder="Sala 2, Online, Bodega central..."
                 {...formNueva.register('lugar', {
                   required: 'Obligatorio',
-                  maxLength: { value: 150, message: 'El lugar no puede superar 150 caracteres' },
+                  maxLength: {
+                    value: 150,
+                    message: 'El lugar no puede superar 150 caracteres',
+                  },
                 })}
               />
-              {formNueva.formState.errors.lugar && <span className="auth-field-error">{formNueva.formState.errors.lugar.message}</span>}
+              {formNueva.formState.errors.lugar && (
+                <span className="auth-field-error">
+                  {formNueva.formState.errors.lugar.message}
+                </span>
+              )}
             </div>
+
             <div>
               <label className="auth-label">Cupos</label>
-              <input type="number" min={1} className="auth-input" placeholder="20" {...formNueva.register('cupos', { valueAsNumber: true })} />
+              <input
+                type="number"
+                min={1}
+                className="auth-input"
+                placeholder="20"
+                {...formNueva.register('cupos', { valueAsNumber: true })}
+              />
             </div>
+
             <div style={{ gridColumn: 'span 2' }}>
               <label className="auth-label">Objetivo</label>
-              <textarea className="auth-input" rows={3} placeholder="Capacitar sobre manipulación segura de cargas." {...formNueva.register('objetivo')} />
+              <textarea
+                className="auth-input"
+                rows={3}
+                placeholder="Capacitar sobre manipulación segura de cargas."
+                {...formNueva.register('objetivo')}
+              />
             </div>
+
             <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input type="checkbox" id="esCapacitacionExtra" {...formNueva.register('esCapacitacionExtra')} />
-              <label htmlFor="esCapacitacionExtra" style={{ fontSize: 13 }}>Capacitación adicional (genera costo extra)</label>
+              <input
+                type="checkbox"
+                id="esCapacitacionExtra"
+                {...formNueva.register('esCapacitacionExtra')}
+              />
+              <label htmlFor="esCapacitacionExtra" style={{ fontSize: 13 }}>
+                Capacitación adicional genera costo extra
+              </label>
             </div>
           </div>
-          {error && <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>{error}</div>}
+
+          {error && (
+            <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>
+              {error}
+            </div>
+          )}
         </form>
       </Modal>
 
-      {/* Modal Detalle */}
-      <Modal abierto={!!modalDetalle} titulo="Ver Detalles Curso" onCerrar={() => setModalDetalle(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalDetalle(null)}>Cerrar</button>{modalDetalle?.estado === 'PROGRAMADA' && <button className="btn btn-primary" onClick={() => { setModalAsistentes(modalDetalle); setModalDetalle(null); }}>Confirmar asistentes</button>}</>}>
+      <Modal
+        abierto={!!modalDetalle}
+        titulo="Ver Detalles Curso"
+        onCerrar={() => setModalDetalle(null)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalDetalle(null)}>
+              Cerrar
+            </button>
+
+            {modalDetalle?.estado === 'PROGRAMADA' && (
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setModalAsistentes(modalDetalle);
+                  setModalDetalle(null);
+                }}
+              >
+                Confirmar asistentes
+              </button>
+            )}
+          </>
+        }
+      >
         {modalDetalle && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px 24px' }}>
-              <p><strong>Curso:</strong> {modalDetalle.curso}</p>
-              <p><strong>Estado:</strong> <Badge variante={badgePorEstado[modalDetalle.estado]}>{labelEstado[modalDetalle.estado]}</Badge></p>
-              <p><strong>Cliente:</strong> {modalDetalle.cliente}</p>
-              <p><strong>Relator:</strong> {modalDetalle.relator}</p>
-              <p><strong>Fecha:</strong> {fmtFecha(modalDetalle.fechaProgramada)}</p>
-              <p><strong>Hora:</strong> {modalDetalle.horaProgramada}</p>
-              <p><strong>Lugar:</strong> {modalDetalle.lugar}</p>
-              <p><strong>Confirmados:</strong> {modalDetalle.asistencias.filter(a => a.confirmado).length}/{modalDetalle.cupos}</p>
-              <p><strong>Cupos disp.:</strong> {modalDetalle.cuposDisponibles}</p>
-            </div>
+            <p><strong>Curso:</strong> {modalDetalle.curso}</p>
+            <p><strong>Cliente:</strong> {modalDetalle.cliente}</p>
+            <p><strong>Relator:</strong> {modalDetalle.relator}</p>
+            <p><strong>Fecha:</strong> {fmtFecha(modalDetalle.fechaProgramada)}</p>
+            <p><strong>Hora:</strong> {modalDetalle.horaProgramada}</p>
+            <p><strong>Lugar:</strong> {modalDetalle.lugar}</p>
+            <p>
+              <strong>Confirmados:</strong>{' '}
+              {modalDetalle.asistencias.filter(a => a.confirmado).length}/{modalDetalle.cupos}
+            </p>
+            <p>
+              <strong>Estado:</strong>{' '}
+              <Badge variante={badgePorEstado[modalDetalle.estado]}>
+                {labelEstado[modalDetalle.estado]}
+              </Badge>
+            </p>
+
             {modalDetalle.objetivo && (
-              <div style={{ marginTop: 10, background: '#f8fafc', borderLeft: '3px solid #cbd5e1', padding: '8px 12px', borderRadius: 6, fontSize: 12, color: '#4b5563' }}>
+              <div
+                style={{
+                  marginTop: 10,
+                  background: '#f8fafc',
+                  borderLeft: '3px solid #cbd5e1',
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              >
                 <strong>Objetivo:</strong> {modalDetalle.objetivo}
               </div>
             )}
-            {modalDetalle.esCapacitacionExtra && <div className="alert-item alert-item--warn" style={{ marginTop: 10 }}>⚡ Capacitación adicional — genera costo extra al plan.</div>}
           </div>
         )}
       </Modal>
 
-      {/* Modal Confirmar Asistentes */}
-      <Modal abierto={!!modalAsistentes} titulo="Confirmar Asistentes" ancho="lg" onCerrar={() => setModalAsistentes(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalAsistentes(null)}>Cancelar</button><button className="btn btn-primary" onClick={() => setModalAsistentes(null)}>Guardar</button></>}>
+      <Modal
+        abierto={!!modalAsistentes}
+        titulo="Confirmar Asistentes"
+        ancho="lg"
+        onCerrar={() => setModalAsistentes(null)}
+        footer={
+          <>
+            <button
+              className="btn btn-outline"
+              onClick={() => setModalAsistentes(null)}
+              disabled={guardando}
+            >
+              Cancelar
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={onGuardarConfirmacionAsistentes}
+              disabled={guardando || !modalAsistentes || modalAsistentes.asistencias.length === 0}
+            >
+              {guardando ? 'Guardando...' : 'Guardar'}
+            </button>
+          </>
+        }
+      >
         {modalAsistentes && (
           <>
-            <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}><strong>{modalAsistentes.curso}</strong> · {fmtFecha(modalAsistentes.fechaProgramada)} · {modalAsistentes.horaProgramada} · {modalAsistentes.lugar}</div>
+            <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>
+              <strong>{modalAsistentes.curso}</strong> · {fmtFecha(modalAsistentes.fechaProgramada)} ·{' '}
+              {modalAsistentes.horaProgramada} · {modalAsistentes.lugar}
+            </div>
+
             {modalAsistentes.asistencias.length === 0 ? (
-              <div className="alert-item alert-item--warn">⚠️ No hay asistentes inscritos aún.</div>
+              <div className="alert-item alert-item--warn">
+                ⚠️ No hay asistentes inscritos aún.
+              </div>
             ) : (
-              <>
-                <table className="app-table">
-                  <thead><tr><th>Trabajador</th><th>RUT</th><th>Cargo</th><th>Estado</th><th>Acción</th></tr></thead>
-                  <tbody>
-                    {modalAsistentes.asistencias.map((a: AsistenciaResponse) => (
-                      <tr key={a.idAsistencia}>
-                        <td style={{ fontWeight: 600 }}>{a.nombreAsistente}</td>
-                        <td>{a.rutAsistente}</td>
-                        <td>{a.cargoAsistente ?? '—'}</td>
-                        <td><Badge variante={a.confirmado ? 'green' : 'gray'}>{a.confirmado ? 'Confirmado' : 'Pendiente'}</Badge></td>
-                        <td>{!a.confirmado && <button className="btn btn-sm btn-primary" disabled={confirmandoId === a.idAsistente} onClick={() => onConfirmar(modalAsistentes.id, a.idAsistente)}>{confirmandoId === a.idAsistente ? 'Confirmando...' : 'Confirmar'}</button>}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {modalAsistentes.asistencias.every(a => !a.confirmado) && (
-                  <div className="alert-item alert-item--warn" style={{ marginTop: 12 }}>⚠️ No se puede cerrar la capacitación sin asistencias confirmadas.</div>
-                )}
-              </>
+              <table className="app-table">
+                <thead>
+                  <tr>
+                    <th>Trabajador</th>
+                    <th>Estado</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {modalAsistentes.asistencias.map((a: AsistenciaResponse) => (
+                    <tr key={a.idAsistencia}>
+                      <td style={{ fontWeight: 600 }}>
+                        {a.nombreAsistente}
+                      </td>
+
+                      <td>
+                        <Badge variante={a.confirmado ? 'green' : 'gray'}>
+                          {a.confirmado ? 'Confirmado' : 'Pendiente'}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             )}
           </>
         )}
       </Modal>
 
-      {/* Modal Acta */}
-      <Modal abierto={!!modalActa} titulo="Ver Acta" ancho="sm" onCerrar={() => setModalActa(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-primary" onClick={() => modalActa && descargarActaPdf(modalActa.id)}>Descargar acta</button></>}>
+      <Modal
+        abierto={!!modalActa}
+        titulo="Ver Acta"
+        ancho="sm"
+        onCerrar={() => setModalActa(null)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalActa(null)}>
+              Cerrar
+            </button>
+
+            <button
+              className="btn btn-primary"
+              onClick={() => modalActa && descargarActaPdf(modalActa.id)}
+            >
+              Descargar acta
+            </button>
+          </>
+        }
+      >
         {modalActa && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
-            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>Acta — {modalActa.curso}</p>
+            <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 10 }}>
+              Acta — {modalActa.curso}
+            </p>
             <p><strong>Fecha:</strong> {fmtFecha(modalActa.fechaRealizacion ?? modalActa.fechaProgramada)}</p>
             <p><strong>Cliente:</strong> {modalActa.cliente}</p>
             <p><strong>Relator:</strong> {modalActa.relator}</p>
             <p><strong>Lugar:</strong> {modalActa.lugar}</p>
-            <p><strong>Asistencia:</strong> {modalActa.asistencias.filter(a => a.asistio).length}/{modalActa.asistencias.length} presentes</p>
-            <div style={{ marginTop: 10, background: '#f0fdf4', borderLeft: '4px solid #27ae60', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>Resultado: capacitación realizada correctamente.</div>
+            <p>
+              <strong>Asistencia:</strong>{' '}
+              {modalActa.asistencias.filter(a => a.asistio).length}/{modalActa.asistencias.length} presentes
+            </p>
+            <div
+              style={{
+                marginTop: 10,
+                background: '#f0fdf4',
+                borderLeft: '4px solid #27ae60',
+                padding: '8px 12px',
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+            >
+              Resultado: capacitación realizada correctamente.
+            </div>
           </div>
         )}
       </Modal>
 
-      {/* Modal Certificados */}
-      <Modal abierto={!!modalCertificados} titulo="Descargar Certificados" ancho="sm" onCerrar={() => setModalCertificados(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalCertificados(null)}>Cerrar</button>{modalCertificados?.asistencias.some(a => a.confirmado) && <button className="btn btn-success" onClick={() => alert('Generando certificados...')}>Generar</button>}</>}>
-        {modalCertificados && (
-          modalCertificados.asistencias.filter(a => a.confirmado).length === 0 ? (
-            <div className="alert-item alert-item--warn">⚠️ Sin asistentes confirmados. La descarga está bloqueada.</div>
+      <Modal
+        abierto={!!modalCertificados}
+        titulo="Descargar Certificados"
+        ancho="sm"
+        onCerrar={() => setModalCertificados(null)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalCertificados(null)}>
+              Cerrar
+            </button>
+
+            {modalCertificados?.asistencias.some(a => a.asistio) && (
+              <button
+                className="btn btn-success"
+                onClick={() => modalCertificados && descargarCertificadosPdf(modalCertificados.id)}
+              >
+                Generar
+              </button>
+            )}
+          </>
+        }
+      >
+        {modalCertificados &&
+          (modalCertificados.asistencias.filter(a => a.asistio).length === 0 ? (
+            <div className="alert-item alert-item--warn">
+              ⚠️ Sin asistencia registrada. La descarga está bloqueada.
+            </div>
           ) : (
             <>
-              <div className="alert-item alert-item--ok" style={{ marginBottom: 12 }}>✅ {modalCertificados.asistencias.filter(a => a.confirmado).length} asistentes listos para certificar.</div>
+              <div className="alert-item alert-item--ok" style={{ marginBottom: 12 }}>
+                ✅ {modalCertificados.asistencias.filter(a => a.asistio).length} asistentes listos para certificar.
+              </div>
+
               <table className="app-table">
-                <thead><tr><th>Asistente</th><th>RUT</th><th></th></tr></thead>
-                <tbody>{modalCertificados.asistencias.filter(a => a.confirmado).map(a => (
-                  <tr key={a.idAsistencia}>
-                    <td style={{ fontWeight: 600 }}>{a.nombreAsistente}</td>
-                    <td>{a.rutAsistente}</td>
-                    <td><button className="btn btn-sm btn-outline" onClick={() => alert(`Descargando certificado de ${a.nombreAsistente}`)}>🏅 Descargar</button></td>
+                <thead>
+                  <tr>
+                    <th>Asistente</th>
+                    <th></th>
                   </tr>
-                ))}</tbody>
+                </thead>
+
+                <tbody>
+                  {modalCertificados.asistencias
+                    .filter(a => a.asistio)
+                    .map(a => (
+                      <tr key={a.idAsistencia}>
+                        <td style={{ fontWeight: 600 }}>{a.nombreAsistente}</td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() =>
+                              modalCertificados &&
+                              descargarCertificadoIndividualPdf(
+                                modalCertificados.id,
+                                a.idAsistente,
+                                a.nombreAsistente
+                              )
+                            }
+                          >
+                             Descargar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
               </table>
             </>
-          )
-        )}
+          ))}
       </Modal>
 
-      {/* Modal Cancelar */}
-      <Modal abierto={!!modalCancelar} titulo="Cancelar capacitación" ancho="sm" onCerrar={() => setModalCancelar(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalCancelar(null)}>Cancelar</button><button className="btn btn-danger" onClick={onCancelar} disabled={guardando}>{guardando ? 'Cancelando...' : 'Confirmar'}</button></>}>
-        <div style={{ background: '#fef2f2', borderLeft: '4px solid #c0392b', padding: 12, borderRadius: 8, fontSize: 13, lineHeight: 1.5 }}>
-          ¿Cancelar <strong>"{modalCancelar?.curso}"</strong> del {fmtFecha(modalCancelar?.fechaProgramada ?? null)} a las {modalCancelar?.horaProgramada}?
+      <Modal
+        abierto={!!modalCancelar}
+        titulo="Cancelar capacitación"
+        ancho="sm"
+        onCerrar={() => setModalCancelar(null)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalCancelar(null)}>
+              Cancelar
+            </button>
+
+            <button className="btn btn-danger" onClick={onCancelar} disabled={guardando}>
+              {guardando ? 'Cancelando...' : 'Confirmar'}
+            </button>
+          </>
+        }
+      >
+        <div
+          style={{
+            background: '#fef2f2',
+            borderLeft: '4px solid #c0392b',
+            padding: 12,
+            borderRadius: 8,
+            fontSize: 13,
+            lineHeight: 1.5,
+          }}
+        >
+          ¿Cancelar <strong>"{modalCancelar?.curso}"</strong> del{' '}
+          {fmtFecha(modalCancelar?.fechaProgramada ?? null)} a las{' '}
+          {modalCancelar?.horaProgramada}?
         </div>
-        {error && <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>{error}</div>}
+
+        {error && (
+          <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>
+            {error}
+          </div>
+        )}
       </Modal>
     </>
   );
@@ -403,63 +882,133 @@ function VistaAdmin() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 function VistaProfesional() {
+  const { email } = useAuth();
+
   const [capacitaciones, setCapacitaciones] = useState<CapacitacionResponse[]>([]);
-  const [cargando,       setCargando]       = useState(true);
-  const [modalDetalle,   setModalDetalle]   = useState<CapacitacionResponse | null>(null);
-  const [modalAsistencia,setModalAsistencia]= useState<CapacitacionResponse | null>(null);
-  const [modalActa,      setModalActa]      = useState<CapacitacionResponse | null>(null);
-  const [iniciandoId,    setIniciandoId]    = useState<number | null>(null);
-  const [marcandoId,     setMarcandoId]     = useState<number | null>(null);
-  const [finalizando,    setFinalizando]    = useState(false);
-  const [errorAsistencia,setErrorAsistencia]= useState<string | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [modalDetalle, setModalDetalle] = useState<CapacitacionResponse | null>(null);
+  const [modalAsistencia, setModalAsistencia] = useState<CapacitacionResponse | null>(null);
+  const [modalActa, setModalActa] = useState<CapacitacionResponse | null>(null);
+
+  const [iniciandoId, setIniciandoId] = useState<number | null>(null);
+  const [marcandoId, setMarcandoId] = useState<number | null>(null);
+  const [finalizando, setFinalizando] = useState(false);
+  const [errorAsistencia, setErrorAsistencia] = useState<string | null>(null);
+
+  const [observacionActa, setObservacionActa] = useState('');
+  const [firmaDigital, setFirmaDigital] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
-    try { const d = await listarCapacitaciones(0, 200); setCapacitaciones(d.content); }
-    finally { setCargando(false); }
+    try {
+      const d = await listarCapacitaciones(0, 200);
+      setCapacitaciones(d.content);
+    } finally {
+      setCargando(false);
+    }
   }, []);
 
-  useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => {
+    cargar();
+  }, [cargar]);
 
-  const proximas  = capacitaciones.filter(c => c.estado === 'PROGRAMADA' || c.estado === 'EN_CURSO');
+  const proximas = capacitaciones.filter(
+    c => c.estado === 'PROGRAMADA' || c.estado === 'EN_CURSO'
+  );
+
   const historial = capacitaciones.filter(c => c.estado === 'REALIZADA');
   const porDictar = proximas.length;
-  const dictadas  = historial.length;
-  const confirmados = capacitaciones.reduce((acc, c) => acc + c.asistencias.filter(a => a.confirmado).length, 0);
-  const totalAsistentes = capacitaciones.reduce((acc, c) => acc + c.asistencias.length, 0);
-  const extras    = capacitaciones.filter(c => c.esCapacitacionExtra).length;
+  const dictadas = historial.length;
+  const confirmados = capacitaciones.reduce(
+    (acc, c) => acc + c.asistencias.filter(a => a.confirmado).length,
+    0
+  );
+  const totalAsistentes = capacitaciones.reduce(
+    (acc, c) => acc + c.asistencias.length,
+    0
+  );
+  const extras = capacitaciones.filter(c => c.esCapacitacionExtra).length;
+
+  function abrirModalAsistencia(c: CapacitacionResponse) {
+    setModalAsistencia(c);
+    setObservacionActa(c.observacionActa ?? '');
+    setFirmaDigital(false);
+    setErrorAsistencia(null);
+  }
 
   async function onIniciar(id: number) {
     setIniciandoId(id);
+
     try {
       await iniciarCapacitacion(id);
       await cargar();
-    } catch (e) { alert(mensajeError(e, 'No se pudo iniciar la capacitación.')); }
-    finally { setIniciandoId(null); }
+    } catch (e) {
+      alert(mensajeError(e, 'No se pudo iniciar la capacitación.'));
+    } finally {
+      setIniciandoId(null);
+    }
   }
 
-  async function onMarcarAsistio(idCapacitacion: number, idAsistente: number, asistio: boolean) {
+  async function onMarcarAsistio(
+    idCapacitacion: number,
+    idAsistente: number,
+    asistio: boolean
+  ) {
     setMarcandoId(idAsistente);
     setErrorAsistencia(null);
+
     try {
       await registrarAsistenciaEfectiva(idCapacitacion, idAsistente, asistio);
-      const fresca = (await listarCapacitaciones(0, 200)).content.find(c => c.id === idCapacitacion);
-      if (fresca) setModalAsistencia(fresca);
+
+      const fresca = (await listarCapacitaciones(0, 200)).content.find(
+        c => c.id === idCapacitacion
+      );
+
+      if (fresca) {
+        setModalAsistencia(fresca);
+      }
+
       await cargar();
-    } catch (e) { setErrorAsistencia(mensajeError(e, 'No se pudo registrar la asistencia.')); }
-    finally { setMarcandoId(null); }
+    } catch (e) {
+      setErrorAsistencia(mensajeError(e, 'No se pudo registrar la asistencia.'));
+    } finally {
+      setMarcandoId(null);
+    }
   }
 
   async function onFinalizar() {
     if (!modalAsistencia) return;
+
+    const presentes = modalAsistencia.asistencias.filter(a => a.asistio).length;
+
+    if (presentes === 0) {
+      setErrorAsistencia('Debes marcar al menos un asistente como presente antes de cerrar la asistencia.');
+      return;
+    }
+
+    if (!firmaDigital) {
+      setErrorAsistencia('Debes firmar digitalmente antes de cerrar la asistencia.');
+      return;
+    }
+
     setFinalizando(true);
     setErrorAsistencia(null);
+
     try {
-      await finalizarCapacitacion(modalAsistencia.id);
+      await finalizarCapacitacion(modalAsistencia.id, {
+        observacionActa: observacionActa.trim() || undefined,
+      });
+
       setModalAsistencia(null);
+      setObservacionActa('');
+      setFirmaDigital(false);
+
       await cargar();
-    } catch (e) { setErrorAsistencia(mensajeError(e, 'No se pudo finalizar la capacitación.')); }
-    finally { setFinalizando(false); }
+    } catch (e) {
+      setErrorAsistencia(mensajeError(e, 'No se pudo finalizar la capacitación.'));
+    } finally {
+      setFinalizando(false);
+    }
   }
 
   return (
@@ -467,19 +1016,19 @@ function VistaProfesional() {
       <div className="page-title">Capacitaciones</div>
       <div className="page-subtitle">Tus capacitaciones asignadas como relator</div>
 
-      {/* KPIs — wireframe profesional p.3 */}
       <div className="kpi-row">
-        <KpiCard label="Por dictar"             value={porDictar}                               variante="warn" />
-        <KpiCard label="Dictadas (mes)"         value={dictadas}                                variante="ok" />
+        <KpiCard label="Por dictar" value={porDictar} variante="warn" />
+        <KpiCard label="Dictadas (mes)" value={dictadas} variante="ok" />
         <KpiCard label="Asistentes confirmados" value={`${confirmados}/${totalAsistentes}`} />
-        <KpiCard label="Adicionales"            value={extras} />
+        <KpiCard label="Adicionales" value={extras} />
       </div>
 
-      {/* Capacitaciones programadas */}
       <Panel titulo="📅 Capacitaciones programadas">
-        {cargando ? <div className="placeholder">Cargando...</div>
-        : proximas.length === 0 ? <div className="placeholder">No tienes capacitaciones programadas próximamente.</div>
-        : (
+        {cargando ? (
+          <div className="placeholder">Cargando...</div>
+        ) : proximas.length === 0 ? (
+          <div className="placeholder">No tienes capacitaciones programadas próximamente.</div>
+        ) : (
           <table className="app-table">
             <thead>
               <tr>
@@ -492,31 +1041,48 @@ function VistaProfesional() {
                 <th>Acción</th>
               </tr>
             </thead>
+
             <tbody>
               {proximas.map(c => {
-                const confirmados = c.asistencias.filter(a => a.confirmado).length;
+                const confirmadosCap = c.asistencias.filter(a => a.confirmado).length;
+
                 return (
                   <tr key={c.id}>
                     <td>
                       <div style={{ fontWeight: 600 }}>{fmtFecha(c.fechaProgramada)}</div>
                       <div style={{ fontSize: 11, color: '#9ca3af' }}>{c.horaProgramada}</div>
                     </td>
+
                     <td>{c.cliente}</td>
                     <td>{c.lugar}</td>
-                    <td style={{ fontWeight: 600, color: '#1a3a5c' }}>{c.curso}</td>
+
+                    <td style={{ fontWeight: 600, color: '#1a3a5c' }}>
+                      {c.curso}
+                    </td>
+
                     <td>
                       <Badge variante={c.esCapacitacionExtra ? 'yellow' : 'blue'}>
                         {c.esCapacitacionExtra ? 'Extra' : 'Plan'}
                       </Badge>
                     </td>
+
                     <td>
-                      <span style={{ fontSize: 12, color: confirmados === 0 ? '#c0392b' : '#4b5563' }}>
-                        {confirmados}/{c.cupos} confirmados
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: confirmadosCap === 0 ? '#c0392b' : '#4b5563',
+                        }}
+                      >
+                        {confirmadosCap}/{c.cupos} confirmados
                       </span>
                     </td>
+
                     <td>
                       <div className="btn-group">
-                        <button className="btn btn-sm btn-outline" onClick={() => setModalDetalle(c)}>Detalle</button>
+                        <button className="btn btn-sm btn-outline" onClick={() => setModalDetalle(c)}>
+                          Detalle
+                        </button>
+
                         {c.estado === 'PROGRAMADA' && (
                           <button
                             className="btn btn-sm btn-outline"
@@ -526,7 +1092,10 @@ function VistaProfesional() {
                             {iniciandoId === c.id ? 'Iniciando...' : 'Iniciar'}
                           </button>
                         )}
-                        <button className="btn btn-sm btn-primary" onClick={() => setModalAsistencia(c)}>Registrar asistencia</button>
+
+                        <button className="btn btn-sm btn-primary" onClick={() => abrirModalAsistencia(c)}>
+                          Registrar asistencia
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -537,15 +1106,23 @@ function VistaProfesional() {
         )}
       </Panel>
 
-      {/* Historial */}
       <Panel titulo="📚 Historial de capacitaciones">
-        {cargando ? <div className="placeholder">Cargando...</div>
-        : historial.length === 0 ? <div className="placeholder">Sin capacitaciones realizadas aún.</div>
-        : (
+        {cargando ? (
+          <div className="placeholder">Cargando...</div>
+        ) : historial.length === 0 ? (
+          <div className="placeholder">Sin capacitaciones realizadas aún.</div>
+        ) : (
           <table className="app-table">
             <thead>
-              <tr><th>Fecha</th><th>Cliente</th><th>Tema</th><th>Asistentes</th><th>Acción</th></tr>
+              <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Tema</th>
+                <th>Asistentes</th>
+                <th>Acción</th>
+              </tr>
             </thead>
+
             <tbody>
               {historial.map(c => (
                 <tr key={c.id}>
@@ -553,7 +1130,11 @@ function VistaProfesional() {
                   <td>{c.cliente}</td>
                   <td style={{ fontWeight: 600 }}>{c.curso}</td>
                   <td>{c.asistencias.filter(a => a.asistio).length}/{c.asistencias.length}</td>
-                  <td><button className="btn btn-sm btn-outline" onClick={() => setModalActa(c)}>Ver acta</button></td>
+                  <td>
+                    <button className="btn btn-sm btn-outline" onClick={() => setModalActa(c)}>
+                      Ver acta
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -561,18 +1142,39 @@ function VistaProfesional() {
         )}
       </Panel>
 
-      {/* Modal Detalle capacitación — wireframe profesional p.3 */}
-      <Modal abierto={!!modalDetalle} titulo="Detalle de capacitación" ancho="sm" onCerrar={() => setModalDetalle(null)}
-        footer={<button className="btn btn-outline" onClick={() => setModalDetalle(null)}>Cerrar</button>}>
+      <Modal
+        abierto={!!modalDetalle}
+        titulo="Detalle de capacitación"
+        ancho="sm"
+        onCerrar={() => setModalDetalle(null)}
+        footer={
+          <button className="btn btn-outline" onClick={() => setModalDetalle(null)}>
+            Cerrar
+          </button>
+        }
+      >
         {modalDetalle && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
             <p><strong>Cliente:</strong> {modalDetalle.cliente}</p>
             <p><strong>Tema:</strong> {modalDetalle.curso}</p>
             <p><strong>Fecha:</strong> {fmtFecha(modalDetalle.fechaProgramada)} · {modalDetalle.horaProgramada}</p>
             <p><strong>Lugar:</strong> {modalDetalle.lugar}</p>
-            <p><strong>Asistentes confirmados:</strong> {modalDetalle.asistencias.filter(a => a.confirmado).length}/{modalDetalle.cupos} — {modalDetalle.asistencias.filter(a => a.confirmado).length === 0 ? 'pendiente confirmación del cliente.' : 'confirmados.'}</p>
+            <p>
+              <strong>Asistentes confirmados:</strong>{' '}
+              {modalDetalle.asistencias.filter(a => a.confirmado).length}/{modalDetalle.cupos}
+            </p>
+
             {modalDetalle.objetivo && (
-              <div style={{ marginTop: 10, background: '#f8fafc', borderLeft: '3px solid #cbd5e1', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>
+              <div
+                style={{
+                  marginTop: 10,
+                  background: '#f8fafc',
+                  borderLeft: '3px solid #cbd5e1',
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              >
                 <strong>Objetivo:</strong> {modalDetalle.objetivo}
               </div>
             )}
@@ -580,24 +1182,51 @@ function VistaProfesional() {
         )}
       </Modal>
 
-      {/* Modal Registrar asistencia — wireframe profesional p.3 */}
-      <Modal abierto={!!modalAsistencia} titulo="Registrar asistencia" ancho="lg" onCerrar={() => setModalAsistencia(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalAsistencia(null)}>Cancelar</button><button className="btn btn-success" disabled={finalizando} onClick={onFinalizar}>{finalizando ? 'Cerrando...' : 'Cerrar asistencia'}</button></>}>
+      <Modal
+        abierto={!!modalAsistencia}
+        titulo="Registrar asistencia"
+        ancho="lg"
+        onCerrar={() => setModalAsistencia(null)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalAsistencia(null)}>
+              Cancelar
+            </button>
+
+            <button className="btn btn-success" disabled={finalizando} onClick={onFinalizar}>
+              {finalizando ? 'Cerrando...' : 'Cerrar asistencia'}
+            </button>
+          </>
+        }
+      >
         {modalAsistencia && (
           <>
             <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>
-              <strong>{modalAsistencia.curso}</strong> · {modalAsistencia.cliente} · {fmtFecha(modalAsistencia.fechaProgramada)} · {modalAsistencia.lugar}
+              <strong>{modalAsistencia.curso}</strong> · {modalAsistencia.cliente} ·{' '}
+              {fmtFecha(modalAsistencia.fechaProgramada)} · {modalAsistencia.lugar}
             </div>
+
             {modalAsistencia.estado === 'PROGRAMADA' && (
               <div className="alert-item alert-item--warn" style={{ marginBottom: 12 }}>
-                ⚠️ Esta capacitación aún no se ha iniciado. Puedes registrar la asistencia, pero te recomendamos iniciarla primero.
+                ⚠️ Esta capacitación aún no se ha iniciado. Puedes registrar la asistencia,
+                pero te recomendamos iniciarla primero.
               </div>
             )}
+
             {modalAsistencia.asistencias.length === 0 ? (
-              <div className="alert-item alert-item--warn">⚠️ No hay asistentes inscritos en esta capacitación.</div>
+              <div className="alert-item alert-item--warn">
+                ⚠️ No hay asistentes inscritos en esta capacitación.
+              </div>
             ) : (
               <table className="app-table">
-                <thead><tr><th>Trabajador</th><th>Cargo</th><th>Presente</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Trabajador</th>
+                    <th>Cargo</th>
+                    <th>Presente</th>
+                  </tr>
+                </thead>
+
                 <tbody>
                   {modalAsistencia.asistencias.map((a: AsistenciaResponse) => (
                     <tr key={a.idAsistencia}>
@@ -609,9 +1238,13 @@ function VistaProfesional() {
                           disabled={marcandoId === a.idAsistente}
                           onClick={() => onMarcarAsistio(modalAsistencia.id, a.idAsistente, !a.asistio)}
                         >
-                          {marcandoId === a.idAsistente
-                            ? 'Guardando...'
-                            : <Badge variante={a.asistio ? 'green' : 'gray'}>{a.asistio ? 'Presente' : 'Ausente'}</Badge>}
+                          {marcandoId === a.idAsistente ? (
+                            'Guardando...'
+                          ) : (
+                            <Badge variante={a.asistio ? 'green' : 'gray'}>
+                              {a.asistio ? 'Presente' : 'Ausente'}
+                            </Badge>
+                          )}
                         </button>
                       </td>
                     </tr>
@@ -619,30 +1252,102 @@ function VistaProfesional() {
                 </tbody>
               </table>
             )}
-            {errorAsistencia && <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>{errorAsistencia}</div>}
-            {/* Firma capacitador */}
-            <div style={{ marginTop: 16, padding: '12px 16px', background: '#f8fafc', borderRadius: 8, border: '1px dashed #cbd5e1', textAlign: 'center', cursor: 'pointer', fontSize: 12, color: '#6b7280' }}
-              onClick={() => alert('Firma digital registrada.')}>
-              ✍️ Haz clic para firmar digitalmente como capacitador
+
+            {errorAsistencia && (
+              <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>
+                {errorAsistencia}
+              </div>
+            )}
+
+            <div style={{ marginTop: 16 }}>
+              <label className="auth-label">Firma del capacitador</label>
+
+              <div
+                className={`signature ${firmaDigital ? 'signed' : ''}`}
+                onClick={() => setFirmaDigital(true)}
+                style={{
+                  padding: '12px 16px',
+                  background: firmaDigital ? '#f0fdf4' : '#f8fafc',
+                  borderRadius: 8,
+                  border: firmaDigital ? '1px solid #86efac' : '1px dashed #cbd5e1',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  color: firmaDigital ? '#166534' : '#6b7280',
+                }}
+              >
+                {firmaDigital
+                  ? `✅ Firmado digitalmente por ${email ?? 'capacitador'}`
+                  : 'Haz clic para firmar digitalmente'}
+              </div>
             </div>
+
             <div style={{ marginTop: 12 }}>
-              <label className="auth-label">Observaciones</label>
-              <textarea className="auth-input" rows={3} placeholder="Capacitación dictada según contenido planificado." />
+              <label className="auth-label">Observaciones para el acta</label>
+              <textarea
+                className="auth-input"
+                rows={3}
+                placeholder="Capacitación dictada según contenido planificado."
+                value={observacionActa}
+                onChange={e => setObservacionActa(e.target.value)}
+              />
             </div>
           </>
         )}
       </Modal>
 
-      {/* Modal Acta */}
-      <Modal abierto={!!modalActa} titulo="Acta de capacitación" ancho="sm" onCerrar={() => setModalActa(null)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalActa(null)}>Cerrar</button><button className="btn btn-primary" onClick={() => modalActa && descargarActaPdf(modalActa.id)}>Descargar acta</button></>}>
+      <Modal
+        abierto={!!modalActa}
+        titulo="Acta de capacitación"
+        ancho="sm"
+        onCerrar={() => setModalActa(null)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalActa(null)}>
+              Cerrar
+            </button>
+
+            <button className="btn btn-primary" onClick={() => modalActa && descargarActaPdf(modalActa.id)}>
+              Descargar acta
+            </button>
+          </>
+        }
+      >
         {modalActa && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
             <p><strong>Cliente:</strong> {modalActa.cliente}</p>
             <p><strong>Fecha:</strong> {fmtFecha(modalActa.fechaRealizacion ?? modalActa.fechaProgramada)}</p>
             <p><strong>Lugar:</strong> {modalActa.lugar}</p>
-            <p><strong>Asistencia:</strong> {modalActa.asistencias.filter(a => a.asistio).length}/{modalActa.asistencias.length}</p>
-            <div style={{ marginTop: 10, background: '#f0fdf4', borderLeft: '4px solid #27ae60', padding: '8px 12px', borderRadius: 6, fontSize: 12 }}>
+            <p>
+              <strong>Asistencia:</strong>{' '}
+              {modalActa.asistencias.filter(a => a.asistio).length}/{modalActa.asistencias.length}
+            </p>
+
+            {modalActa.observacionActa && (
+              <div
+                style={{
+                  marginTop: 10,
+                  background: '#f8fafc',
+                  borderLeft: '3px solid #cbd5e1',
+                  padding: '8px 12px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                }}
+              >
+                <strong>Observación:</strong> {modalActa.observacionActa}
+              </div>
+            )}
+
+            <div
+              style={{
+                marginTop: 10,
+                background: '#f0fdf4',
+                borderLeft: '4px solid #27ae60',
+                padding: '8px 12px',
+                borderRadius: 6,
+                fontSize: 12,
+              }}
+            >
               Resultado: Capacitación dictada correctamente.
             </div>
           </div>
@@ -944,7 +1649,7 @@ function VistaCliente() {
                           <td>
                             <div className="btn-group">
                               <button className="btn btn-sm btn-outline" onClick={() => setModalActa(c)}>Ver acta</button>
-                              {confirmadosHist > 0 && <button className="btn btn-sm btn-success" onClick={() => alert('Descargando certificados...')}>Certificados</button>}
+                              {confirmadosHist > 0 && <button className="btn btn-sm btn-success" onClick={() => descargarCertificadosPdf(c.id)}>Certificados</button>}
                             </div>
                           </td>
                         </tr>
@@ -972,8 +1677,6 @@ function VistaCliente() {
                   {asistentes.map(a => (
                     <tr key={a.id}>
                       <td style={{ fontWeight: 600 }}>{a.nombreCompleto}</td>
-                      <td>{a.rut}</td>
-                      <td>{a.cargo ?? '—'}</td>
                       <td>{a.area ?? '—'}</td>
                       <td>{a.email ?? '—'}</td>
                       <td>

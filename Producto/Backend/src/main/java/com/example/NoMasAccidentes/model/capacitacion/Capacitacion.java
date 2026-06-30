@@ -112,6 +112,10 @@ public class Capacitacion extends BaseEntity {
     @Builder.Default
     private boolean esCapacitacionExtra = false;
 
+    /** Observaciones finales que aparecerán en el acta de capacitación. */
+    @Column(name = "observacion_acta", length = 1000)
+    private String observacionActa;
+
     @Column(name = "activo", nullable = false)
     @Builder.Default
     private boolean activo = true;
