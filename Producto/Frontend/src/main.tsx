@@ -19,6 +19,8 @@ import Asesorias from './pages/Asesorias';
 import AsesoriaDetalle from './pages/AsesoriaDetalle';
 import Capacitaciones from './pages/Capacitaciones';
 import Reportes from './pages/Reportes';
+import SeguimientoPreventivo from './pages/SeguimientoPreventivo';
+import Comunicaciones from './pages/Comunicaciones';
 import './index.css';
 
 
@@ -75,6 +77,14 @@ const router = createBrowserRouter([
       {
         path: '/capacitaciones',
         element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CLIENTE']}><Capacitaciones /></ProtectedRoute>,
+      },
+      {
+        path: '/seguimiento-preventivo',
+        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><SeguimientoPreventivo /></ProtectedRoute>,
+      },
+      {
+        path: '/comunicaciones',
+        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><Comunicaciones /></ProtectedRoute>,
       },
       {
         path: '/reportes',

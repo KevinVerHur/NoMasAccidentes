@@ -22,27 +22,28 @@ const seccionesOperativas: SeccionNav[] = [
     {
         titulo: 'Gestión',
         items: [
-            { icono: '📊', label: 'Dashboard',      path: '/dashboard',      roles: TODOS },
-            { icono: '👥', label: 'Clientes',       path: '/clientes',       roles: ['ADMIN'] },
-            { icono: '🧑‍💼', label: 'Profesionales', path: '/profesionales',  roles: ['ADMIN'] },
-            { icono: '📅', label: 'Visitas',        path: '/visitas',        roles: ['ADMIN', 'PROFESIONAL'] },
+            { icono: '📊', label: 'Dashboard', path: '/dashboard', roles: TODOS },
+            { icono: '👥', label: 'Clientes', path: '/clientes', roles: ['ADMIN'] },
+            { icono: '🧑‍💼', label: 'Profesionales', path: '/profesionales', roles: ['ADMIN'] },
+            { icono: '📅', label: 'Visitas', path: '/visitas', roles: ['ADMIN', 'PROFESIONAL'] },
             { icono: '🎓', label: 'Capacitaciones', path: '/capacitaciones', roles: ['ADMIN', 'PROFESIONAL', 'CAPACITADOR'] },
-            { icono: '📋', label: 'Asesorías',      path: '/asesorias',      roles: ['ADMIN', 'PROFESIONAL'] },
+            { icono: '📋', label: 'Asesorías', path: '/asesorias', roles: ['ADMIN', 'PROFESIONAL'] },
             { icono: '✅', label: 'Seguimiento preventivo', path: '/seguimiento-preventivo', roles: ['ADMIN', 'PROFESIONAL'] },
+            { icono: '☎️', label: 'Comunicaciones', path: '/comunicaciones', roles: ['ADMIN', 'PROFESIONAL'] },
         ],
     },
     {
         titulo: 'Finanzas',
         items: [
-            { icono: '💰', label: 'Pagos',       path: '/pagos',       roles: ['ADMIN'] },
+            { icono: '💰', label: 'Pagos', path: '/pagos', roles: ['ADMIN'] },
             { icono: '⚠️', label: 'Morosidades', path: '/morosidades', roles: ['ADMIN'] },
         ],
     },
     {
         titulo: 'Sistema',
         items: [
-            { icono: '📄', label: 'Reportes',      path: '/reportes',      roles: ['ADMIN', 'PROFESIONAL'] },
-            { icono: '🔔', label: 'Alertas',       path: '/alertas',       badge: 5, roles: ['ADMIN'] },
+            { icono: '📄', label: 'Reportes', path: '/reportes', roles: ['ADMIN', 'PROFESIONAL'] },
+            { icono: '🔔', label: 'Alertas', path: '/alertas', badge: 5, roles: ['ADMIN'] },
             { icono: '⚙️', label: 'Configuración', path: '/configuracion', roles: ['ADMIN'] },
         ],
     },
@@ -53,19 +54,19 @@ const seccionesCliente: SeccionNav[] = [
     {
         titulo: 'Portal Cliente',
         items: [
-            { icono: '🏠', label: 'Inicio',          path: '/dashboard',       roles: ['CLIENTE'] },
+            { icono: '🏠', label: 'Inicio', path: '/dashboard', roles: ['CLIENTE'] },
             { icono: '📅', label: 'Mis actividades', path: '/mis-actividades', roles: ['CLIENTE'] },
-            { icono: '🎓', label: 'Capacitaciones',  path: '/capacitaciones',  roles: ['CLIENTE'] },
-            { icono: '📄', label: 'Reportes',        path: '/reportes',        roles: ['CLIENTE'] },
-            { icono: '💰', label: 'Pagos',           path: '/mis-pagos',       roles: ['CLIENTE'] },
-            { icono: '📋', label: 'Solicitudes',     path: '/mis-solicitudes', roles: ['CLIENTE'] },
+            { icono: '🎓', label: 'Capacitaciones', path: '/capacitaciones', roles: ['CLIENTE'] },
+            { icono: '📄', label: 'Reportes', path: '/reportes', roles: ['CLIENTE'] },
+            { icono: '💰', label: 'Pagos', path: '/mis-pagos', roles: ['CLIENTE'] },
+            { icono: '📋', label: 'Solicitudes', path: '/mis-solicitudes', roles: ['CLIENTE'] },
         ],
     },
     {
         titulo: 'Cuenta',
         items: [
             { icono: '🔔', label: 'Notificaciones', path: '/notificaciones', badge: 3, roles: ['CLIENTE'] },
-            { icono: '🏢', label: 'Mi empresa',     path: '/mi-empresa',     roles: ['CLIENTE'] },
+            { icono: '🏢', label: 'Mi empresa', path: '/mi-empresa', roles: ['CLIENTE'] },
         ],
     },
 ];
@@ -107,8 +108,8 @@ export default function Sidebar() {
                                 <span className="flex-1">{item.label}</span>
                                 {item.badge && (
                                     <span className="bg-peligro text-white text-[9px] rounded-full w-[14px] h-[14px] flex items-center justify-center font-bold">
-                    {item.badge}
-                  </span>
+                                        {item.badge}
+                                    </span>
                                 )}
                             </a>
                         );
