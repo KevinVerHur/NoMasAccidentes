@@ -579,6 +579,24 @@ export interface CambiarEstadoActividadRequest {
   observaciones?: string;
 }
 
+// ---- Comunicaciones / centro de llamados (RF30-RF32) ----
+export interface ConsultaResponse {
+  id: number;
+  idCliente: number;
+  cliente: string;
+  fechaHora: string;
+  motivo: string;
+  detalle: string | null;
+  fueraHorario: boolean;
+  costoAdicional: boolean;
+}
+
+export interface CrearConsultaRequest {
+  idCliente: number;
+  motivo: string;
+  detalle?: string;
+}
+
 // ---- Asesorías (RF22–RF25) ----
 export type TipoAsesoria = 'ACCIDENTE' | 'FISCALIZACION';
 export type EstadoAsesoria = 'SOLICITADA' | 'EN_PROCESO' | 'CERRADA' | 'CANCELADA';
