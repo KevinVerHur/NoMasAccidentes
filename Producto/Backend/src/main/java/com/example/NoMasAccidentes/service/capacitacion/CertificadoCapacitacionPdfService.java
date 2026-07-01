@@ -58,7 +58,7 @@ public class CertificadoCapacitacionPdfService {
                         obtenerNombreAsistente(a) + "\n\n" +
                         "participó y aprobó la capacitación:\n\n" +
                         c.getCurso() + "\n\n" +
-                        "realizada para la empresa " + c.getCliente().getRazonSocial() +
+                        "realizada para la empresa " + c.getEmpresa().getRazonSocial() +
                         ", con fecha " + (c.getFechaRealizacion() != null
                             ? c.getFechaRealizacion().format(F_FECHA)
                             : c.getFechaProgramada().format(F_FECHA)) +
@@ -132,7 +132,7 @@ public class CertificadoCapacitacionPdfService {
                 obtenerNombreAsistente(asistencia) + "\n\n" +
                 "participó satisfactoriamente en la capacitación:\n\n" +
                 c.getCurso() + "\n\n" +
-                "realizada para la empresa " + c.getCliente().getRazonSocial() +
+                "realizada para la empresa " + c.getEmpresa().getRazonSocial() +
                 ", con fecha " + (c.getFechaRealizacion() != null
                         ? c.getFechaRealizacion().format(F_FECHA)
                         : c.getFechaProgramada().format(F_FECHA)) +

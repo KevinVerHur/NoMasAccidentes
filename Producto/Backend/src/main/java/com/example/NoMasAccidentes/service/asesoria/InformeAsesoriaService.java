@@ -80,7 +80,7 @@ public class InformeAsesoriaService {
         informe.setEstado(EstadoInforme.GENERADO);
         informe.setHallazgos(asesoria.getMotivo());
         informe.setContenido("Informe de asesoría (" + asesoria.getTipo() + ") para "
-                + asesoria.getCliente().getRazonSocial()
+                + asesoria.getEmpresa().getRazonSocial()
                 + " — solicitada el " + asesoria.getFechaSolicitud());
         informe.setUrlPdf(clave);
 

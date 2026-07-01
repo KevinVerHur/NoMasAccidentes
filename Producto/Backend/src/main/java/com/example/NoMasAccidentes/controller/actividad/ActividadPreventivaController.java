@@ -33,10 +33,10 @@ public class ActividadPreventivaController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public Page<ActividadPreventivaResponse> listar(
-            @RequestParam(required = false) Long idCliente,
+            @RequestParam(required = false) Long idEmpresa,
             @RequestParam(required = false) EstadoActividadPreventiva estado,
             Pageable pageable){
-        return service.listar(idCliente, estado, pageable);
+        return service.listar(idEmpresa, estado, pageable);
     }
 
     @GetMapping("/{id}")

@@ -8,14 +8,14 @@ import com.example.NoMasAccidentes.dto.pago.CrearCobroExtraRequest;
 import com.example.NoMasAccidentes.dto.pago.PagoMapper;
 import com.example.NoMasAccidentes.dto.pago.PagoResponse;
 import com.example.NoMasAccidentes.dto.pago.RegistrarPagoRequest;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
-import com.example.NoMasAccidentes.model.cliente.EstadoCliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
+import com.example.NoMasAccidentes.model.empresa.EstadoEmpresa;
 import com.example.NoMasAccidentes.model.pago.CobroExtra;
 import com.example.NoMasAccidentes.model.pago.EstadoPago;
 import com.example.NoMasAccidentes.model.pago.Pago;
 import com.example.NoMasAccidentes.repository.pago.CobroExtraRepository;
 import com.example.NoMasAccidentes.repository.pago.PagoRepository;
-import com.example.NoMasAccidentes.service.cliente.ClienteService;
+import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class PagoService {
     private final CobroExtraRepository cobroExtraRepository;
     private final PagoMapper pagoMapper;
     private final CobroExtraMapper cobroExtraMapper;
-    private final ClienteService clienteService;
+    private final EmpresaService empresaService;
 
     /** Registra el pago de una cuota (RF09). */
     @Transactional
@@ -55,25 +55,25 @@ public class PagoService {
         pago.setMedioPago(request.medioPago());
         log.info("Pago registrado id={} cuota={} (RF09)", idPago, pago.getNumeroCuota());
 
-        reevaluarEstadoCliente(pago.getPlan().getCliente());
+        reevaluarEstadoEmpresa(pago.getPlan().getEmpresa());
         return pagoMapper.toResponse(pago);
     }
 
-    /** Historial de pagos de un cliente (RF10). */
-    public List<PagoResponse> historialPorCliente(Long idCliente) {
-        return pagoRepository.findByPlanClienteIdOrderByFechaVencimientoDesc(idCliente)
+    /** Historial de pagos de una empresa (RF10). */
+    public List<PagoResponse> historialPorEmpresa(Long idEmpresa) {
+        return pagoRepository.findByPlanEmpresaIdOrderByFechaVencimientoDesc(idEmpresa)
                 .stream().map(pagoMapper::toResponse).toList();
     }
 
-    /** Historial del cliente autenticado (portal cliente, solo lectura). */
+    /** Historial de la empresa del usuario autenticado (portal cliente, solo lectura). */
     public List<PagoResponse> misPagos(String emailUsuario) {
-        Long idCliente = clienteService.clienteAutenticado(emailUsuario).getId();
-        return historialPorCliente(idCliente);
+        Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
+        return historialPorEmpresa(idEmpresa);
     }
 
     /**
-     * Marca como ATRASADAS las cuotas vencidas e impagas y deja MOROSOS a los
-     * clientes afectados (RF11). Devuelve la cantidad de cuotas marcadas.
+     * Marca como ATRASADAS las cuotas vencidas e impagas y deja MOROSAS a las
+     * empresas afectadas (RF11). Devuelve la cantidad de cuotas marcadas.
      */
     @Transactional
     public int evaluarMorosidad() {
@@ -81,9 +81,9 @@ public class PagoService {
                 .findByEstadoPagoAndFechaVencimientoBefore(EstadoPago.PENDIENTE, LocalDate.now());
         for (Pago pago : vencidas) {
             pago.setEstadoPago(EstadoPago.ATRASADO);
-            Cliente cliente = pago.getPlan().getCliente();
-            if (cliente.getEstado() == EstadoCliente.ACTIVO) {
-                cliente.setEstado(EstadoCliente.MOROSO);
+            Empresa empresa = pago.getPlan().getEmpresa();
+            if (empresa.getEstado() == EstadoEmpresa.ACTIVO) {
+                empresa.setEstado(EstadoEmpresa.MOROSO);
             }
         }
         log.info("Morosidad evaluada: {} cuotas marcadas ATRASADO (RF11)", vencidas.size());
@@ -91,23 +91,23 @@ public class PagoService {
     }
 
     /**
-     * Suspende el servicio de los clientes con {@value #UMBRAL_SUSPENSION} o más
-     * cuotas atrasadas (RF12). Devuelve la cantidad de clientes suspendidos.
+     * Suspende el servicio de las empresas con {@value #UMBRAL_SUSPENSION} o más
+     * cuotas atrasadas (RF12). Devuelve la cantidad de empresas suspendidas.
      */
     @Transactional
     public int suspenderMorosos() {
-        Map<Cliente, Long> atrasadasPorCliente = pagoRepository.findByEstadoPago(EstadoPago.ATRASADO)
+        Map<Empresa, Long> atrasadasPorEmpresa = pagoRepository.findByEstadoPago(EstadoPago.ATRASADO)
                 .stream()
-                .collect(Collectors.groupingBy(p -> p.getPlan().getCliente(), Collectors.counting()));
+                .collect(Collectors.groupingBy(p -> p.getPlan().getEmpresa(), Collectors.counting()));
 
         int suspendidos = 0;
-        for (Map.Entry<Cliente, Long> e : atrasadasPorCliente.entrySet()) {
-            Cliente cliente = e.getKey();
-            if (e.getValue() >= UMBRAL_SUSPENSION && cliente.getEstado() != EstadoCliente.SUSPENDIDO) {
-                cliente.setEstado(EstadoCliente.SUSPENDIDO);
+        for (Map.Entry<Empresa, Long> e : atrasadasPorEmpresa.entrySet()) {
+            Empresa empresa = e.getKey();
+            if (e.getValue() >= UMBRAL_SUSPENSION && empresa.getEstado() != EstadoEmpresa.SUSPENDIDO) {
+                empresa.setEstado(EstadoEmpresa.SUSPENDIDO);
                 suspendidos++;
-                log.info("Cliente suspendido por morosidad id={} ({} cuotas atrasadas) (RF12)",
-                        cliente.getId(), e.getValue());
+                log.info("Empresa suspendida por morosidad id={} ({} cuotas atrasadas) (RF12)",
+                        empresa.getId(), e.getValue());
             }
         }
         return suspendidos;
@@ -138,16 +138,16 @@ public class PagoService {
         return pagoMapper.toResponse(buscarOFallar(id));
     }
 
-    /** Si el cliente ya no tiene cuotas atrasadas, vuelve de MOROSO a ACTIVO. */
-    private void reevaluarEstadoCliente(Cliente cliente) {
-        if (cliente.getEstado() != EstadoCliente.MOROSO) {
+    /** Si la empresa ya no tiene cuotas atrasadas, vuelve de MOROSO a ACTIVO. */
+    private void reevaluarEstadoEmpresa(Empresa empresa) {
+        if (empresa.getEstado() != EstadoEmpresa.MOROSO) {
             return;
         }
         boolean tieneAtrasos = !pagoRepository
-                .findByPlanClienteIdAndEstadoPago(cliente.getId(), EstadoPago.ATRASADO).isEmpty();
+                .findByPlanEmpresaIdAndEstadoPago(empresa.getId(), EstadoPago.ATRASADO).isEmpty();
         if (!tieneAtrasos) {
-            cliente.setEstado(EstadoCliente.ACTIVO);
-            log.info("Cliente regularizado id={} -> ACTIVO (RF11)", cliente.getId());
+            empresa.setEstado(EstadoEmpresa.ACTIVO);
+            log.info("Empresa regularizada id={} -> ACTIVO (RF11)", empresa.getId());
         }
     }
 

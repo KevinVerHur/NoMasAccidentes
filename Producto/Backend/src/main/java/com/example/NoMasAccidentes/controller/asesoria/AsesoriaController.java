@@ -45,10 +45,10 @@ public class AsesoriaController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public Page<AsesoriaResponse> listar(
-            @RequestParam(required = false) Long idCliente,
+            @RequestParam(required = false) Long idEmpresa,
             Pageable pageable) {
-        return idCliente != null
-                ? asesoriaService.listarPorCliente(idCliente, pageable)
+        return idEmpresa != null
+                ? asesoriaService.listarPorEmpresa(idEmpresa, pageable)
                 : asesoriaService.listar(pageable);
     }
 

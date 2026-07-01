@@ -7,10 +7,10 @@ import com.example.NoMasAccidentes.dto.asesoria.AsesoriaResponse;
 import com.example.NoMasAccidentes.dto.asesoria.CrearAsesoriaRequest;
 import com.example.NoMasAccidentes.model.asesoria.Asesoria;
 import com.example.NoMasAccidentes.model.asesoria.EstadoAsesoria;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
 import com.example.NoMasAccidentes.repository.asesoria.AsesoriaRepository;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -31,27 +31,27 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class AsesoriaService {
 
-    /** Asesorías incluidas en el plan por cliente al año (RF23). */
+    /** Asesorías incluidas en el plan por empresa al año (RF23). */
     private static final long ASESORIAS_INCLUIDAS_ANUALES = 10;
 
     private final AsesoriaRepository asesoriaRepository;
-    private final ClienteRepository clienteRepository;
+    private final EmpresaRepository empresaRepository;
     private final ProfesionalRepository profesionalRepository;
     private final AsesoriaMapper asesoriaMapper;
 
     /** Registra una asesoría (RF22) y determina si es extra según el límite anual (RF23, RF24). */
     @Transactional
     public AsesoriaResponse crear(CrearAsesoriaRequest request) {
-        Cliente cliente = clienteRepository.findById(request.idCliente())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", request.idCliente()));
+        Empresa empresa = empresaRepository.findById(request.idEmpresa())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", request.idEmpresa()));
         Profesional profesional = profesionalRepository.findById(request.idProfesional())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Profesional", request.idProfesional()));
 
         LocalDate hoy = LocalDate.now();
-        boolean esExtra = excedeLimiteIncluidas(cliente.getId(), hoy.getYear());
+        boolean esExtra = excedeLimiteIncluidas(empresa.getId(), hoy.getYear());
 
         Asesoria asesoria = Asesoria.builder()
-                .cliente(cliente)
+                .empresa(empresa)
                 .profesional(profesional)
                 .fechaSolicitud(hoy)
                 .motivo(request.motivo())
@@ -61,8 +61,8 @@ public class AsesoriaService {
                 .build();
 
         Asesoria guardada = asesoriaRepository.save(asesoria);
-        log.info("Asesoría creada id={} cliente={} tipo={} extra={} (RF22-RF24)",
-                guardada.getId(), cliente.getId(), request.tipo(), esExtra);
+        log.info("Asesoría creada id={} empresa={} tipo={} extra={} (RF22-RF24)",
+                guardada.getId(), empresa.getId(), request.tipo(), esExtra);
         return asesoriaMapper.toResponse(guardada);
     }
 
@@ -107,8 +107,8 @@ public class AsesoriaService {
         return asesoriaRepository.findAll(pageable).map(asesoriaMapper::toResponse);
     }
 
-    public Page<AsesoriaResponse> listarPorCliente(Long idCliente, Pageable pageable) {
-        return asesoriaRepository.findByClienteId(idCliente, pageable).map(asesoriaMapper::toResponse);
+    public Page<AsesoriaResponse> listarPorEmpresa(Long idEmpresa, Pageable pageable) {
+        return asesoriaRepository.findByEmpresaId(idEmpresa, pageable).map(asesoriaMapper::toResponse);
     }
 
     public AsesoriaResponse obtenerPorId(Long id) {
@@ -121,13 +121,13 @@ public class AsesoriaService {
                 .stream().map(asesoriaMapper::toResponse).toList();
     }
 
-    /** True si el cliente ya consumió sus asesorías incluidas en el año (RF23 → cobro extra RF24). */
-    private boolean excedeLimiteIncluidas(Long idCliente, int anio) {
+    /** True si la empresa ya consumió sus asesorías incluidas en el año (RF23 → cobro extra RF24). */
+    private boolean excedeLimiteIncluidas(Long idEmpresa, int anio) {
         LocalDate desde = LocalDate.of(anio, 1, 1);
         LocalDate hasta = LocalDate.of(anio, 12, 31);
         long incluidasUsadas = asesoriaRepository
-                .countByClienteIdAndFechaSolicitudBetweenAndEstadoNot(
-                        idCliente, desde, hasta, EstadoAsesoria.CANCELADA);
+                .countByEmpresaIdAndFechaSolicitudBetweenAndEstadoNot(
+                        idEmpresa, desde, hasta, EstadoAsesoria.CANCELADA);
         return incluidasUsadas >= ASESORIAS_INCLUIDAS_ANUALES;
     }
 

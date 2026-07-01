@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface ListaChequeoMapper {
 
-    @Mapping(target = "idCliente", source = "cliente.id")
+    @Mapping(target = "idEmpresa", source = "empresa.id")
     ListaChequeoResponse toResponse(ListaChequeo lista);
 
     ItemChequeoResponse toItemResponse(ItemChequeo item);

@@ -53,10 +53,10 @@ public class ListaChequeoController {
         return listaChequeoService.obtenerPorId(id);
     }
 
-    @Operation(summary = "Obtener la lista de chequeo de un cliente")
-    @GetMapping("/cliente/{idCliente}")
+    @Operation(summary = "Obtener la lista de chequeo de una empresa")
+    @GetMapping("/empresa/{idEmpresa}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
-    public ListaChequeoResponse obtenerPorCliente(@PathVariable Long idCliente) {
-        return listaChequeoService.obtenerPorCliente(idCliente);
+    public ListaChequeoResponse obtenerPorEmpresa(@PathVariable Long idEmpresa) {
+        return listaChequeoService.obtenerPorEmpresa(idEmpresa);
     }
 }

@@ -5,11 +5,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
 
-/** Crear la lista de chequeo de un cliente (RF16). */
+/** Crear la lista de chequeo de una empresa (RF16). */
 public record CrearListaChequeoRequest(
 
     @NotNull
-    Long idCliente,
+    Long idEmpresa,
 
     @Size(max = 120)
     String nombre,

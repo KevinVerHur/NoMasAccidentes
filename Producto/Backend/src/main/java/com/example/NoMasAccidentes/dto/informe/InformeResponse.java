@@ -6,7 +6,7 @@ import java.time.LocalDate;
 public record InformeResponse(
     Long id,
     Long idVisita,
-    String razonSocialCliente,
+    String razonSocialEmpresa,
     String nombreProfesional,
     LocalDate fechaEmision,
     EstadoInforme estado,

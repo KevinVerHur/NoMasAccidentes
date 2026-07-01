@@ -40,8 +40,8 @@ public class InformePdfService {
         doc.add(espacio());
 
         doc.add(seccion("Datos de la visita"));
-        doc.add(linea("Cliente: ", visita.getCliente().getRazonSocial()));
-        doc.add(linea("RUT: ", visita.getCliente().getRut()));
+        doc.add(linea("Empresa: ", visita.getEmpresa().getRazonSocial()));
+        doc.add(linea("RUT: ", visita.getEmpresa().getRut()));
         doc.add(linea("Profesional: ",
                 visita.getProfesional().getUsuario().getNombre() + " "
                         + visita.getProfesional().getUsuario().getApellido()));

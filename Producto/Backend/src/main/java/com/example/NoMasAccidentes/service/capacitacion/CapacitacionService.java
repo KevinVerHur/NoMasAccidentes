@@ -7,12 +7,12 @@ import com.example.NoMasAccidentes.model.asistente.Asistente;
 import com.example.NoMasAccidentes.model.asistencia.Asistencia;
 import com.example.NoMasAccidentes.model.capacitacion.Capacitacion;
 import com.example.NoMasAccidentes.model.capacitacion.EstadoCapacitacion;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
 import com.example.NoMasAccidentes.repository.asistente.AsistenteRepository;
 import com.example.NoMasAccidentes.repository.asistencia.AsistenciaRepository;
 import com.example.NoMasAccidentes.repository.capacitacion.CapacitacionRepository;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -48,7 +48,7 @@ public class CapacitacionService {
     private final CapacitacionRepository capacitacionRepository;
     private final AsistenciaRepository   asistenciaRepository;
     private final AsistenteRepository    asistenteRepository;
-    private final ClienteRepository      clienteRepository;
+    private final EmpresaRepository      empresaRepository;
     private final ProfesionalRepository  profesionalRepository;
     private final CapacitacionMapper     mapper;
 
@@ -64,16 +64,16 @@ public class CapacitacionService {
         return mapper.toResponse(buscarOFallar(id));
     }
 
-    public List<CapacitacionResponse> listarPorCliente(Long idCliente) {
-        validarExisteCliente(idCliente);
-        return capacitacionRepository.findByClienteId(idCliente)
+    public List<CapacitacionResponse> listarPorEmpresa(Long idEmpresa) {
+        validarExisteEmpresa(idEmpresa);
+        return capacitacionRepository.findByEmpresaId(idEmpresa)
                 .stream().map(mapper::toResponse).toList();
     }
 
-    /** Retorna solo las capacitaciones con costo extra del cliente (RF-CAP4). */
-    public List<CapacitacionResponse> listarExtras(Long idCliente) {
-        validarExisteCliente(idCliente);
-        return capacitacionRepository.findByClienteIdAndEsCapacitacionExtraTrue(idCliente)
+    /** Retorna solo las capacitaciones con costo extra de la empresa (RF-CAP4). */
+    public List<CapacitacionResponse> listarExtras(Long idEmpresa) {
+        validarExisteEmpresa(idEmpresa);
+        return capacitacionRepository.findByEmpresaIdAndEsCapacitacionExtraTrue(idEmpresa)
                 .stream().map(mapper::toResponse).toList();
     }
 
@@ -96,14 +96,14 @@ public class CapacitacionService {
     public CapacitacionResponse crear(CrearCapacitacionRequest request) {
         validarAnticipacion(request.fechaProgramada());
 
-        Cliente cliente = clienteRepository.findById(request.idCliente())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", request.idCliente()));
+        Empresa empresa = empresaRepository.findById(request.idEmpresa())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", request.idEmpresa()));
 
         Profesional relator = profesionalRepository.findById(request.idRelator())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Relator (Profesional)", request.idRelator()));
 
         Capacitacion capacitacion = Capacitacion.builder()
-                .cliente(cliente)
+                .empresa(empresa)
                 .curso(request.curso())
                 .relator(relator)
                 .fechaProgramada(request.fechaProgramada())
@@ -119,7 +119,7 @@ public class CapacitacionService {
 
         log.info("Capacitación creada id={} cliente='{}' curso='{}' relator='{}' fecha={} hora={} cupos={} extra={} (RF-CAP1/RF-CAP4)",
                 guardada.getId(),
-                cliente.getRazonSocial(),
+                empresa.getRazonSocial(),
                 guardada.getCurso(),
                 relator.getUsuario().getNombre() + " " + relator.getUsuario().getApellido(),
                 guardada.getFechaProgramada(),
@@ -172,10 +172,10 @@ public class CapacitacionService {
             Asistente asistente = asistenteRepository.findById(idAsistente)
                     .orElseThrow(() -> new RecursoNoEncontradoException("Asistente", idAsistente));
 
-            // Validar que el asistente pertenece al cliente de la capacitación
-            if (!asistente.getCliente().getId().equals(capacitacion.getCliente().getId())) {
+            // Validar que el asistente pertenece a la empresa de la capacitación
+            if (!asistente.getEmpresa().getId().equals(capacitacion.getEmpresa().getId())) {
                 throw new ConflictoNegocioException(
-                        "El asistente id=%d no pertenece al cliente de esta capacitación."
+                        "El asistente id=%d no pertenece a la empresa de esta capacitación."
                                 .formatted(idAsistente));
             }
 
@@ -347,9 +347,9 @@ public class CapacitacionService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Capacitación", id));
     }
 
-    private void validarExisteCliente(Long idCliente) {
-        if (!clienteRepository.existsById(idCliente)) {
-            throw new RecursoNoEncontradoException("Cliente", idCliente);
+    private void validarExisteEmpresa(Long idEmpresa) {
+        if (!empresaRepository.existsById(idEmpresa)) {
+            throw new RecursoNoEncontradoException("Empresa", idEmpresa);
         }
     }
 

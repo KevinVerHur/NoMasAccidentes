@@ -7,8 +7,8 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface PlanPagoMapper {
 
-    @Mapping(target = "idCliente",          source = "cliente.id")
-    @Mapping(target = "razonSocialCliente", source = "cliente.razonSocial")
+    @Mapping(target = "idEmpresa",          source = "empresa.id")
+    @Mapping(target = "razonSocialEmpresa", source = "empresa.razonSocial")
     @Mapping(target = "idMensualidad",      source = "mensualidad.id")
     @Mapping(target = "nombrePlan",         source = "mensualidad.nombrePlan")
     PlanPagoResponse toResponse(PlanPago plan);

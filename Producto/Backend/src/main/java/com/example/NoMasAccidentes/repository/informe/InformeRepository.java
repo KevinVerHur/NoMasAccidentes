@@ -12,6 +12,6 @@ public interface InformeRepository extends JpaRepository<Informe, Long> {
     /** Informe de una asesoría (el informe de asesoría reutiliza esta tabla, RF15). */
     Optional<Informe> findByIdAsesoria(Long idAsesoria);
 
-    /** Informes de las visitas de un cliente (portal cliente, RF15). */
-    List<Informe> findByVisitaClienteIdOrderByFechaEmisionDesc(Long idCliente);
+    /** Informes de las visitas de una empresa (portal cliente, RF15). */
+    List<Informe> findByVisitaEmpresaIdOrderByFechaEmisionDesc(Long idEmpresa);
 }

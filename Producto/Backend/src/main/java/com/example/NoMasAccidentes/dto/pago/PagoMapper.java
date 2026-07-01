@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 public interface PagoMapper {
 
     @Mapping(target = "idPlan",             source = "plan.id")
-    @Mapping(target = "idCliente",          source = "plan.cliente.id")
-    @Mapping(target = "razonSocialCliente", source = "plan.cliente.razonSocial")
+    @Mapping(target = "idEmpresa",          source = "plan.empresa.id")
+    @Mapping(target = "razonSocialEmpresa", source = "plan.empresa.razonSocial")
     PagoResponse toResponse(Pago pago);
 }

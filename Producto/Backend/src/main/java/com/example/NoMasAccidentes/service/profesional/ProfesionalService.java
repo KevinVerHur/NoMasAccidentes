@@ -11,7 +11,7 @@ import com.example.NoMasAccidentes.dto.profesional.RegistrarProfesionalRequest;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
 import com.example.NoMasAccidentes.model.usuario.Rol;
 import com.example.NoMasAccidentes.model.usuario.Usuario;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
 import com.example.NoMasAccidentes.repository.usuario.RolRepository;
 import com.example.NoMasAccidentes.repository.usuario.UsuarioRepository;
@@ -34,7 +34,7 @@ public class ProfesionalService {
     private final ProfesionalRepository profesionalRepository;
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
-    private final ClienteRepository clienteRepository;
+    private final EmpresaRepository empresaRepository;
     private final ProfesionalMapper profesionalMapper;
     private final PasswordEncoder passwordEncoder;
 
@@ -174,7 +174,7 @@ public class ProfesionalService {
 
     private ProfesionalResponse toResponseConCarga(Profesional p) {
         ProfesionalResponse base = profesionalMapper.toResponse(p);
-        long cantidad = clienteRepository.countByProfesionalId(p.getId());
+        long cantidad = empresaRepository.countByProfesionalId(p.getId());
 
         return new ProfesionalResponse(
                 base.id(),

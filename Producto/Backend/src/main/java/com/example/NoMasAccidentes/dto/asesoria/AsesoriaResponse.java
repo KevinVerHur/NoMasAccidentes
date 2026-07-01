@@ -6,8 +6,8 @@ import java.time.LocalDate;
 
 public record AsesoriaResponse(
     Long id,
-    Long idCliente,
-    String razonSocialCliente,
+    Long idEmpresa,
+    String razonSocialEmpresa,
     Long idProfesional,
     String nombreProfesional,
     LocalDate fechaSolicitud,

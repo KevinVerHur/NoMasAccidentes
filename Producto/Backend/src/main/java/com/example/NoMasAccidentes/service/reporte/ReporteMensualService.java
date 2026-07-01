@@ -5,19 +5,19 @@ import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
 import com.example.NoMasAccidentes.dto.reporte.ReporteMensualMapper;
 import com.example.NoMasAccidentes.dto.reporte.ReporteMensualResponse;
 import com.example.NoMasAccidentes.model.capacitacion.EstadoCapacitacion;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.reporte.ReporteMensual;
 import com.example.NoMasAccidentes.model.visita.EstadoVisita;
 import com.example.NoMasAccidentes.repository.asesoria.AccidenteRepository;
 import com.example.NoMasAccidentes.repository.asesoria.AsesoriaRepository;
 import com.example.NoMasAccidentes.repository.asesoria.MultaRepository;
 import com.example.NoMasAccidentes.repository.capacitacion.CapacitacionRepository;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.consulta.ConsultaRepository;
 import com.example.NoMasAccidentes.repository.pago.CobroExtraRepository;
 import com.example.NoMasAccidentes.repository.reporte.ReporteMensualRepository;
 import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
-import com.example.NoMasAccidentes.service.cliente.ClienteService;
+import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -29,7 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Reporte mensual de gestión por cliente (RF38, RF39). Capa de agregación:
+ * Reporte mensual de gestión por empresa (RF38, RF39). Capa de agregación:
  * consolida los totales realizados en el periodo a partir de los módulos
  * operativos y produce el PDF, reutilizando el almacenamiento de informes.
  */
@@ -40,8 +40,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class ReporteMensualService {
 
     private final ReporteMensualRepository reporteRepository;
-    private final ClienteRepository clienteRepository;
-    private final ClienteService clienteService;
+    private final EmpresaRepository empresaRepository;
+    private final EmpresaService empresaService;
     private final ReporteMensualMapper mapper;
     private final ReporteMensualPdfService pdfService;
     private final com.example.NoMasAccidentes.service.informe.AlmacenamientoInformeService almacenamiento;
@@ -56,57 +56,57 @@ public class ReporteMensualService {
     private final CobroExtraRepository cobroExtraRepository;
 
     /**
-     * Genera (o regenera, RF46) el reporte mensual de un cliente para el periodo
+     * Genera (o regenera, RF46) el reporte mensual de una empresa para el periodo
      * indicado. Contabiliza lo realizado en el mes y produce el PDF. Idempotente
-     * sobre la clave natural (cliente, mes, año).
+     * sobre la clave natural (empresa, mes, año).
      */
     @Transactional
-    public ReporteMensualResponse generar(Long idCliente, int mes, int anio) {
+    public ReporteMensualResponse generar(Long idEmpresa, int mes, int anio) {
         validarPeriodo(mes, anio);
-        Cliente cliente = clienteRepository.findById(idCliente)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", idCliente));
+        Empresa empresa = empresaRepository.findById(idEmpresa)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", idEmpresa));
 
         LocalDate desde = LocalDate.of(anio, mes, 1);
         LocalDate hasta = desde.withDayOfMonth(desde.lengthOfMonth());
         LocalDateTime desdeDt = desde.atStartOfDay();
         LocalDateTime hastaDt = hasta.atTime(LocalTime.MAX);
 
-        var existente = reporteRepository.findByClienteIdAndMesAndAnio(idCliente, mes, anio);
+        var existente = reporteRepository.findByEmpresaIdAndMesAndAnio(idEmpresa, mes, anio);
         ReporteMensual reporte = existente.orElseGet(ReporteMensual::new);
-        reporte.setCliente(cliente);
+        reporte.setEmpresa(empresa);
         reporte.setMes(mes);
         reporte.setAnio(anio);
         reporte.setFechaEmision(LocalDate.now());
         reporte.setEsActualizacionExtra(existente.isPresent());
 
         reporte.setTotalVisitas((int) visitaRepository
-                .countByClienteIdAndEstadoAndFechaFinBetween(idCliente, EstadoVisita.REALIZADA, desdeDt, hastaDt));
+                .countByEmpresaIdAndEstadoAndFechaFinBetween(idEmpresa, EstadoVisita.REALIZADA, desdeDt, hastaDt));
         reporte.setTotalCapacitaciones((int) capacitacionRepository
-                .countByClienteIdAndEstadoAndFechaRealizacionBetween(idCliente, EstadoCapacitacion.REALIZADA, desde, hasta));
+                .countByEmpresaIdAndEstadoAndFechaRealizacionBetween(idEmpresa, EstadoCapacitacion.REALIZADA, desde, hasta));
         reporte.setTotalAsesorias((int) asesoriaRepository
-                .countByClienteIdAndFechaAtencionBetween(idCliente, desde, hasta));
+                .countByEmpresaIdAndFechaAtencionBetween(idEmpresa, desde, hasta));
         reporte.setTotalLlamados((int) consultaRepository
-                .countByClienteIdAndFechaHoraBetween(idCliente, desdeDt, hastaDt));
+                .countByEmpresaIdAndFechaHoraBetween(idEmpresa, desdeDt, hastaDt));
         reporte.setTotalAccidentes((int) accidenteRepository
-                .countByAsesoriaClienteIdAndFechaOcurrenciaBetween(idCliente, desde, hasta));
+                .countByAsesoriaEmpresaIdAndFechaOcurrenciaBetween(idEmpresa, desde, hasta));
         reporte.setTotalMultas((int) multaRepository
-                .countByFiscalizacionAsesoriaClienteIdAndFechaEmisionBetween(idCliente, desde, hasta));
+                .countByFiscalizacionAsesoriaEmpresaIdAndFechaEmisionBetween(idEmpresa, desde, hasta));
         reporte.setCostosExtra(cobroExtraRepository
-                .sumMontoByClienteAndFechaGeneracionBetween(idCliente, desde, hasta));
+                .sumMontoByEmpresaAndFechaGeneracionBetween(idEmpresa, desde, hasta));
 
         byte[] pdf = pdfService.generar(reporte);
-        String nombreArchivo = "reporte-" + idCliente + "-" + anio + "-" + mes + "-" + UUID.randomUUID() + ".pdf";
+        String nombreArchivo = "reporte-" + idEmpresa + "-" + anio + "-" + mes + "-" + UUID.randomUUID() + ".pdf";
         reporte.setUrlPdf(almacenamiento.guardar(nombreArchivo, pdf));
 
         ReporteMensual guardado = reporteRepository.save(reporte);
-        log.info("Reporte mensual generado id={} cliente={} periodo={}-{} (RF38)",
-                guardado.getId(), idCliente, anio, mes);
+        log.info("Reporte mensual generado id={} empresa={} periodo={}-{} (RF38)",
+                guardado.getId(), idEmpresa, anio, mes);
         return mapper.toResponse(guardado);
     }
 
-    /** Reportes históricos de un cliente (RF38, RF42). */
-    public List<ReporteMensualResponse> listarPorCliente(Long idCliente) {
-        return reporteRepository.findByClienteIdOrderByAnioDescMesDesc(idCliente)
+    /** Reportes históricos de una empresa (RF38, RF42). */
+    public List<ReporteMensualResponse> listarPorEmpresa(Long idEmpresa) {
+        return reporteRepository.findByEmpresaIdOrderByAnioDescMesDesc(idEmpresa)
                 .stream().map(mapper::toResponse).toList();
     }
 
@@ -122,14 +122,14 @@ public class ReporteMensualService {
     // ---- Portal cliente (solo lectura de lo propio) ----
 
     public List<ReporteMensualResponse> listarMisReportes(String emailUsuario) {
-        Long idCliente = clienteService.clienteAutenticado(emailUsuario).getId();
-        return listarPorCliente(idCliente);
+        Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
+        return listarPorEmpresa(idEmpresa);
     }
 
     public byte[] descargarMiPdf(Long idReporte, String emailUsuario) {
-        Long idCliente = clienteService.clienteAutenticado(emailUsuario).getId();
+        Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
         ReporteMensual reporte = conArchivo(buscarOFallar(idReporte));
-        if (!reporte.getCliente().getId().equals(idCliente)) {
+        if (!reporte.getEmpresa().getId().equals(idEmpresa)) {
             // No revelar la existencia de reportes ajenos.
             throw new RecursoNoEncontradoException("Reporte", idReporte);
         }

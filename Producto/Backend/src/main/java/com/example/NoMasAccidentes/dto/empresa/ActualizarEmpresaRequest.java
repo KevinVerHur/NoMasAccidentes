@@ -1,14 +1,13 @@
-package com.example.NoMasAccidentes.dto.cliente;
+package com.example.NoMasAccidentes.dto.empresa;
 
-import com.example.NoMasAccidentes.model.cliente.EstadoCliente;
-import jakarta.validation.constraints.Email;
+import com.example.NoMasAccidentes.model.empresa.EstadoEmpresa;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
-public record ActualizarClienteRequest(
+public record ActualizarEmpresaRequest(
 
     @NotBlank @Size(max = 200)
     String razonSocial,
@@ -18,17 +17,14 @@ public record ActualizarClienteRequest(
     @Size(max = 12)
     String rut,
 
-    @NotBlank @Size(max = 120)
-    String nombreContacto,
+    @Size(max = 200)
+    String direccion,
 
-    @NotBlank @Email @Size(max = 120)
-    String email,
+    @Size(max = 80)
+    String comuna,
 
-    @Size(max = 20)
-    String telefono,
-
-    @NotBlank @Size(max = 80)
-    String rubro,
+    @NotNull(message = "Debe indicar el rubro de la empresa")
+    Long idRubro,
 
     @NotBlank @Size(max = 40)
     String plan,
@@ -37,7 +33,7 @@ public record ActualizarClienteRequest(
     Integer cantidadTrabajadores,
 
     @NotNull
-    EstadoCliente estado,
+    EstadoEmpresa estado,
 
     Long idProfesional
 ) {}

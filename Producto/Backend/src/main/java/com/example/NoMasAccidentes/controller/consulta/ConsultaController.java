@@ -26,10 +26,10 @@ public class ConsultaController {
         return consultaService.listar(pageable);
     }
 
-    @GetMapping("/cliente/{idCliente}")
+    @GetMapping("/empresa/{idEmpresa}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
-    public List<ConsultaResponse> listarPorCliente(@PathVariable Long idCliente){
-        return consultaService.listarPorCliente(idCliente);
+    public List<ConsultaResponse> listarPorEmpresa(@PathVariable Long idEmpresa){
+        return consultaService.listarPorEmpresa(idEmpresa);
     }
 
     @PostMapping

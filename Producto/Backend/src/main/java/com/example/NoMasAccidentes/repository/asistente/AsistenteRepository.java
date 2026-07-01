@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AsistenteRepository extends JpaRepository<Asistente, Long> {
 
-    List<Asistente> findByClienteId(Long idCliente);
+    List<Asistente> findByEmpresaId(Long idEmpresa);
 
     boolean existsByRut(String rut);
 }

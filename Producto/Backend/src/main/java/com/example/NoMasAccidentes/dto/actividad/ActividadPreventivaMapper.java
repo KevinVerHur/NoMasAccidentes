@@ -14,8 +14,8 @@ public class ActividadPreventivaMapper {
 
         return new ActividadPreventivaResponse(
                 a.getId(),
-                a.getCliente().getId(),
-                a.getCliente().getRazonSocial(),
+                a.getEmpresa().getId(),
+                a.getEmpresa().getRazonSocial(),
                 a.getTitulo(),
                 a.getDescripcion(),
                 a.getNormativa(),

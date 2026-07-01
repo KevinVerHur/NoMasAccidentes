@@ -8,7 +8,7 @@ import org.mapstruct.Mapping;
 public interface InformeMapper {
 
     @Mapping(target = "idVisita",           source = "visita.id")
-    @Mapping(target = "razonSocialCliente", source = "visita.cliente.razonSocial")
+    @Mapping(target = "razonSocialEmpresa", source = "visita.empresa.razonSocial")
     @Mapping(target = "nombreProfesional",  expression = "java(informe.getVisita().getProfesional().getUsuario().getNombre() + \" \" + informe.getVisita().getProfesional().getUsuario().getApellido())")
     @Mapping(target = "tieneArchivo",       expression = "java(informe.getUrlPdf() != null)")
     InformeResponse toResponse(Informe informe);

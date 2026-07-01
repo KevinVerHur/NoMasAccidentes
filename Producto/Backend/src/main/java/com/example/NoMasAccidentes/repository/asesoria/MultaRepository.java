@@ -9,7 +9,7 @@ public interface MultaRepository extends JpaRepository<Multa, Long> {
 
     List<Multa> findByFiscalizacionIdOrderByFechaEmisionDesc(Long idFiscalizacion);
 
-    /** Multas del cliente (vía fiscalización → asesoría) emitidas en el periodo (reporte mensual, RF39). */
-    long countByFiscalizacionAsesoriaClienteIdAndFechaEmisionBetween(
-            Long idCliente, LocalDate desde, LocalDate hasta);
+    /** Multas de la empresa (vía fiscalización → asesoría) emitidas en el periodo (reporte mensual, RF39). */
+    long countByFiscalizacionAsesoriaEmpresaIdAndFechaEmisionBetween(
+            Long idEmpresa, LocalDate desde, LocalDate hasta);
 }

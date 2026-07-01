@@ -6,17 +6,17 @@ import com.example.NoMasAccidentes.dto.visita.PlanificarVisitaRequest;
 import com.example.NoMasAccidentes.dto.visita.RegistrarVisitaRequest;
 import com.example.NoMasAccidentes.dto.visita.VisitaMapper;
 import com.example.NoMasAccidentes.dto.visita.VisitaResponse;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.profesional.EstadoProfesional;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
 import com.example.NoMasAccidentes.model.visita.EstadoVisita;
 import com.example.NoMasAccidentes.model.visita.ListaChequeo;
 import com.example.NoMasAccidentes.model.visita.Visita;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
 import com.example.NoMasAccidentes.repository.visita.ListaChequeoRepository;
 import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
-import com.example.NoMasAccidentes.service.cliente.ClienteService;
+import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Gestión de visitas a clientes (RF13–RF14).
+ * Gestión de visitas a empresas cliente (RF13–RF14).
  * Ciclo: PROGRAMADA -> EN_CURSO -> REALIZADA (o CANCELADA).
  */
 @Service
@@ -39,33 +39,33 @@ public class VisitaService {
 
     private final VisitaRepository visitaRepository;
     private final ListaChequeoRepository listaChequeoRepository;
-    private final ClienteRepository clienteRepository;
+    private final EmpresaRepository empresaRepository;
     private final ProfesionalRepository profesionalRepository;
     private final VisitaMapper visitaMapper;
-    private final ClienteService clienteService;
+    private final EmpresaService empresaService;
 
-    /** Planifica una visita (RF13). Requiere que el cliente tenga lista de chequeo (RF16). */
+    /** Planifica una visita (RF13). Requiere que la empresa tenga lista de chequeo (RF16). */
     @Transactional
     public VisitaResponse planificar(PlanificarVisitaRequest request) {
-        Cliente cliente = clienteRepository.findById(request.idCliente())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", request.idCliente()));
+        Empresa empresa = empresaRepository.findById(request.idEmpresa())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", request.idEmpresa()));
         Profesional profesional = profesionalRepository.findById(request.idProfesional())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Profesional", request.idProfesional()));
-        ListaChequeo lista = listaChequeoRepository.findByClienteId(cliente.getId())
+        ListaChequeo lista = listaChequeoRepository.findByEmpresaId(empresa.getId())
                 .orElseThrow(() -> new ConflictoNegocioException(
-                        "El cliente no tiene lista de chequeo. Cree una antes de planificar visitas (RF16)."));
+                        "La empresa no tiene lista de chequeo. Cree una antes de planificar visitas (RF16)."));
 
         if (request.fechaProgramada().isBefore(LocalDate.now())) {
             throw new ConflictoNegocioException("No se puede planificar una visita en una fecha pasada");
         }
-        if (visitaRepository.existsByClienteIdAndFechaProgramadaAndEstado(
-                cliente.getId(), request.fechaProgramada(), EstadoVisita.PROGRAMADA)) {
+        if (visitaRepository.existsByEmpresaIdAndFechaProgramadaAndEstado(
+                empresa.getId(), request.fechaProgramada(), EstadoVisita.PROGRAMADA)) {
             throw new ConflictoNegocioException(
-                    "Ya existe una visita programada para ese cliente en esa fecha");
+                    "Ya existe una visita programada para esa empresa en esa fecha");
         }
 
         Visita visita = Visita.builder()
-                .cliente(cliente)
+                .empresa(empresa)
                 .profesional(profesional)
                 .listaChequeo(lista)
                 .tipoRevision(request.tipoRevision())
@@ -75,8 +75,8 @@ public class VisitaService {
                 .build();
 
         Visita guardada = visitaRepository.save(visita);
-        log.info("Visita planificada id={} cliente={} fecha={} (RF13)",
-                guardada.getId(), cliente.getId(), request.fechaProgramada());
+        log.info("Visita planificada id={} empresa={} fecha={} (RF13)",
+                guardada.getId(), empresa.getId(), request.fechaProgramada());
         return visitaMapper.toResponse(guardada);
     }
 
@@ -131,8 +131,8 @@ public class VisitaService {
         return visitaRepository.findAll(pageable).map(visitaMapper::toResponse);
     }
 
-    public Page<VisitaResponse> listarPorCliente(Long idCliente, Pageable pageable) {
-        return visitaRepository.findByClienteId(idCliente, pageable).map(visitaMapper::toResponse);
+    public Page<VisitaResponse> listarPorEmpresa(Long idEmpresa, Pageable pageable) {
+        return visitaRepository.findByEmpresaId(idEmpresa, pageable).map(visitaMapper::toResponse);
     }
 
     public VisitaResponse obtenerPorId(Long id) {
@@ -145,18 +145,18 @@ public class VisitaService {
                 .stream().map(visitaMapper::toResponse).toList();
     }
 
-    /** Visitas del cliente autenticado (portal cliente, solo lectura). */
+    /** Visitas de la empresa del usuario autenticado (portal cliente, solo lectura). */
     public List<VisitaResponse> misVisitas(String emailUsuario) {
-        Long idCliente = clienteService.clienteAutenticado(emailUsuario).getId();
-        return visitaRepository.findByClienteIdOrderByFechaProgramadaDesc(idCliente)
+        Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
+        return visitaRepository.findByEmpresaIdOrderByFechaProgramadaDesc(idEmpresa)
                 .stream().map(visitaMapper::toResponse).toList();
     }
 
-    /** Cuenta de visitas del cliente en un mes; apoya el control de RF13 (mínimo 2/mes). */
-    public long contarVisitasDelMes(Long idCliente, int anio, int mes) {
+    /** Cuenta de visitas de la empresa en un mes; apoya el control de RF13 (mínimo 2/mes). */
+    public long contarVisitasDelMes(Long idEmpresa, int anio, int mes) {
         LocalDate desde = LocalDate.of(anio, mes, 1);
         LocalDate hasta = desde.withDayOfMonth(desde.lengthOfMonth());
-        return visitaRepository.countByClienteIdAndFechaProgramadaBetween(idCliente, desde, hasta);
+        return visitaRepository.countByEmpresaIdAndFechaProgramadaBetween(idEmpresa, desde, hasta);
     }
 
     @Transactional

@@ -56,8 +56,8 @@ public class ActaCapacitacionPdfService {
 
             document.add(seccion("Datos generales"));
             document.add(linea("N° Capacitación: ", String.valueOf(c.getId())));
-            document.add(linea("Empresa: ", c.getCliente().getRazonSocial()));
-            document.add(linea("RUT Empresa: ", c.getCliente().getRut()));
+            document.add(linea("Empresa: ", c.getEmpresa().getRazonSocial()));
+            document.add(linea("RUT Empresa: ", c.getEmpresa().getRut()));
             document.add(linea("Fecha programada: ", c.getFechaProgramada() != null ? c.getFechaProgramada().format(F_FECHA) : "—"));
             document.add(linea("Fecha realización: ", c.getFechaRealizacion() != null ? c.getFechaRealizacion().format(F_FECHA) : "—"));
             document.add(linea("Hora: ", c.getHoraProgramada() != null ? c.getHoraProgramada().format(F_HORA) : "—"));
