@@ -2,6 +2,7 @@ package com.example.NoMasAccidentes.service.usuario;
 
 import com.example.NoMasAccidentes.common.ConflictoNegocioException;
 import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
+import com.example.NoMasAccidentes.dto.usuario.ActualizarPerfilRequest;
 import com.example.NoMasAccidentes.dto.usuario.ActualizarUsuarioRequest;
 import com.example.NoMasAccidentes.dto.usuario.CambiarPasswordRequest;
 import com.example.NoMasAccidentes.dto.usuario.CrearUsuarioRequest;
@@ -40,20 +41,20 @@ public class UsuarioService {
             throw new ConflictoNegocioException("Ya existe un usuario con email " + request.email());
         }
         Rol rol = rolRepository.findById(request.idRol())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Rol", request.idRol()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Rol", request.idRol()));
 
         Usuario usuario = Usuario.builder()
-            .email(request.email())
-            .passwordHash(passwordEncoder.encode(request.password()))
-            .nombre(request.nombre())
-            .apellido(request.apellido())
-            .rol(rol)
-            .activo(true)
-            .build();
+                .email(request.email())
+                .passwordHash(passwordEncoder.encode(request.password()))
+                .nombre(request.nombre())
+                .apellido(request.apellido())
+                .rol(rol)
+                .activo(true)
+                .build();
 
         Usuario guardado = usuarioRepository.save(usuario);
         log.info("Usuario creado id={} email={} rol={} (RF01)",
-            guardado.getId(), guardado.getEmail(), rol.getNombre());
+                guardado.getId(), guardado.getEmail(), rol.getNombre());
         return usuarioMapper.toResponse(guardado);
     }
 
@@ -72,11 +73,11 @@ public class UsuarioService {
 
         // Si cambia el email, validar que el nuevo no esté ocupado por otro
         if (!usuario.getEmail().equals(request.email())
-            && usuarioRepository.existsByEmail(request.email())) {
+                && usuarioRepository.existsByEmail(request.email())) {
             throw new ConflictoNegocioException("Ya existe un usuario con email " + request.email());
         }
         Rol rol = rolRepository.findById(request.idRol())
-            .orElseThrow(() -> new RecursoNoEncontradoException("Rol", request.idRol()));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Rol", request.idRol()));
 
         usuario.setEmail(request.email());
         usuario.setNombre(request.nombre());
@@ -115,6 +116,42 @@ public class UsuarioService {
 
     private Usuario buscarOFallar(Long id) {
         return usuarioRepository.findById(id)
-            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", id));
+    }
+
+    public UsuarioResponse obtenerPorEmail(String email) {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", email));
+
+        return usuarioMapper.toResponse(usuario);
+    }
+
+    @Transactional
+    public UsuarioResponse actualizarPerfil(String emailActual, ActualizarPerfilRequest request) {
+        Usuario usuario = usuarioRepository.findByEmail(emailActual)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", emailActual));
+
+        if (!usuario.getEmail().equals(request.email())
+                && usuarioRepository.existsByEmail(request.email())) {
+            throw new ConflictoNegocioException("Ya existe un usuario con email " + request.email());
+        }
+
+        usuario.setEmail(request.email());
+        usuario.setNombre(request.nombre());
+        usuario.setApellido(request.apellido());
+
+        return usuarioMapper.toResponse(usuario);
+    }
+
+    @Transactional
+    public void cambiarMiPassword(String email, CambiarPasswordRequest request) {
+        Usuario usuario = usuarioRepository.findByEmail(email)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Usuario", email));
+
+        if (!passwordEncoder.matches(request.passwordActual(), usuario.getPasswordHash())) {
+            throw new ConflictoNegocioException("La contraseña actual no es correcta");
+        }
+
+        usuario.setPasswordHash(passwordEncoder.encode(request.passwordNueva()));
     }
 }

@@ -22,6 +22,8 @@ import Reportes from './pages/Reportes';
 import SeguimientoPreventivo from './pages/SeguimientoPreventivo';
 import Comunicaciones from './pages/Comunicaciones';
 import './index.css';
+import ConfiguracionAdmin from './pages/ConfiguracionAdmin';
+import Configuracion from './pages/Configuracion';
 
 
 const router = createBrowserRouter([
@@ -98,6 +100,10 @@ const router = createBrowserRouter([
         path: '/asesorias/:id',
         element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><AsesoriaDetalle /></ProtectedRoute>,
       },
+    
+      { path: '/configuracion',      element: <Configuracion /> },
+  
+      
     ],
   },
   {
