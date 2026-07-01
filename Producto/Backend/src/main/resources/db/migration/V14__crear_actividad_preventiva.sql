@@ -1,6 +1,6 @@
 CREATE TABLE actividad_preventiva (
     id_actividad          BIGINT AUTO_INCREMENT PRIMARY KEY,
-    id_cliente            BIGINT NOT NULL,
+    id_empresa            BIGINT NOT NULL,
     titulo                VARCHAR(160) NOT NULL,
     descripcion           VARCHAR(1000),
     responsable           VARCHAR(120),
@@ -14,10 +14,10 @@ CREATE TABLE actividad_preventiva (
     fecha_actualizacion   DATETIME,
     creado_por            VARCHAR(80),
     actualizado_por       VARCHAR(80),
-    CONSTRAINT fk_actividad_cliente FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
+    CONSTRAINT fk_actividad_empresa FOREIGN KEY (id_empresa) REFERENCES empresa(id_empresa)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE INDEX idx_actividad_cliente ON actividad_preventiva(id_cliente);
+CREATE INDEX idx_actividad_empresa ON actividad_preventiva(id_empresa);
 CREATE INDEX idx_actividad_estado ON actividad_preventiva(estado);
 CREATE INDEX idx_actividad_fecha_compromiso ON actividad_preventiva(fecha_compromiso);
 CREATE INDEX idx_actividad_activo ON actividad_preventiva(activo);

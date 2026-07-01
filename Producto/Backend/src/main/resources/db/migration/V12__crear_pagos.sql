@@ -26,10 +26,10 @@ CREATE TABLE mensualidad (
     actualizado_por              VARCHAR(80)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Contrato del cliente con un plan (RF08).
+-- Contrato de la empresa con un plan (RF08).
 CREATE TABLE plan_de_pago (
     id_plan              BIGINT        AUTO_INCREMENT PRIMARY KEY,
-    id_cliente           BIGINT        NOT NULL,
+    id_empresa           BIGINT        NOT NULL,
     id_mensualidad       BIGINT        NOT NULL,
     fecha_inicio         DATE          NOT NULL,
     fecha_termino        DATE,
@@ -40,7 +40,7 @@ CREATE TABLE plan_de_pago (
     fecha_actualizacion  DATETIME,
     creado_por           VARCHAR(80),
     actualizado_por      VARCHAR(80),
-    CONSTRAINT fk_plan_cliente     FOREIGN KEY (id_cliente)     REFERENCES cliente(id_cliente),
+    CONSTRAINT fk_plan_empresa     FOREIGN KEY (id_empresa)     REFERENCES empresa(id_empresa),
     CONSTRAINT fk_plan_mensualidad FOREIGN KEY (id_mensualidad) REFERENCES mensualidad(id_mensualidad)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

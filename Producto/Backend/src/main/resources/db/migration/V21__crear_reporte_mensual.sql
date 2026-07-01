@@ -9,7 +9,7 @@
 
 CREATE TABLE reporte_mensual (
     id_reporte               BIGINT        AUTO_INCREMENT PRIMARY KEY,
-    id_cliente               BIGINT        NOT NULL,
+    id_empresa               BIGINT        NOT NULL,
     mes                      INT           NOT NULL,
     anio                     INT           NOT NULL,
     fecha_emision            DATE          NOT NULL,
@@ -27,9 +27,9 @@ CREATE TABLE reporte_mensual (
     fecha_actualizacion      DATETIME,
     creado_por               VARCHAR(80),
     actualizado_por          VARCHAR(80),
-    CONSTRAINT uk_reporte_periodo UNIQUE (id_cliente, mes, anio),
-    CONSTRAINT fk_reporte_cliente FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
+    CONSTRAINT uk_reporte_periodo UNIQUE (id_empresa, mes, anio),
+    CONSTRAINT fk_reporte_empresa FOREIGN KEY (id_empresa) REFERENCES empresa(id_empresa)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE INDEX idx_reporte_cliente ON reporte_mensual(id_cliente);
+CREATE INDEX idx_reporte_empresa ON reporte_mensual(id_empresa);
 CREATE INDEX idx_reporte_periodo ON reporte_mensual(anio, mes);

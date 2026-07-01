@@ -4,22 +4,22 @@ CREATE TABLE IF NOT EXISTS revinfo (
     PRIMARY KEY (rev)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE cliente_aud (
-    id_cliente BIGINT NOT NULL,
+-- Espejo Envers de empresa (@Audited). El representante (tabla cliente)
+-- NO se audita, por eso no hay cliente_aud.
+CREATE TABLE empresa_aud (
+    id_empresa BIGINT NOT NULL,
     rev INT NOT NULL,
     revtype TINYINT,
 
     razon_social VARCHAR(200),
     rut VARCHAR(12),
-    nombre_contacto VARCHAR(120),
-    email VARCHAR(120),
-    telefono VARCHAR(20),
-    rubro VARCHAR(80),
+    direccion VARCHAR(200),
+    comuna VARCHAR(80),
+    id_rubro BIGINT,
     plan VARCHAR(40),
     cantidad_trabajadores INT,
     estado VARCHAR(20),
     id_profesional BIGINT,
-    id_usuario BIGINT,
     activo BOOLEAN,
 
     fecha_creacion DATETIME,
@@ -27,8 +27,8 @@ CREATE TABLE cliente_aud (
     creado_por VARCHAR(80),
     actualizado_por VARCHAR(80),
 
-    PRIMARY KEY (id_cliente, rev),
-    CONSTRAINT fk_cliente_aud_rev
+    PRIMARY KEY (id_empresa, rev),
+    CONSTRAINT fk_empresa_aud_rev
         FOREIGN KEY (rev) REFERENCES revinfo (rev)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
