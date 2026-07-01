@@ -1,5 +1,6 @@
 package com.example.NoMasAccidentes.controller.usuario;
 
+import com.example.NoMasAccidentes.dto.usuario.ActualizarPerfilRequest;
 import com.example.NoMasAccidentes.dto.usuario.ActualizarUsuarioRequest;
 import com.example.NoMasAccidentes.dto.usuario.CambiarPasswordRequest;
 import com.example.NoMasAccidentes.dto.usuario.CrearUsuarioRequest;
@@ -9,6 +10,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.security.Principal;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -104,4 +107,27 @@ public class UsuarioController {
         usuarioService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+
+@GetMapping("/me")
+@PreAuthorize("isAuthenticated()")
+public UsuarioResponse me(Principal principal) {
+    return usuarioService.obtenerPorEmail(principal.getName());
+}    
+
+@PutMapping("/me")
+@PreAuthorize("isAuthenticated()")
+public UsuarioResponse actualizarMiPerfil(
+        Principal principal,
+        @Valid @RequestBody ActualizarPerfilRequest request) {
+    return usuarioService.actualizarPerfil(principal.getName(), request);
+}
+
+@PatchMapping("/me/password")
+@PreAuthorize("isAuthenticated()")
+public ResponseEntity<Void> cambiarMiPassword(
+        Principal principal,
+        @Valid @RequestBody CambiarPasswordRequest request) {
+    usuarioService.cambiarMiPassword(principal.getName(), request);
+    return ResponseEntity.noContent().build();
+}
 }

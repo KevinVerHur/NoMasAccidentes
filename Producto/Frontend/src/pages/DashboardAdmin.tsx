@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useNavigate } from 'react-router-dom';
 
 import KpiCard from '../components/ui/KpiCard';
 import Badge from '../components/ui/Badge';
@@ -18,6 +19,7 @@ import type {
   EstadoProfesional,
   UbicacionProfesionalResponse,
 } from '../types';
+
 
 const CENTRO_FALLBACK: [number, number] = [-33.4489, -70.6693];
 
@@ -75,10 +77,10 @@ const fmtCLP = (v: number | null) => (v === null ? '—' : `$${v.toLocaleString(
 const fmtFecha = (iso: string | null) =>
   iso
     ? new Date(`${iso}T00:00:00`).toLocaleDateString('es-CL', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      })
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
     : '—';
 
 const mesActual = new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
@@ -245,11 +247,12 @@ function MapaAdmin({
 export default function DashboardAdmin() {
   const [modalMapa, setModalMapa] = useState(false);
   const [ubicaciones, setUbicaciones] = useState<UbicacionProfesionalResponse[]>([]);
-  const [cargandoMapa, setCargandoMapa] = useState(false);
   const [errorMapa, setErrorMapa] = useState<string | null>(null);
   const [ultimaActualizacionMapa, setUltimaActualizacionMapa] = useState<Date | null>(null);
   const [datos, setDatos] = useState<DashboardAdminResponse | null>(null);
   const [errorDatos, setErrorDatos] = useState<string | null>(null);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
     obtenerDashboardAdmin()
@@ -258,7 +261,7 @@ export default function DashboardAdmin() {
   }, []);
 
   const cargarMapa = useCallback(async () => {
-    setCargandoMapa(true);
+    // setCargandoMapa(true);
     setErrorMapa(null);
 
     try {
@@ -268,7 +271,7 @@ export default function DashboardAdmin() {
     } catch {
       setErrorMapa('No se pudieron cargar las ubicaciones activas.');
     } finally {
-      setCargandoMapa(false);
+      // setCargandoMapa(false);
     }
   }, []);
 
@@ -315,7 +318,15 @@ export default function DashboardAdmin() {
       </div>
 
       <div className="grid-2">
-        <Panel titulo="📅 Visitas recientes">
+        <Panel
+          titulo="📅 Visitas recientes"
+          accion={
+            <button className="btn btn-sm btn-outline" onClick={() => navigate('/visitas')}>
+              Ver visitas
+            </button>
+          }
+        >
+
           <table className="app-table">
             <thead>
               <tr>
@@ -372,8 +383,8 @@ export default function DashboardAdmin() {
           titulo="📍 Profesionales en terreno"
           accion={
             <div className="btn-group">
-              <button className="btn btn-sm btn-outline" onClick={cargarMapa} disabled={cargandoMapa}>
-                {cargandoMapa ? 'Actualizando...' : 'Refrescar'}
+              <button className="btn btn-sm btn-outline" onClick={() => navigate('/profesionales')}>
+                Profesionales
               </button>
               <button className="btn btn-sm btn-primary" onClick={() => setModalMapa(true)}>
                 Ver mapa
@@ -406,7 +417,14 @@ export default function DashboardAdmin() {
           </div>
         </Panel>
 
-        <Panel titulo="📈 Accidentabilidad por cliente">
+        <Panel
+          titulo="📈 Accidentabilidad por cliente"
+          accion={
+            <button className="btn btn-sm btn-outline" onClick={() => navigate('/reportes')}>
+              Ver reportes
+            </button>
+          }
+        >
           <div style={{ padding: '14px 16px' }}>
             {accidentabilidad.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#9ca3af', padding: 16, fontSize: 12 }}>
@@ -443,7 +461,14 @@ export default function DashboardAdmin() {
         </Panel>
       </div>
 
-      <Panel titulo="💰 Control de pagos y morosidades">
+      <Panel
+        titulo="💰 Control de pagos y morosidades"
+        accion={
+          <button className="btn btn-sm btn-outline" onClick={() => navigate('/pagos')}>
+            Ver pagos
+          </button>
+        }
+      >
         <table className="app-table">
           <thead>
             <tr>
