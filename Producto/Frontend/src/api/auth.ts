@@ -1,4 +1,6 @@
-import type { LoginRequest, LoginResponse, RegistroRequest, UsuarioMe } from '../types';
+import type { LoginRequest, LoginResponse, RegistroRequest, UsuarioMe,UsuarioResponse,
+  ActualizarPerfilRequest,
+  CambiarPasswordRequest, } from '../types';
 import api from './axiosConfig';
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
@@ -29,4 +31,22 @@ export async function validarTokenReset(token: string): Promise<boolean> {
     params: { token },
   });
   return response.data.valido;
+}
+
+export async function obtenerMiPerfil(): Promise<UsuarioResponse> {
+  const response = await api.get<UsuarioResponse>('/api/usuarios/me');
+  return response.data;
+}
+
+export async function actualizarMiPerfil(
+  data: ActualizarPerfilRequest
+): Promise<UsuarioResponse> {
+  const response = await api.put<UsuarioResponse>('/api/usuarios/me', data);
+  return response.data;
+}
+
+export async function cambiarMiPassword(
+  data: CambiarPasswordRequest
+): Promise<void> {
+  await api.patch('/api/usuarios/me/password', data);
 }

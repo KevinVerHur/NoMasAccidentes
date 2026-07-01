@@ -721,3 +721,25 @@ export interface InformeAsesoriaResponse {
   hallazgos: string | null;
   tieneArchivo: boolean;
 }
+
+export interface UsuarioResponse {
+  id: number;
+  email: string;
+  nombre: string;
+  apellido: string;
+  rol: string;
+  activo: boolean;
+  ultimoAcceso: string | null;
+  fechaCreacion: string;
+}
+
+export interface ActualizarPerfilRequest {
+  email: string;
+  nombre: string;
+  apellido: string;
+}
+
+export interface CambiarPasswordRequest {
+  passwordActual: string;
+  passwordNueva: string;
+}
