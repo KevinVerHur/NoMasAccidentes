@@ -47,6 +47,12 @@ const seccionesOperativas: SeccionNav[] = [
             { icono: '⚙️', label: 'Configuración', path: '/configuracion', roles: ['ADMIN'] },
         ],
     },
+    {
+        titulo: 'Cuenta',
+        items: [
+            { icono: '👤', label: 'Mi perfil', path: '/configuracion', roles: ['PROFESIONAL'] },
+        ],
+    },
 ];
 
 // Portal del cliente. Las vistas aún no se construyen: por ahora solo navegación.

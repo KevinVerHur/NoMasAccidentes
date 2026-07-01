@@ -93,4 +93,14 @@ public class ProfesionalController {
     ) {
         return profesionalService.actualizarEstado(id, request);
     }
+    @PutMapping("/me")
+    @PreAuthorize("hasRole('PROFESIONAL')")
+    public ProfesionalResponse actualizarMiPerfilProfesional(
+        Authentication authentication,
+        @Valid @RequestBody ActualizarProfesionalRequest request
+    ) {
+        return profesionalService.actualizarMiPerfil(authentication.getName(), request);
+    }
+
+
 }

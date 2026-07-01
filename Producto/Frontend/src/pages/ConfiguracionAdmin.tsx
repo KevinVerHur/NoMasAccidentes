@@ -12,19 +12,9 @@ import type {
   UsuarioResponse,
 } from '../types';
 
-interface PreferenciasAdmin {
-  alertasMorosidad: boolean;
-  alertasVisitas: boolean;
-  resumenSemanal: boolean;
-  actualizacionMapa: string;
-}
 
-const preferenciasIniciales: PreferenciasAdmin = {
-  alertasMorosidad: true,
-  alertasVisitas: true,
-  resumenSemanal: false,
-  actualizacionMapa: '5',
-};
+
+
 
 function formatearFecha(valor: string | null) {
   if (!valor) return 'Sin registro';
@@ -46,7 +36,6 @@ export default function ConfiguracionAdmin() {
   const [mensajePerfil, setMensajePerfil] = useState<string | null>(null);
   const [mensajePassword, setMensajePassword] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [preferencias, setPreferencias] = useState(preferenciasIniciales);
 
   const formPerfil = useForm<ActualizarPerfilRequest>();
   const formPassword = useForm<CambiarPasswordRequest & { confirmarPassword: string }>();
@@ -121,15 +110,7 @@ export default function ConfiguracionAdmin() {
     }
   }
 
-  function actualizarPreferencia<K extends keyof PreferenciasAdmin>(
-    campo: K,
-    valor: PreferenciasAdmin[K]
-  ) {
-    setPreferencias((actual) => ({
-      ...actual,
-      [campo]: valor,
-    }));
-  }
+ 
 
   return (
     <>
@@ -320,72 +301,6 @@ export default function ConfiguracionAdmin() {
           </form>
         </Panel>
 
-        <Panel titulo="Preferencias operativas">
-          <div style={{ padding: 16, display: 'grid', gap: 14 }}>
-            <label className="check-row">
-              <span className="left">
-                <input
-                  type="checkbox"
-                  checked={preferencias.alertasMorosidad}
-                  onChange={(e) => actualizarPreferencia('alertasMorosidad', e.target.checked)}
-                />
-                <span>
-                  <strong>Alertas de morosidad</strong>
-                  <br />
-                  <small>Notificar clientes con pagos vencidos.</small>
-                </span>
-              </span>
-            </label>
-
-            <label className="check-row">
-              <span className="left">
-                <input
-                  type="checkbox"
-                  checked={preferencias.alertasVisitas}
-                  onChange={(e) => actualizarPreferencia('alertasVisitas', e.target.checked)}
-                />
-                <span>
-                  <strong>Alertas de visitas próximas</strong>
-                  <br />
-                  <small>Mostrar avisos de agenda semanal.</small>
-                </span>
-              </span>
-            </label>
-
-            <label className="check-row">
-              <span className="left">
-                <input
-                  type="checkbox"
-                  checked={preferencias.resumenSemanal}
-                  onChange={(e) => actualizarPreferencia('resumenSemanal', e.target.checked)}
-                />
-                <span>
-                  <strong>Resumen semanal</strong>
-                  <br />
-                  <small>Preparar resumen operativo para administración.</small>
-                </span>
-              </span>
-            </label>
-
-            <div>
-              <label className="auth-label">Actualización del mapa</label>
-              <select
-                className="auth-input"
-                value={preferencias.actualizacionMapa}
-                onChange={(e) => actualizarPreferencia('actualizacionMapa', e.target.value)}
-              >
-                <option value="5">Cada 5 segundos</option>
-                <option value="10">Cada 10 segundos</option>
-                <option value="30">Cada 30 segundos</option>
-                <option value="60">Cada 1 minuto</option>
-              </select>
-            </div>
-
-            <div className="info-box" style={{ marginBottom: 0 }}>
-              Estas preferencias quedan listas en la interfaz, pero requieren endpoint de configuración si deben guardarse en base de datos.
-            </div>
-          </div>
-        </Panel>
       </div>
     </>
   );
