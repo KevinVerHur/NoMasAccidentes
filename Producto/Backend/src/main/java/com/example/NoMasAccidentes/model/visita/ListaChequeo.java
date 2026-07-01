@@ -1,7 +1,7 @@
 package com.example.NoMasAccidentes.model.visita;
 
 import com.example.NoMasAccidentes.common.BaseEntity;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -47,8 +47,8 @@ public class ListaChequeo extends BaseEntity {
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_cliente", nullable = false, unique = true)
-    private Cliente cliente;
+    @JoinColumn(name = "id_empresa", nullable = false, unique = true)
+    private Empresa empresa;
 
     @Column(name = "nombre", length = 120)
     private String nombre;

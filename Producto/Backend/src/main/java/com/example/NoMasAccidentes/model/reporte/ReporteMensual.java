@@ -1,7 +1,7 @@
 package com.example.NoMasAccidentes.model.reporte;
 
 import com.example.NoMasAccidentes.common.BaseEntity;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -31,7 +31,7 @@ import org.hibernate.annotations.SQLRestriction;
 @Table(name = "reporte_mensual",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_reporte_periodo",
-                columnNames = {"id_cliente", "mes", "anio"}))
+                columnNames = {"id_empresa", "mes", "anio"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -47,8 +47,8 @@ public class ReporteMensual extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_cliente", nullable = false)
-    private Cliente cliente;
+    @JoinColumn(name = "id_empresa", nullable = false)
+    private Empresa empresa;
 
     @Column(name = "mes", nullable = false)
     private int mes;
