@@ -6,7 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import KpiCard from '../components/ui/KpiCard';
 import Badge from '../components/ui/Badge';
 import Panel from '../components/ui/Panel';
-import SeguimientoPreventivoPanel from '../components/actividades/SeguimientoPreventivoPanel';
+// import SeguimientoPreventivoPanel from '../components/actividades/SeguimientoPreventivoPanel';
 import { useAuth } from '../context/AuthContext';
 import { registrarMiUbicacion } from '../api/ubicaciones';
 import { obtenerMiPerfilProfesional, actualizarMiEstadoProfesional } from '../api/profesionales';
@@ -671,11 +671,11 @@ export default function DashboardProfesional() {
         </table>
       </Panel>
 
-      <SeguimientoPreventivoPanel
+      {/* <SeguimientoPreventivoPanel
         titulo="Mis actividades preventivas"
         compacto
         editable
-      />
+      /> */}
 
       {modalMapa && (
         <div

@@ -16,6 +16,9 @@ interface SeccionNav {
 }
 
 const TODOS: Rol[] = ['ADMIN', 'PROFESIONAL', 'CLIENTE', 'CAPACITADOR'];
+// Pestañas comentadas temporalmente: Comunicaciones y Seguimiento preventivo
+// para ADMIN/PROFESIONAL, y Mis actividades para CLIENTE.
+const RUTAS_COMENTADAS = new Set(['/comunicaciones', '/seguimiento-preventivo', '/mis-actividades']);
 
 // Menú operativo: ADMIN y PROFESIONAL.
 const seccionesOperativas: SeccionNav[] = [
@@ -87,7 +90,9 @@ export default function Sidebar() {
     const seccionesVisibles = fuente
         .map((seccion) => ({
             ...seccion,
-            items: seccion.items.filter((item) => rol != null && item.roles.includes(rol)),
+            items: seccion.items.filter((item) =>
+                rol != null && item.roles.includes(rol) && !RUTAS_COMENTADAS.has(item.path)
+            ),
         }))
         .filter((seccion) => seccion.items.length > 0);
 

@@ -1,0 +1,59 @@
+name: Deploy Frontend to AWS S3 and CloudFront
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
+  S3_BUCKET_FRONTEND: ${{ vars.S3_BUCKET_FRONTEND }}
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ vars.CLOUDFRONT_DISTRIBUTION_ID }}
+  VITE_API_URL: ${{ vars.VITE_API_URL }}
+  FRONTEND_DIR: Producto/Frontend
+
+jobs:
+  deploy:
+    name: Build and deploy frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: Producto/Frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm ci
+
+      - name: Build Vite app
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: npm run build
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync dist to S3
+        working-directory: ${{ env.FRONTEND_DIR }}
+        run: aws s3 sync dist/ "s3://${S3_BUCKET_FRONTEND}" --delete
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" \
+            --paths "/*"
