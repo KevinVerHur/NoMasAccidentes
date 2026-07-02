@@ -11,7 +11,7 @@ import type {
   AsistenciaResponse,
   EstadoCapacitacion,
   VarianteBadge,
-  ClienteResponse,
+  EmpresaResponse,
   ProfesionalResponse,
   AsistenteRequest,
   AsistenteResponse,
@@ -145,7 +145,7 @@ async function descargarCertificadoIndividualPdf(
 
 function VistaAdmin() {
   const [capacitaciones, setCapacitaciones] = useState<CapacitacionResponse[]>([]);
-  const [clientes, setClientes] = useState<ClienteResponse[]>([]);
+  const [clientes, setClientes] = useState<EmpresaResponse[]>([]);
   const [profesionales, setProfesionales] = useState<ProfesionalResponse[]>([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
@@ -186,7 +186,7 @@ function VistaAdmin() {
     return (
       !t ||
       c.curso.toLowerCase().includes(t) ||
-      c.cliente.toLowerCase().includes(t) ||
+      c.razonSocialEmpresa.toLowerCase().includes(t) ||
       c.relator.toLowerCase().includes(t)
     );
   });
@@ -350,7 +350,7 @@ function VistaAdmin() {
 
                     <div style={{ fontSize: 12, color: '#6b7280' }}>
                       {fmtFecha(c.fechaProgramada)} · {c.horaProgramada} · {c.lugar} ·{' '}
-                      {c.cliente} · {c.relator} · {confirmados}/{c.cupos} confirmados
+                      {c.razonSocialEmpresa} · {c.relator} · {confirmados}/{c.cupos} confirmados
                     </div>
 
                     {esProgramada && confirmados === 0 && (
@@ -438,8 +438,8 @@ function VistaAdmin() {
             <div>
               <label className="auth-label">Cliente *</label>
               <select
-                className={`auth-input ${formNueva.formState.errors.idCliente ? 'auth-input--error' : ''}`}
-                {...formNueva.register('idCliente', {
+                className={`auth-input ${formNueva.formState.errors.idEmpresa ? 'auth-input--error' : ''}`}
+                {...formNueva.register('idEmpresa', {
                   required: 'Obligatorio',
                   valueAsNumber: true,
                 })}
@@ -451,9 +451,9 @@ function VistaAdmin() {
                   </option>
                 ))}
               </select>
-              {formNueva.formState.errors.idCliente && (
+              {formNueva.formState.errors.idEmpresa && (
                 <span className="auth-field-error">
-                  {formNueva.formState.errors.idCliente.message}
+                  {formNueva.formState.errors.idEmpresa.message}
                 </span>
               )}
             </div>
@@ -615,7 +615,7 @@ function VistaAdmin() {
         {modalDetalle && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
             <p><strong>Curso:</strong> {modalDetalle.curso}</p>
-            <p><strong>Cliente:</strong> {modalDetalle.cliente}</p>
+            <p><strong>Cliente:</strong> {modalDetalle.razonSocialEmpresa}</p>
             <p><strong>Relator:</strong> {modalDetalle.relator}</p>
             <p><strong>Fecha:</strong> {fmtFecha(modalDetalle.fechaProgramada)}</p>
             <p><strong>Hora:</strong> {modalDetalle.horaProgramada}</p>
@@ -741,7 +741,7 @@ function VistaAdmin() {
               Acta — {modalActa.curso}
             </p>
             <p><strong>Fecha:</strong> {fmtFecha(modalActa.fechaRealizacion ?? modalActa.fechaProgramada)}</p>
-            <p><strong>Cliente:</strong> {modalActa.cliente}</p>
+            <p><strong>Cliente:</strong> {modalActa.razonSocialEmpresa}</p>
             <p><strong>Relator:</strong> {modalActa.relator}</p>
             <p><strong>Lugar:</strong> {modalActa.lugar}</p>
             <p>
@@ -1053,7 +1053,7 @@ function VistaProfesional() {
                       <div style={{ fontSize: 11, color: '#9ca3af' }}>{c.horaProgramada}</div>
                     </td>
 
-                    <td>{c.cliente}</td>
+                    <td>{c.razonSocialEmpresa}</td>
                     <td>{c.lugar}</td>
 
                     <td style={{ fontWeight: 600, color: '#1a3a5c' }}>
@@ -1127,7 +1127,7 @@ function VistaProfesional() {
               {historial.map(c => (
                 <tr key={c.id}>
                   <td>{fmtFecha(c.fechaRealizacion ?? c.fechaProgramada)}</td>
-                  <td>{c.cliente}</td>
+                  <td>{c.razonSocialEmpresa}</td>
                   <td style={{ fontWeight: 600 }}>{c.curso}</td>
                   <td>{c.asistencias.filter(a => a.asistio).length}/{c.asistencias.length}</td>
                   <td>
@@ -1155,7 +1155,7 @@ function VistaProfesional() {
       >
         {modalDetalle && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
-            <p><strong>Cliente:</strong> {modalDetalle.cliente}</p>
+            <p><strong>Cliente:</strong> {modalDetalle.razonSocialEmpresa}</p>
             <p><strong>Tema:</strong> {modalDetalle.curso}</p>
             <p><strong>Fecha:</strong> {fmtFecha(modalDetalle.fechaProgramada)} · {modalDetalle.horaProgramada}</p>
             <p><strong>Lugar:</strong> {modalDetalle.lugar}</p>
@@ -1202,7 +1202,7 @@ function VistaProfesional() {
         {modalAsistencia && (
           <>
             <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 14 }}>
-              <strong>{modalAsistencia.curso}</strong> · {modalAsistencia.cliente} ·{' '}
+              <strong>{modalAsistencia.curso}</strong> · {modalAsistencia.razonSocialEmpresa} ·{' '}
               {fmtFecha(modalAsistencia.fechaProgramada)} · {modalAsistencia.lugar}
             </div>
 
@@ -1315,7 +1315,7 @@ function VistaProfesional() {
       >
         {modalActa && (
           <div style={{ fontSize: 13, lineHeight: 1.9 }}>
-            <p><strong>Cliente:</strong> {modalActa.cliente}</p>
+            <p><strong>Cliente:</strong> {modalActa.razonSocialEmpresa}</p>
             <p><strong>Fecha:</strong> {fmtFecha(modalActa.fechaRealizacion ?? modalActa.fechaProgramada)}</p>
             <p><strong>Lugar:</strong> {modalActa.lugar}</p>
             <p>
@@ -1362,7 +1362,7 @@ function VistaProfesional() {
 //  Wireframe: PDF clientes p.3
 // ══════════════════════════════════════════════════════════════════════════════
 
-const FORM_VACIO: Omit<AsistenteRequest, 'idCliente'> = {
+const FORM_VACIO: Omit<AsistenteRequest, 'idEmpresa'> = {
   rut: '', nombre: '', apellidos: '', cargo: '', area: '', email: '',
 };
 
@@ -1384,7 +1384,7 @@ function VistaCliente() {
   const { email } = useAuth();
   
   // ── Estado general ──────────────────────────────────────────────────────────
-  const [idCliente,      setIdCliente]      = useState<number | null>(null);
+  const [idEmpresa,      setIdEmpresa]      = useState<number | null>(null);
   const [capacitaciones, setCapacitaciones] = useState<CapacitacionResponse[]>([]);
   const [asistentes,     setAsistentes]     = useState<AsistenteResponse[]>([]);
   const [cargando,       setCargando]       = useState(true);
@@ -1431,7 +1431,7 @@ function VistaCliente() {
       setCargando(true);
       try {
         const cliente = await miCliente();
-        setIdCliente(cliente.id);
+        setIdEmpresa(cliente.id);
         await Promise.all([cargarCapacitaciones(), cargarAsistentes(cliente.id)]);
       } catch { /* error silencioso */ }
       finally { setCargando(false); }
@@ -1464,7 +1464,7 @@ function VistaCliente() {
 
 
   async function onAgregarRapido(){
-    if (!modalConfirmar || !idCliente) return;
+    if (!modalConfirmar || !idEmpresa) return;
 
     const nombreCompleto = nombreRapido.trim();
 
@@ -1480,7 +1480,7 @@ function VistaCliente() {
 
     try{
       const nuevo = await crearAsistente({
-        idCliente, 
+        idEmpresa, 
         rut: generarRutTecnico(),
         nombre: partesNombre.nombre,
         apellidos: partesNombre.apellidos,
@@ -1490,7 +1490,7 @@ function VistaCliente() {
         idsAsistentes: [nuevo.id],
       });
 
-      await cargarAsistentes(idCliente);
+      await cargarAsistentes(idEmpresa);
 
       const actualizadas = (await listarCapacitaciones(0, 200)).content;
       setCapacitaciones(actualizadas);
@@ -1543,29 +1543,29 @@ function VistaCliente() {
 
 
   async function onGuardarAsistente() {
-    if (!idCliente) return;
+    if (!idEmpresa) return;
     if (!formAsistente.rut || !formAsistente.nombre || !formAsistente.apellidos) {
       setErrorAsis('RUT, nombre y apellidos son obligatorios.'); return;
     }
     setGuardandoAsis(true); setErrorAsis(null);
     try {
-      const payload: AsistenteRequest = { idCliente, ...formAsistente };
+      const payload: AsistenteRequest = { idEmpresa, ...formAsistente };
       if (asistenteEditar) {
         await editarAsistente(asistenteEditar.id, payload);
       } else {
         await crearAsistente(payload);
       }
-      await cargarAsistentes(idCliente);
+      await cargarAsistentes(idEmpresa);
       setModalAsistente(false);
     } catch (e) { setErrorAsis(mensajeError(e, 'Error al guardar el trabajador.')); }
     finally { setGuardandoAsis(false); }
   }
 
   async function onEliminarAsistente() {
-    if (!modalEliminar || !idCliente) return;
+    if (!modalEliminar || !idEmpresa) return;
     try {
       await eliminarAsistente(modalEliminar.id);
-      await cargarAsistentes(idCliente);
+      await cargarAsistentes(idEmpresa);
       setModalEliminar(null);
     } catch (e) { alert(mensajeError(e, 'No se pudo eliminar el trabajador.')); }
   }

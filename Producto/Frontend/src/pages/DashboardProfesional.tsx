@@ -519,7 +519,7 @@ export default function DashboardProfesional() {
               <tbody>
                 {visitas.map((v) => (
                   <tr key={v.id}>
-                    <td>{v.razonSocialCliente}</td>
+                    <td>{v.razonSocialEmpresa}</td>
                     <td>{formatearFecha(v.fechaProgramada)}</td>
                     <td>{formatearHora(v.fechaProgramada)}</td>
                     <td>{v.tipoRevision ?? '-'}</td>
@@ -626,7 +626,7 @@ export default function DashboardProfesional() {
 
             <span>
               {proximaVisita
-                ? `Proxima visita: ${proximaVisita.razonSocialCliente} - ${proximaVisita.tipoRevision ?? 'Sin tipo'} - ${formatearHora(proximaVisita.fechaProgramada)}`
+                ? `Proxima visita: ${proximaVisita.razonSocialEmpresa} - ${proximaVisita.tipoRevision ?? 'Sin tipo'} - ${formatearHora(proximaVisita.fechaProgramada)}`
                 : 'Sin proximas visitas asignadas'}
             </span>
 

@@ -23,7 +23,7 @@ export async function listarActividadesPreventivas(
     params: {
       page,
       size,
-      ...(idCliente ? { idCliente } : {}),
+      ...(idCliente ? { idEmpresa: idCliente } : {}),
       ...(estado ? { estado } : {}),
     },
   });

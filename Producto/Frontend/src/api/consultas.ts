@@ -16,7 +16,7 @@ export async function listarConsultas(page = 0, size = 100): Promise<Pagina<Cons
 }
 
 export async function listarConsultasPorCliente(idCliente: number): Promise<ConsultaResponse[]> {
-  const res = await api.get<ConsultaResponse[]>(`/api/consultas/cliente/${idCliente}`);
+  const res = await api.get<ConsultaResponse[]>(`/api/consultas/empresa/${idCliente}`);
   return res.data;
 }
 

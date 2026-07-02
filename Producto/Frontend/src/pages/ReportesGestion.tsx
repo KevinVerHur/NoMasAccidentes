@@ -8,7 +8,7 @@ import Panel from '../components/ui/Panel';
 import Modal from '../components/ui/Modal';
 import { useAuth } from '../context/AuthContext';
 import type {
-  ClienteResponse, ReporteMensualResponse,
+  EmpresaResponse, ReporteMensualResponse,
   AccidentabilidadMensualResponse, RendimientoProfesionalResponse,
 } from '../types';
 import { listarClientes } from '../api/clientes';
@@ -32,8 +32,8 @@ export default function ReportesGestion() {
   const hoy = new Date();
   const anios = [hoy.getFullYear(), hoy.getFullYear() - 1, hoy.getFullYear() - 2];
 
-  const [clientes, setClientes] = useState<ClienteResponse[]>([]);
-  const [idCliente, setIdCliente] = useState<number | null>(null);
+  const [clientes, setClientes] = useState<EmpresaResponse[]>([]);
+  const [idEmpresa, setIdEmpresa] = useState<number | null>(null);
   const [mes, setMes] = useState(hoy.getMonth() + 1);
   const [anio, setAnio] = useState(hoy.getFullYear());
 
@@ -62,19 +62,19 @@ export default function ReportesGestion() {
     setAccData(acc);
   }, []);
 
-  useEffect(() => { if (idCliente != null) cargarCliente(idCliente, anio).catch(() => {}); }, [idCliente, anio, cargarCliente]);
+  useEffect(() => { if (idEmpresa != null) cargarCliente(idEmpresa, anio).catch(() => {}); }, [idEmpresa, anio, cargarCliente]);
   useEffect(() => { rendimientoProfesional(mes, anio).then(setRendData).catch(() => {}); }, [mes, anio]);
 
   async function onGenerar() {
-    if (idCliente == null) return;
+    if (idEmpresa == null) return;
     setError(null);
     setAviso(null);
     setGenerando(true);
     try {
-      const reporte = await generarReporte(idCliente, mes, anio);
+      const reporte = await generarReporte(idEmpresa, mes, anio);
       setReporteGenerado(reporte);
       setAviso(`Reporte de ${MESES[mes - 1]} ${anio} generado.`);
-      await cargarCliente(idCliente, anio);
+      await cargarCliente(idEmpresa, anio);
     } catch (e: unknown) {
       setError(mensajeError(e, 'Error al generar el reporte.'));
     } finally {
@@ -99,7 +99,7 @@ export default function ReportesGestion() {
       const r = await ejecutarCierreMensual(mes, anio);
       setAviso(`Cierre mensual ejecutado: ${r.reportesGenerados} reporte(s) generados y enviados por correo.`);
       setModalCierre(false);
-      if (idCliente != null) await cargarCliente(idCliente, anio);
+      if (idEmpresa != null) await cargarCliente(idEmpresa, anio);
     } catch (e: unknown) {
       setError(mensajeError(e, 'Error al ejecutar el cierre mensual.'));
     } finally {
@@ -135,7 +135,7 @@ export default function ReportesGestion() {
         <div className="btn-group" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12, padding: 4 }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <label className="auth-label">Cliente</label>
-            <select className="auth-input" value={idCliente ?? ''} onChange={e => { setReporteGenerado(null); setIdCliente(e.target.value ? Number(e.target.value) : null); }}>
+            <select className="auth-input" value={idEmpresa ?? ''} onChange={e => { setReporteGenerado(null); setIdEmpresa(e.target.value ? Number(e.target.value) : null); }}>
               <option value="">Seleccionar cliente...</option>
               {clientes.map(c => <option key={c.id} value={c.id}>{c.razonSocial}</option>)}
             </select>
@@ -152,7 +152,7 @@ export default function ReportesGestion() {
               {anios.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
           </div>
-          <button className="btn btn-primary" disabled={idCliente == null || generando} onClick={onGenerar}>
+          <button className="btn btn-primary" disabled={idEmpresa == null || generando} onClick={onGenerar}>
             {generando ? 'Generando...' : 'Generar reporte'}
           </button>
         </div>
@@ -170,8 +170,8 @@ export default function ReportesGestion() {
       )}
 
       <div className="grid-2">
-        <Panel titulo={`📈 Accidentabilidad ${idCliente != null ? anio : '(elige un cliente)'}`}>
-          {idCliente == null ? (
+        <Panel titulo={`📈 Accidentabilidad ${idEmpresa != null ? anio : '(elige un cliente)'}`}>
+          {idEmpresa == null ? (
             <div className="placeholder">Selecciona un cliente para ver su accidentabilidad.</div>
           ) : (
             <div style={{ width: '100%', height: 280, padding: 12 }}>
@@ -231,7 +231,7 @@ export default function ReportesGestion() {
       </Panel>
 
       <Panel titulo="📄 Historial de reportes del cliente">
-        {idCliente == null ? (
+        {idEmpresa == null ? (
           <div className="placeholder">Selecciona un cliente para ver su historial.</div>
         ) : historial.length === 0 ? (
           <div className="placeholder">Este cliente no tiene reportes generados.</div>
