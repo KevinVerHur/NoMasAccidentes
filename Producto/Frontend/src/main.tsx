@@ -22,7 +22,6 @@ import Reportes from './pages/Reportes';
 import SeguimientoPreventivo from './pages/SeguimientoPreventivo';
 import Comunicaciones from './pages/Comunicaciones';
 import './index.css';
-import ConfiguracionAdmin from './pages/ConfiguracionAdmin';
 import Configuracion from './pages/Configuracion';
 
 
