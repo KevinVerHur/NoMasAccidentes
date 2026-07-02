@@ -446,6 +446,48 @@ export interface RegistrarPagoRequest {
   medioPago?: string;
 }
 
+// ---- Morosidades (vista frontend sobre pagos/clientes existentes) ----
+export type RiesgoMorosidad = 'CRITICO' | 'ALERTA' | 'OBSERVACION';
+
+export interface MorosidadResumen {
+  clientesMora: number;
+  montoTotalAdeudado: number;
+  serviciosSuspendidos: number;
+  notificacionesEnviadas: number;
+}
+
+export interface MorosidadItem {
+  idCliente: number;
+  cliente: string;
+  email: string;
+  estadoCliente: EstadoCliente;
+  mesesDeuda: number;
+  montoAdeudado: number;
+  riesgo: RiesgoMorosidad;
+  suspendido: boolean;
+  ultimoPago: string | null;
+  pagos: PagoResponse[];
+  cuotasAdeudadas: PagoResponse[];
+}
+
+export interface MorosidadDetalle extends MorosidadItem {
+  historialNotificaciones: string[];
+}
+
+export interface MorosidadPagoRequest {
+  idPago: number;
+  monto: number;
+  fecha: string;
+  metodo: string;
+}
+
+export interface MorosidadNotificacionRequest {
+  idCliente: number;
+  destinatario: string;
+  asunto: string;
+  mensaje: string;
+}
+
 // ---- Informe post-visita (RF15) ----
 export type EstadoInforme = 'GENERADO' | 'ANULADO';
 
