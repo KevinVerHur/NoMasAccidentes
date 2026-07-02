@@ -1,1 +1,10 @@
 .env
+.env.prod
+.env.*.local
+
+# Artefactos de despliegue con secretos / llaves SSH
+deploy/*.pem
+deploy/.env.prod
+
+# Nota: .env.prod.example SI se versiona (es la plantilla sin secretos).
+# El .env.prod real se crea en el servidor copiando el .example y rellenando.
