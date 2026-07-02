@@ -4,7 +4,7 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
 public record CrearActividadPreventivaRequest (
-    @NotNull Long idCliente,
+    @NotNull Long idEmpresa,
     @NotBlank @Size(max = 160) String titulo,
     @Size(max = 1000) String descripcion,
     @Size(max = 120) String normativa,

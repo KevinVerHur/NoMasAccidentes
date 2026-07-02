@@ -3,9 +3,9 @@ package com.example.NoMasAccidentes.service.consulta;
 import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
 import com.example.NoMasAccidentes.dto.consulta.ConsultaResponse;
 import com.example.NoMasAccidentes.dto.consulta.CrearConsultaRequest;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.consulta.Consulta;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.consulta.ConsultaRepository;
 import java.time.DayOfWeek;
 import java.time.LocalDateTime;
@@ -21,33 +21,33 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ConsultaService {
-    
+
     private static final LocalTime INICIO_ATENCION = LocalTime.of(9,0);
     private static final LocalTime FIN_ATENCION = LocalTime.of(18, 0);
 
     private final ConsultaRepository consultaRepository;
-    private final ClienteRepository clienteRepository;
+    private final EmpresaRepository empresaRepository;
 
     public Page<ConsultaResponse> listar(Pageable pageable) {
         return consultaRepository.findAll(pageable).map(this::toResponse);
     }
-    public List<ConsultaResponse> listarPorCliente(Long idCliente){
-        return consultaRepository.findByClienteIdOrderByFechaHoraDesc(idCliente)
+    public List<ConsultaResponse> listarPorEmpresa(Long idEmpresa){
+        return consultaRepository.findByEmpresaIdOrderByFechaHoraDesc(idEmpresa)
                 .stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    @Transactional 
+    @Transactional
     public ConsultaResponse crear(CrearConsultaRequest request){
-        Cliente cliente = clienteRepository.findById(request.idCliente())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", request.idCliente()));
-        
+        Empresa empresa = empresaRepository.findById(request.idEmpresa())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", request.idEmpresa()));
+
         LocalDateTime fechaHora = LocalDateTime.now();
         boolean fueraHorario = !esHorarioAtencion(fechaHora);
 
         Consulta consulta = Consulta.builder()
-                .cliente(cliente)
+                .empresa(empresa)
                 .fechaHora(fechaHora)
                 .motivo(request.motivo())
                 .detalle(request.detalle())
@@ -72,8 +72,8 @@ public class ConsultaService {
     private ConsultaResponse toResponse(Consulta consulta) {
         return new ConsultaResponse(
                 consulta.getId(),
-                consulta.getCliente().getId(),
-                consulta.getCliente().getRazonSocial(),
+                consulta.getEmpresa().getId(),
+                consulta.getEmpresa().getRazonSocial(),
                 consulta.getFechaHora(),
                 consulta.getMotivo(),
                 consulta.getDetalle(),

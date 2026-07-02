@@ -54,8 +54,8 @@ public class ReporteMensualPdfService {
         doc.add(espacio());
 
         doc.add(seccion("Datos del reporte"));
-        doc.add(linea("Cliente: ", r.getCliente().getRazonSocial()));
-        doc.add(linea("RUT: ", r.getCliente().getRut()));
+        doc.add(linea("Empresa: ", r.getEmpresa().getRazonSocial()));
+        doc.add(linea("RUT: ", r.getEmpresa().getRut()));
         doc.add(linea("Periodo: ", nombreMes(r.getMes()) + " " + r.getAnio()));
         doc.add(linea("Fecha de emisión: ", r.getFechaEmision().format(F_FECHA)));
         doc.add(espacio());

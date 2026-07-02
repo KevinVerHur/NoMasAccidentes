@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ListaChequeoRepository extends JpaRepository<ListaChequeo, Long> {
 
-    Optional<ListaChequeo> findByClienteId(Long idCliente);
+    Optional<ListaChequeo> findByEmpresaId(Long idEmpresa);
 
-    boolean existsByClienteId(Long idCliente);
+    boolean existsByEmpresaId(Long idEmpresa);
 }

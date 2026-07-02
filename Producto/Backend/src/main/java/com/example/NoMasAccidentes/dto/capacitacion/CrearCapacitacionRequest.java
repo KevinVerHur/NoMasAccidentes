@@ -14,9 +14,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
  */
 public record CrearCapacitacionRequest(
 
-        /** Dropdown "Cliente *" */
-        @NotNull(message = "El cliente es obligatorio")
-        Long idCliente,
+        /** Dropdown "Empresa *" */
+        @NotNull(message = "La empresa es obligatoria")
+        Long idEmpresa,
 
         /** Campo libre "Curso *" */
         @NotBlank(message = "El curso es obligatorio")

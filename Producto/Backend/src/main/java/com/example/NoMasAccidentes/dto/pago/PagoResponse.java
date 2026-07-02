@@ -7,8 +7,8 @@ import java.time.LocalDate;
 public record PagoResponse(
     Long id,
     Long idPlan,
-    Long idCliente,
-    String razonSocialCliente,
+    Long idEmpresa,
+    String razonSocialEmpresa,
     Integer numeroCuota,
     BigDecimal monto,
     LocalDate fechaEmision,

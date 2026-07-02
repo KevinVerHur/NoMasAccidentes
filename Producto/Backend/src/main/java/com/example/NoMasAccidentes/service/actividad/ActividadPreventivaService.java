@@ -3,9 +3,10 @@ package com.example.NoMasAccidentes.service.actividad;
 import com.example.NoMasAccidentes.common.*;
 import com.example.NoMasAccidentes.dto.actividad.*;
 import com.example.NoMasAccidentes.model.actividad.*;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.repository.actividad.ActividadPreventivaRepository;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
+import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import com.example.NoMasAccidentes.service.usuario.CorreoService;
 import java.time.LocalDate;
 import java.util.List;
@@ -19,21 +20,22 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ActividadPreventivaService {
 
-    
+
     private final ActividadPreventivaRepository repository;
-    private final ClienteRepository clienteRepository;
+    private final EmpresaRepository empresaRepository;
+    private final EmpresaService empresaService;
     private final ActividadPreventivaMapper mapper;
     private final CorreoService correoService;
 
-    @Transactional 
+    @Transactional
     public ActividadPreventivaResponse crear(CrearActividadPreventivaRequest r) {
     validarFechas(r.fechaPlanificada(), r.fechaCompromiso());
 
-        Cliente cliente = clienteRepository.findById(r.idCliente())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", r.idCliente()));
-        
+        Empresa empresa = empresaRepository.findById(r.idEmpresa())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", r.idEmpresa()));
+
         ActividadPreventiva actividad = ActividadPreventiva.builder()
-                .cliente(cliente)
+                .empresa(empresa)
                 .titulo(r.titulo())
                 .descripcion(r.descripcion())
                 .normativa(r.normativa())
@@ -42,20 +44,20 @@ public class ActividadPreventivaService {
                 .fechaCompromiso(r.fechaCompromiso())
                 .observaciones(r.observaciones())
                 .build();
-        
+
         return mapper.toResponse(repository.save(actividad));
     }
 
 
     @Transactional
-    public Page<ActividadPreventivaResponse> listar(Long idCliente, EstadoActividadPreventiva estado, Pageable pageable){
+    public Page<ActividadPreventivaResponse> listar(Long idEmpresa, EstadoActividadPreventiva estado, Pageable pageable){
         repository.marcarVencidas(LocalDate.now());
 
         Page<ActividadPreventiva> page;
-        if(idCliente != null && estado != null){
-            page = repository.findByClienteIdAndEstado(idCliente, estado, pageable);
-        } else if (idCliente != null){
-            page = repository.findByClienteId(idCliente, pageable);
+        if(idEmpresa != null && estado != null){
+            page = repository.findByEmpresaIdAndEstado(idEmpresa, estado, pageable);
+        } else if (idEmpresa != null){
+            page = repository.findByEmpresaId(idEmpresa, pageable);
         } else if (estado != null){
             page = repository.findByEstado(estado, pageable);
         } else {
@@ -106,7 +108,8 @@ public class ActividadPreventivaService {
     @Transactional
     public List<ActividadPreventivaResponse> misActividades(String email) {
         repository.marcarVencidas(LocalDate.now());
-        return repository.findByClienteUsuarioEmailOrderByFechaCompromisoAsc(email)
+        Long idEmpresa = empresaService.empresaAutenticada(email).getId();
+        return repository.findByEmpresaIdOrderByFechaCompromisoAsc(idEmpresa)
                 .stream()
                 .map(mapper::toResponse)
                 .toList();
@@ -121,7 +124,7 @@ public class ActividadPreventivaService {
         vencidas.forEach(actividad -> {
             actividad.setEstado(EstadoActividadPreventiva.VENCIDA);
             correoService.enviarAlertaActividadPreventivaVencida(
-                    actividad.getCliente().getRazonSocial(),
+                    actividad.getEmpresa().getRazonSocial(),
                     actividad.getTitulo(),
                     actividad.getNormativa(),
                     actividad.getResponsable(),
@@ -132,7 +135,7 @@ public class ActividadPreventivaService {
 
         return vencidas.size();
     }
-  
+
     @Transactional
     private ActividadPreventiva buscar(Long id) {
         return repository.findById(id)

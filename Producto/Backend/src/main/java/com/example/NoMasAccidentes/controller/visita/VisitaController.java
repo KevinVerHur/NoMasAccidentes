@@ -47,10 +47,10 @@ public class VisitaController {
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public Page<VisitaResponse> listar(
-            @RequestParam(required = false) Long idCliente,
+            @RequestParam(required = false) Long idEmpresa,
             Pageable pageable) {
-        return idCliente != null
-                ? visitaService.listarPorCliente(idCliente, pageable)
+        return idEmpresa != null
+                ? visitaService.listarPorEmpresa(idEmpresa, pageable)
                 : visitaService.listar(pageable);
     }
 

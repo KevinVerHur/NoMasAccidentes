@@ -1,8 +1,10 @@
 package com.example.NoMasAccidentes.service.notificacion;
 
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.pago.EstadoPago;
 import com.example.NoMasAccidentes.model.visita.EstadoVisita;
 import com.example.NoMasAccidentes.repository.capacitacion.CapacitacionRepository;
+import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
 import com.example.NoMasAccidentes.repository.pago.PagoRepository;
 import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
 import com.example.NoMasAccidentes.service.actividad.ActividadPreventivaService;
@@ -22,10 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Slf4j
 public class NotificacionScheduler {
-    
+
     private final VisitaRepository visitaRepository;
     private final PagoRepository pagoRepository;
     private final CapacitacionRepository capacitacionRepository;
+    private final ClienteRepository clienteRepository;
     private final ActividadPreventivaService actividadPreventivaService;
     private final CorreoService correoService;
 
@@ -46,13 +49,16 @@ public class NotificacionScheduler {
         );
 
         visitas.forEach(visita -> {
-            var cliente = visita.getCliente();
-            correoService.enviarRecordatorioVisita(
-                    cliente.getEmail(),
-                    cliente.getRazonSocial(),
-                    visita.getFechaProgramada().format(FECHA_FORMATO),
-                    ""
-            );
+            Empresa empresa = visita.getEmpresa();
+            String email = emailRepresentante(empresa);
+            if (email != null) {
+                correoService.enviarRecordatorioVisita(
+                        email,
+                        empresa.getRazonSocial(),
+                        visita.getFechaProgramada().format(FECHA_FORMATO),
+                        ""
+                );
+            }
             visita.setRecordatorioEnviado(true);
         });
 
@@ -71,13 +77,16 @@ public class NotificacionScheduler {
         NumberFormat formatoMoneda = NumberFormat.getCurrencyInstance(new Locale("es", "CL"));
 
         pagos.forEach(pago -> {
-            var cliente = pago.getPlan().getCliente();
-            correoService.enviarAlertaPagoPendiente(
-                cliente.getEmail(),
-                cliente.getRazonSocial(),
-                pago.getFechaVencimiento().format(FECHA_FORMATO),
-                formatoMoneda.format(pago.getMonto())
-            );
+            Empresa empresa = pago.getPlan().getEmpresa();
+            String email = emailRepresentante(empresa);
+            if (email != null) {
+                correoService.enviarAlertaPagoPendiente(
+                    email,
+                    empresa.getRazonSocial(),
+                    pago.getFechaVencimiento().format(FECHA_FORMATO),
+                    formatoMoneda.format(pago.getMonto())
+                );
+            }
             pago.setAlertaEnviada(true);
         });
 
@@ -85,7 +94,7 @@ public class NotificacionScheduler {
     }
 
     /**
-     * RF30: recordatorio al cliente 3 días antes de cada capacitación programada.
+     * RF30: recordatorio al representante 3 días antes de cada capacitación programada.
      */
     @Scheduled(cron = "0 30 8 * * MON-FRI", zone = "America/Santiago")
     @Transactional
@@ -95,14 +104,17 @@ public class NotificacionScheduler {
         var capacitaciones = capacitacionRepository.findParaRecordatorio(enTresDias);
 
         capacitaciones.forEach(cap -> {
-            var cliente = cap.getCliente();
-            correoService.enviarRecordatorioCapacitacion(
-                    cliente.getEmail(),
-                    cliente.getRazonSocial(),
-                    cap.getCurso(),
-                    cap.getFechaProgramada().format(FECHA_FORMATO),
-                    cap.getHoraProgramada().format(HORA_FORMATO)
-            );
+            Empresa empresa = cap.getEmpresa();
+            String email = emailRepresentante(empresa);
+            if (email != null) {
+                correoService.enviarRecordatorioCapacitacion(
+                        email,
+                        empresa.getRazonSocial(),
+                        cap.getCurso(),
+                        cap.getFechaProgramada().format(FECHA_FORMATO),
+                        cap.getHoraProgramada().format(HORA_FORMATO)
+                );
+            }
             cap.setRecordatorioEnviado(true);
         });
 
@@ -119,7 +131,7 @@ public class NotificacionScheduler {
 
         capacitaciones.forEach(cap -> {
             correoService.enviarAlertaCapacitacionNoRealizada(
-                    cap.getCliente().getRazonSocial(),
+                    cap.getEmpresa().getRazonSocial(),
                     cap.getCurso(),
                     cap.getFechaProgramada().format(FECHA_FORMATO)
             );
@@ -137,5 +149,14 @@ public class NotificacionScheduler {
     public void notificarActividadesPreventivasVencidas(){
         int procesadas = actividadPreventivaService.procesarVencidasYAlertar();
         log.info("Alertas de actividades preventivas vencidas procesadas: {}", procesadas);
+    }
+
+    /** Correo del representante principal de la empresa (primero con email válido). */
+    private String emailRepresentante(Empresa empresa) {
+        return clienteRepository.findByEmpresaId(empresa.getId()).stream()
+                .map(rep -> rep.getEmail())
+                .filter(e -> e != null && !e.isBlank())
+                .findFirst()
+                .orElse(null);
     }
 }

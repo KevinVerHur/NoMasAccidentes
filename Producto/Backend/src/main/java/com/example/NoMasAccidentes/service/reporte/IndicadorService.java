@@ -5,16 +5,16 @@ import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
 import com.example.NoMasAccidentes.dto.reporte.AccidentabilidadMensualResponse;
 import com.example.NoMasAccidentes.dto.reporte.RendimientoProfesionalResponse;
 import com.example.NoMasAccidentes.model.capacitacion.EstadoCapacitacion;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
 import com.example.NoMasAccidentes.model.visita.EstadoVisita;
 import com.example.NoMasAccidentes.repository.asesoria.AccidenteRepository;
 import com.example.NoMasAccidentes.repository.asesoria.AsesoriaRepository;
 import com.example.NoMasAccidentes.repository.capacitacion.CapacitacionRepository;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
 import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
-import com.example.NoMasAccidentes.service.cliente.ClienteService;
+import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Indicadores de gestión derivados de los módulos operativos:
- * accidentabilidad por cliente (RF40) y rendimiento por profesional (RF41).
+ * accidentabilidad por empresa (RF40) y rendimiento por profesional (RF41).
  * Agregación de solo lectura; no persiste entidades propias.
  */
 @Service
@@ -34,20 +34,20 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class IndicadorService {
 
-    private final ClienteRepository clienteRepository;
+    private final EmpresaRepository empresaRepository;
     private final ProfesionalRepository profesionalRepository;
     private final AccidenteRepository accidenteRepository;
     private final VisitaRepository visitaRepository;
     private final AsesoriaRepository asesoriaRepository;
     private final CapacitacionRepository capacitacionRepository;
-    private final ClienteService clienteService;
+    private final EmpresaService empresaService;
 
-    /** Serie mensual (12 meses) de accidentabilidad de un cliente para el año (RF40). */
-    public List<AccidentabilidadMensualResponse> accidentabilidadAnual(Long idCliente, int anio) {
+    /** Serie mensual (12 meses) de accidentabilidad de una empresa para el año (RF40). */
+    public List<AccidentabilidadMensualResponse> accidentabilidadAnual(Long idEmpresa, int anio) {
         validarAnio(anio);
-        Cliente cliente = clienteRepository.findById(idCliente)
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", idCliente));
-        Integer trabajadores = cliente.getCantidadTrabajadores();
+        Empresa empresa = empresaRepository.findById(idEmpresa)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", idEmpresa));
+        Integer trabajadores = empresa.getCantidadTrabajadores();
 
         List<AccidentabilidadMensualResponse> serie = new ArrayList<>(12);
         for (int mes = 1; mes <= 12; mes++) {
@@ -55,9 +55,9 @@ public class IndicadorService {
             LocalDate hasta = desde.withDayOfMonth(desde.lengthOfMonth());
 
             long accidentes = accidenteRepository
-                    .countByAsesoriaClienteIdAndFechaOcurrenciaBetween(idCliente, desde, hasta);
+                    .countByAsesoriaEmpresaIdAndFechaOcurrenciaBetween(idEmpresa, desde, hasta);
             long diasPerdidos = accidenteRepository
-                    .sumDiasPerdidosByClienteAndFechaOcurrenciaBetween(idCliente, desde, hasta);
+                    .sumDiasPerdidosByEmpresaAndFechaOcurrenciaBetween(idEmpresa, desde, hasta);
             Double tasa = (trabajadores != null && trabajadores > 0)
                     ? (accidentes * 100.0) / trabajadores
                     : null;
@@ -67,10 +67,10 @@ public class IndicadorService {
         return serie;
     }
 
-    /** Accidentabilidad anual del cliente autenticado (portal cliente, RF40). */
+    /** Accidentabilidad anual de la empresa del usuario autenticado (portal cliente, RF40). */
     public List<AccidentabilidadMensualResponse> miAccidentabilidad(String emailUsuario, int anio) {
-        Long idCliente = clienteService.clienteAutenticado(emailUsuario).getId();
-        return accidentabilidadAnual(idCliente, anio);
+        Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
+        return accidentabilidadAnual(idEmpresa, anio);
     }
 
     /** Rendimiento de cada profesional en el periodo (RF41). */

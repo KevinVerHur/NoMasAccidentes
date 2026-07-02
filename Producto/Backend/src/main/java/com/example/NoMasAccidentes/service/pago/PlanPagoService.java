@@ -4,13 +4,13 @@ import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
 import com.example.NoMasAccidentes.dto.pago.CrearPlanPagoRequest;
 import com.example.NoMasAccidentes.dto.pago.PlanPagoMapper;
 import com.example.NoMasAccidentes.dto.pago.PlanPagoResponse;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.pago.EstadoPago;
 import com.example.NoMasAccidentes.model.pago.Mensualidad;
 import com.example.NoMasAccidentes.model.pago.Pago;
 import com.example.NoMasAccidentes.model.pago.Periodicidad;
 import com.example.NoMasAccidentes.model.pago.PlanPago;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.pago.PagoRepository;
 import com.example.NoMasAccidentes.repository.pago.PlanPagoRepository;
 import java.time.LocalDate;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Planes de pago por cliente (RF08). Al crear el plan genera sus cuotas.
+ * Planes de pago por empresa (RF08). Al crear el plan genera sus cuotas.
  */
 @Service
 @RequiredArgsConstructor
@@ -31,21 +31,21 @@ public class PlanPagoService {
 
     private final PlanPagoRepository planPagoRepository;
     private final PagoRepository pagoRepository;
-    private final ClienteRepository clienteRepository;
+    private final EmpresaRepository empresaRepository;
     private final MensualidadService mensualidadService;
     private final PlanPagoMapper planPagoMapper;
 
     @Transactional
     public PlanPagoResponse crear(CrearPlanPagoRequest request) {
-        Cliente cliente = clienteRepository.findById(request.idCliente())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", request.idCliente()));
+        Empresa empresa = empresaRepository.findById(request.idEmpresa())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", request.idEmpresa()));
         Mensualidad mensualidad = mensualidadService.buscarOFallar(request.idMensualidad());
         Periodicidad periodicidad = request.periodicidad() != null ? request.periodicidad() : Periodicidad.MENSUAL;
 
         LocalDate fechaTermino = vencimientoCuota(request.fechaInicio(), periodicidad, request.cuotasTotales());
 
         PlanPago plan = PlanPago.builder()
-                .cliente(cliente)
+                .empresa(empresa)
                 .mensualidad(mensualidad)
                 .fechaInicio(request.fechaInicio())
                 .fechaTermino(fechaTermino)
@@ -55,8 +55,8 @@ public class PlanPagoService {
         PlanPago guardado = planPagoRepository.save(plan);
 
         generarCuotas(guardado, mensualidad, periodicidad);
-        log.info("Plan de pago creado id={} cliente={} cuotas={} (RF08)",
-                guardado.getId(), cliente.getId(), request.cuotasTotales());
+        log.info("Plan de pago creado id={} empresa={} cuotas={} (RF08)",
+                guardado.getId(), empresa.getId(), request.cuotasTotales());
         return planPagoMapper.toResponse(guardado);
     }
 
@@ -82,8 +82,8 @@ public class PlanPagoService {
         };
     }
 
-    public List<PlanPagoResponse> listarPorCliente(Long idCliente) {
-        return planPagoRepository.findByClienteId(idCliente).stream().map(planPagoMapper::toResponse).toList();
+    public List<PlanPagoResponse> listarPorEmpresa(Long idEmpresa) {
+        return planPagoRepository.findByEmpresaId(idEmpresa).stream().map(planPagoMapper::toResponse).toList();
     }
 
     public PlanPagoResponse obtenerPorId(Long id) {

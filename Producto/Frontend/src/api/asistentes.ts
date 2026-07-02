@@ -2,7 +2,7 @@ import type { AsistenteResponse, AsistenteRequest } from '../types';
 import api from './axiosConfig';
 
 export async function listarAsistentesPorCliente(idCliente: number): Promise<AsistenteResponse[]> {
-  const res = await api.get<AsistenteResponse[]>(`/api/asistentes/cliente/${idCliente}`);
+  const res = await api.get<AsistenteResponse[]>(`/api/asistentes/empresa/${idCliente}`);
   return res.data;
 }
 

@@ -10,7 +10,7 @@
 
 CREATE TABLE asesoria (
     id_asesoria          BIGINT        AUTO_INCREMENT PRIMARY KEY,
-    id_cliente           BIGINT        NOT NULL,
+    id_empresa           BIGINT        NOT NULL,
     id_profesional       BIGINT        NOT NULL,
     fecha_solicitud      DATE          NOT NULL,
     fecha_atencion       DATE,
@@ -23,11 +23,11 @@ CREATE TABLE asesoria (
     fecha_actualizacion  DATETIME,
     creado_por           VARCHAR(80),
     actualizado_por      VARCHAR(80),
-    CONSTRAINT fk_asesoria_cliente     FOREIGN KEY (id_cliente)     REFERENCES cliente(id_cliente),
+    CONSTRAINT fk_asesoria_empresa     FOREIGN KEY (id_empresa)     REFERENCES empresa(id_empresa),
     CONSTRAINT fk_asesoria_profesional FOREIGN KEY (id_profesional) REFERENCES profesional(id_profesional)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE INDEX idx_asesoria_cliente ON asesoria(id_cliente);
+CREATE INDEX idx_asesoria_empresa ON asesoria(id_empresa);
 CREATE INDEX idx_asesoria_estado  ON asesoria(estado);
 
 -- Cierra la referencia informe -> asesoria (RF15 para asesorías; el informe reutiliza esta tabla).

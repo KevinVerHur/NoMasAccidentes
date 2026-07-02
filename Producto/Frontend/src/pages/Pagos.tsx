@@ -5,7 +5,7 @@ import Panel from '../components/ui/Panel';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import type {
-  ClienteResponse, MensualidadResponse, CrearMensualidadRequest,
+  EmpresaResponse, MensualidadResponse, CrearMensualidadRequest,
   PlanPagoResponse, CrearPlanPagoRequest, PagoResponse, RegistrarPagoRequest,
   EstadoPago, VarianteBadge,
 } from '../types';
@@ -30,9 +30,9 @@ const mensajeError = (e: unknown, fallback: string) =>
   (e as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje ?? fallback;
 
 export default function Pagos() {
-  const [clientes, setClientes]       = useState<ClienteResponse[]>([]);
+  const [clientes, setClientes]       = useState<EmpresaResponse[]>([]);
   const [mensualidades, setMensualidades] = useState<MensualidadResponse[]>([]);
-  const [idCliente, setIdCliente]     = useState<number | null>(null);
+  const [idEmpresa, setIdEmpresa]     = useState<number | null>(null);
   const [planes, setPlanes]           = useState<PlanPagoResponse[]>([]);
   const [pagos, setPagos]             = useState<PagoResponse[]>([]);
   const [cargandoCliente, setCargandoCliente] = useState(false);
@@ -63,7 +63,7 @@ export default function Pagos() {
     }
   }, []);
 
-  useEffect(() => { if (idCliente != null) cargarCliente(idCliente); }, [idCliente, cargarCliente]);
+  useEffect(() => { if (idEmpresa != null) cargarCliente(idEmpresa); }, [idEmpresa, cargarCliente]);
 
   const pagadas   = pagos.filter(p => p.estadoPago === 'PAGADO').length;
   const pendientes = pagos.filter(p => p.estadoPago === 'PENDIENTE').length;
@@ -71,14 +71,14 @@ export default function Pagos() {
   const totalAdeudado = pagos.filter(p => p.estadoPago !== 'PAGADO').reduce((s, p) => s + p.monto, 0);
 
   async function onCrearPlan(data: CrearPlanPagoRequest) {
-    if (idCliente == null) return;
+    if (idEmpresa == null) return;
     setError(null);
     setGuardando(true);
     try {
-      await crearPlanPago({ ...data, idCliente });
+      await crearPlanPago({ ...data, idEmpresa });
       setModalPlan(false);
       formPlan.reset();
-      await cargarCliente(idCliente);
+      await cargarCliente(idEmpresa);
     } catch (e: unknown) {
       setError(mensajeError(e, 'Error al asignar el plan.'));
     } finally {
@@ -102,14 +102,14 @@ export default function Pagos() {
   }
 
   async function onRegistrarPago(data: RegistrarPagoRequest) {
-    if (!modalPago || idCliente == null) return;
+    if (!modalPago || idEmpresa == null) return;
     setError(null);
     setGuardando(true);
     try {
       await registrarPago(modalPago.id, data);
       setModalPago(null);
       formPago.reset();
-      await cargarCliente(idCliente);
+      await cargarCliente(idEmpresa);
     } catch (e: unknown) {
       setError(mensajeError(e, 'Error al registrar el pago.'));
     } finally {
@@ -121,13 +121,13 @@ export default function Pagos() {
     setAviso(null);
     const r = await evaluarMorosidad();
     setAviso(`Morosidad evaluada: ${r.cuotasMarcadas} cuota(s) marcada(s) como atrasada(s).`);
-    if (idCliente != null) await cargarCliente(idCliente);
+    if (idEmpresa != null) await cargarCliente(idEmpresa);
   }
 
   async function onSuspenderMorosos() {
     setAviso(null);
     const r = await suspenderMorosos();
-    setAviso(`${r.clientesSuspendidos} cliente(s) suspendido(s) por morosidad.`);
+    setAviso(`${r.empresasSuspendidas} cliente(s) suspendido(s) por morosidad.`);
   }
 
   return (
@@ -186,15 +186,15 @@ export default function Pagos() {
         {/* Selector de cliente + planes asignados */}
         <Panel
           titulo="🏢 Cliente"
-          accion={idCliente != null
+          accion={idEmpresa != null
             ? <button className="btn btn-sm btn-primary" onClick={() => { formPlan.reset(); setError(null); setModalPlan(true); }}>+ Asignar plan</button>
             : undefined}
         >
-          <select className="auth-input" value={idCliente ?? ''} onChange={e => setIdCliente(e.target.value ? Number(e.target.value) : null)} style={{ marginBottom: 12 }}>
+          <select className="auth-input" value={idEmpresa ?? ''} onChange={e => setIdEmpresa(e.target.value ? Number(e.target.value) : null)} style={{ marginBottom: 12 }}>
             <option value="">Seleccionar cliente...</option>
             {clientes.map(c => <option key={c.id} value={c.id}>{c.razonSocial}</option>)}
           </select>
-          {idCliente == null ? (
+          {idEmpresa == null ? (
             <div className="placeholder">Selecciona un cliente para ver sus planes y pagos.</div>
           ) : planes.length === 0 ? (
             <div className="placeholder">El cliente no tiene planes asignados.</div>
@@ -217,7 +217,7 @@ export default function Pagos() {
       </div>
 
       {/* Historial de cuotas */}
-      {idCliente != null && (
+      {idEmpresa != null && (
         <Panel titulo="💳 Historial de cuotas">
           {cargandoCliente ? (
             <div className="placeholder">Cargando...</div>

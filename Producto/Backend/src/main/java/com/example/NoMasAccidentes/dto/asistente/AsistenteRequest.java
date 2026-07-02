@@ -4,8 +4,8 @@ import jakarta.validation.constraints.*;
 
 public record AsistenteRequest(
 
-        @NotNull(message = "El cliente es obligatorio")
-        Long idCliente,
+        @NotNull(message = "La empresa es obligatoria")
+        Long idEmpresa,
 
         @NotBlank(message = "El RUT es obligatorio")
         @Size(max = 12, message = "RUT inválido")

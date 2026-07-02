@@ -41,17 +41,17 @@ public class ReporteController {
     @PostMapping("/api/reportes/generar")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public ResponseEntity<ReporteMensualResponse> generar(
-            @RequestParam Long idCliente,
+            @RequestParam Long idEmpresa,
             @RequestParam int mes,
             @RequestParam int anio) {
-        return ResponseEntity.ok(reporteService.generar(idCliente, mes, anio));
+        return ResponseEntity.ok(reporteService.generar(idEmpresa, mes, anio));
     }
 
-    @Operation(summary = "Listar los reportes mensuales de un cliente (RF38, RF42)")
+    @Operation(summary = "Listar los reportes mensuales de una empresa (RF38, RF42)")
     @GetMapping("/api/reportes")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
-    public List<ReporteMensualResponse> listarPorCliente(@RequestParam Long idCliente) {
-        return reporteService.listarPorCliente(idCliente);
+    public List<ReporteMensualResponse> listarPorEmpresa(@RequestParam Long idEmpresa) {
+        return reporteService.listarPorEmpresa(idEmpresa);
     }
 
     @Operation(summary = "Obtener un reporte mensual por id")

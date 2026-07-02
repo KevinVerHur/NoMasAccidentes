@@ -10,16 +10,16 @@ public interface AccidenteRepository extends JpaRepository<Accidente, Long> {
 
     List<Accidente> findByAsesoriaIdOrderByFechaOcurrenciaDesc(Long idAsesoria);
 
-    /** Accidentes del cliente (vía asesoría) ocurridos en el periodo (reporte mensual, RF39). */
-    long countByAsesoriaClienteIdAndFechaOcurrenciaBetween(
-            Long idCliente, LocalDate desde, LocalDate hasta);
+    /** Accidentes de la empresa (vía asesoría) ocurridos en el periodo (reporte mensual, RF39). */
+    long countByAsesoriaEmpresaIdAndFechaOcurrenciaBetween(
+            Long idEmpresa, LocalDate desde, LocalDate hasta);
 
-    /** Días perdidos por accidentes del cliente en el periodo (indicador accidentabilidad, RF40). */
+    /** Días perdidos por accidentes de la empresa en el periodo (indicador accidentabilidad, RF40). */
     @Query("""
             select coalesce(sum(a.diasPerdidos), 0)
             from Accidente a
-            where a.asesoria.cliente.id = :idCliente
+            where a.asesoria.empresa.id = :idEmpresa
                 and a.fechaOcurrencia between :desde and :hasta
             """)
-    long sumDiasPerdidosByClienteAndFechaOcurrenciaBetween(Long idCliente, LocalDate desde, LocalDate hasta);
+    long sumDiasPerdidosByEmpresaAndFechaOcurrenciaBetween(Long idEmpresa, LocalDate desde, LocalDate hasta);
 }

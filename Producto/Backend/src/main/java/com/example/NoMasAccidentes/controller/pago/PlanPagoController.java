@@ -38,8 +38,8 @@ public class PlanPagoController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
-    public List<PlanPagoResponse> listarPorCliente(@RequestParam Long idCliente) {
-        return planPagoService.listarPorCliente(idCliente);
+    public List<PlanPagoResponse> listarPorEmpresa(@RequestParam Long idEmpresa) {
+        return planPagoService.listarPorEmpresa(idEmpresa);
     }
 
     @GetMapping("/{id}")

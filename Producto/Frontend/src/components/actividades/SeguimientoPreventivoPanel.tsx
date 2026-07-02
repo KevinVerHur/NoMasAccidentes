@@ -79,7 +79,7 @@ export default function SeguimientoPreventivoPanel({
 
     return actividades.filter((a) =>
       !texto ||
-      a.razonSocialCliente.toLowerCase().includes(texto) ||
+      a.razonSocialEmpresa.toLowerCase().includes(texto) ||
       a.titulo.toLowerCase().includes(texto) ||
       (a.responsable ?? '').toLowerCase().includes(texto)
     );
@@ -130,7 +130,7 @@ export default function SeguimientoPreventivoPanel({
           <tbody>
             {filtradas.map((a) => (
               <tr key={a.id}>
-                {!idCliente && !modoCliente && <td>{a.razonSocialCliente}</td>}
+                {!idCliente && !modoCliente && <td>{a.razonSocialEmpresa}</td>}
                 <td>
                   <div style={{ fontWeight: 600, color: '#1a3a5c' }}>{a.titulo}</div>
                   <div style={{ fontSize: 11, color: '#6b7280' }}>{a.descripcion ?? '-'}</div>

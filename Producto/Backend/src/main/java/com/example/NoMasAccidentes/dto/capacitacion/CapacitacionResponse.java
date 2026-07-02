@@ -14,8 +14,8 @@ public record CapacitacionResponse(
         Long id,
 
         // — Campos del formulario —
-        Long idCliente,
-        String cliente,              // razonSocial del Cliente
+        Long idEmpresa,
+        String razonSocialEmpresa,   // razonSocial de la Empresa
 
         String curso,
 

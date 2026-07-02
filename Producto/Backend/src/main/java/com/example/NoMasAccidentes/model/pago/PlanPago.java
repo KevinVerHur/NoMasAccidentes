@@ -1,7 +1,7 @@
 package com.example.NoMasAccidentes.model.pago;
 
 import com.example.NoMasAccidentes.common.BaseEntity;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -42,8 +42,8 @@ public class PlanPago extends BaseEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_cliente", nullable = false)
-    private Cliente cliente;
+    @JoinColumn(name = "id_empresa", nullable = false)
+    private Empresa empresa;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_mensualidad", nullable = false)

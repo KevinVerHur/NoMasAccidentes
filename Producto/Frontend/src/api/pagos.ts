@@ -18,7 +18,7 @@ export async function crearMensualidad(data: CrearMensualidadRequest): Promise<M
 
 // ---- Planes de pago (RF08) ----
 export async function listarPlanesPorCliente(idCliente: number): Promise<PlanPagoResponse[]> {
-  const res = await api.get<PlanPagoResponse[]>('/api/planes-pago', { params: { idCliente } });
+  const res = await api.get<PlanPagoResponse[]>('/api/planes-pago', { params: { idEmpresa: idCliente } });
   return res.data;
 }
 
@@ -29,7 +29,7 @@ export async function crearPlanPago(data: CrearPlanPagoRequest): Promise<PlanPag
 
 // ---- Pagos / cuotas (RF09–RF12) ----
 export async function historialPagos(idCliente: number): Promise<PagoResponse[]> {
-  const res = await api.get<PagoResponse[]>('/api/pagos', { params: { idCliente } });
+  const res = await api.get<PagoResponse[]>('/api/pagos', { params: { idEmpresa: idCliente } });
   return res.data;
 }
 
@@ -43,8 +43,8 @@ export async function evaluarMorosidad(): Promise<{ cuotasMarcadas: number }> {
   return res.data;
 }
 
-export async function suspenderMorosos(): Promise<{ clientesSuspendidos: number }> {
-  const res = await api.post<{ clientesSuspendidos: number }>('/api/pagos/suspender-morosos');
+export async function suspenderMorosos(): Promise<{ empresasSuspendidas: number }> {
+  const res = await api.post<{ empresasSuspendidas: number }>('/api/pagos/suspender-morosos');
   return res.data;
 }
 

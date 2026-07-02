@@ -47,8 +47,8 @@ public class InformeAsesoriaPdfService {
         doc.add(espacio());
 
         doc.add(seccion("Datos de la asesoría"));
-        doc.add(linea("Cliente: ", asesoria.getCliente().getRazonSocial()));
-        doc.add(linea("RUT: ", asesoria.getCliente().getRut()));
+        doc.add(linea("Empresa: ", asesoria.getEmpresa().getRazonSocial()));
+        doc.add(linea("RUT: ", asesoria.getEmpresa().getRut()));
         doc.add(linea("Profesional: ",
                 asesoria.getProfesional().getUsuario().getNombre() + " "
                         + asesoria.getProfesional().getUsuario().getApellido()));

@@ -1,7 +1,7 @@
 package com.example.NoMasAccidentes.model.actividad;
 
 import com.example.NoMasAccidentes.common.BaseEntity;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import lombok.*;
@@ -25,8 +25,8 @@ public class ActividadPreventiva extends BaseEntity{
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_cliente", nullable = false)
-    private Cliente cliente;
+    @JoinColumn(name = "id_empresa", nullable = false)
+    private Empresa empresa;
 
     @Column(nullable = false, length = 160)
     private String titulo;

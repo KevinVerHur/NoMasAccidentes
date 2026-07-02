@@ -8,8 +8,8 @@ import java.time.LocalDate;
  */
 public record ReporteMensualResponse(
         Long id,
-        Long idCliente,
-        String razonSocialCliente,
+        Long idEmpresa,
+        String razonSocialEmpresa,
         int mes,
         int anio,
         LocalDate fechaEmision,

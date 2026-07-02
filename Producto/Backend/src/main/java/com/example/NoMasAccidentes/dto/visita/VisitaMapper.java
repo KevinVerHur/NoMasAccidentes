@@ -7,8 +7,8 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface VisitaMapper {
 
-    @Mapping(target = "idCliente",          source = "cliente.id")
-    @Mapping(target = "razonSocialCliente", source = "cliente.razonSocial")
+    @Mapping(target = "idEmpresa",          source = "empresa.id")
+    @Mapping(target = "razonSocialEmpresa", source = "empresa.razonSocial")
     @Mapping(target = "idProfesional",      source = "profesional.id")
     @Mapping(target = "nombreProfesional",  expression = "java(visita.getProfesional().getUsuario().getNombre() + \" \" + visita.getProfesional().getUsuario().getApellido())")
     @Mapping(target = "idListaChequeo",     source = "listaChequeo.id")

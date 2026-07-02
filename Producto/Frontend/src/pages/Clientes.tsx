@@ -4,39 +4,48 @@ import KpiCard from '../components/ui/KpiCard';
 import Panel from '../components/ui/Panel';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
-import type { ClienteResponse, CrearClienteRequest, ActualizarClienteRequest, EstadoCliente, VarianteBadge } from '../types';
+import type { EmpresaResponse, CrearEmpresaRequest, ActualizarEmpresaRequest, EstadoEmpresa, RubroResponse, RepresentanteResponse, CrearRepresentanteRequest, VarianteBadge } from '../types';
 import { listarClientes, crearCliente, actualizarCliente, suspenderCliente, reactivarCliente, eliminarCliente } from '../api/clientes';
+import { listarRubros } from '../api/rubros';
+import { listarRepresentantes, crearRepresentante, eliminarRepresentante } from '../api/representantes';
 
-const badgePorEstado: Record<EstadoCliente, VarianteBadge> = {
+const badgePorEstado: Record<EstadoEmpresa, VarianteBadge> = {
   ACTIVO:     'green',
   MOROSO:     'red',
   SUSPENDIDO: 'gray',
 };
 
-const labelEstado: Record<EstadoCliente, string> = {
+const labelEstado: Record<EstadoEmpresa, string> = {
   ACTIVO:     'Activo',
   MOROSO:     'Moroso',
   SUSPENDIDO: 'Suspendido',
 };
 
-const RUBROS = ['Construcción', 'Minería', 'Transporte', 'Manufactura', 'Agricultura', 'Servicios', 'Otro'];
 const PLANES = ['BASICO', 'PRO', 'PREMIUM'];
 
 export default function Clientes() {
-  const [clientes, setClientes]         = useState<ClienteResponse[]>([]);
+  const [clientes, setClientes]         = useState<EmpresaResponse[]>([]);
+  const [rubros, setRubros]             = useState<RubroResponse[]>([]);
   const [cargando, setCargando]         = useState(true);
   const [busqueda, setBusqueda]         = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [modalNuevo, setModalNuevo]     = useState(false);
-  const [modalEditar, setModalEditar]   = useState<ClienteResponse | null>(null);
-  const [modalSuspender, setModalSuspender] = useState<ClienteResponse | null>(null);
-  const [modalEliminar, setModalEliminar]   = useState<ClienteResponse | null>(null);
+  const [modalEditar, setModalEditar]   = useState<EmpresaResponse | null>(null);
+  const [modalSuspender, setModalSuspender] = useState<EmpresaResponse | null>(null);
+  const [modalEliminar, setModalEliminar]   = useState<EmpresaResponse | null>(null);
   const [reactivandoId, setReactivandoId] = useState<number | null>(null);
   const [guardando, setGuardando]       = useState(false);
   const [error, setError]               = useState<string | null>(null);
 
-  const formNuevo  = useForm<CrearClienteRequest>();
-  const formEditar = useForm<ActualizarClienteRequest>();
+  // Drill-down a los contactos/representantes de una empresa.
+  const [empresaSel, setEmpresaSel]           = useState<EmpresaResponse | null>(null);
+  const [representantes, setRepresentantes]   = useState<RepresentanteResponse[]>([]);
+  const [cargandoContactos, setCargandoContactos] = useState(false);
+  const [modalNuevoContacto, setModalNuevoContacto] = useState(false);
+
+  const formNuevo  = useForm<CrearEmpresaRequest>();
+  const formEditar = useForm<ActualizarEmpresaRequest>();
+  const formRep    = useForm<CrearRepresentanteRequest>({ defaultValues: { conAcceso: true } });
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -49,10 +58,11 @@ export default function Clientes() {
   }, []);
 
   useEffect(() => { cargar(); }, [cargar]);
+  useEffect(() => { listarRubros().then(setRubros).catch(() => {}); }, []);
 
   const filtrados = clientes.filter(c => {
     const texto = busqueda.toLowerCase();
-    const coincide = !texto || c.razonSocial.toLowerCase().includes(texto) || c.rut.toLowerCase().includes(texto) || c.rubro.toLowerCase().includes(texto);
+    const coincide = !texto || c.razonSocial.toLowerCase().includes(texto) || c.rut.toLowerCase().includes(texto) || c.nombreRubro.toLowerCase().includes(texto);
     const estado = !filtroEstado || c.estado === filtroEstado;
     return coincide && estado;
   });
@@ -61,7 +71,7 @@ export default function Clientes() {
   const suspendidos = clientes.filter(c => c.estado === 'SUSPENDIDO').length;
   const morosos     = clientes.filter(c => c.estado === 'MOROSO').length;
 
-  async function onCrear(data: CrearClienteRequest) {
+  async function onCrear(data: CrearEmpresaRequest) {
     setError(null);
     setGuardando(true);
     try {
@@ -77,14 +87,13 @@ export default function Clientes() {
     }
   }
 
-  function abrirEditar(c: ClienteResponse) {
+  function abrirEditar(c: EmpresaResponse) {
     formEditar.reset({
       razonSocial:    c.razonSocial,
       rut:            c.rut,
-      nombreContacto: c.nombreContacto,
-      email:          c.email,
-      telefono:       c.telefono ?? '',
-      rubro:          c.rubro,
+      direccion:      c.direccion ?? '',
+      comuna:         c.comuna ?? '',
+      idRubro:        c.idRubro,
       plan:           c.plan,
       cantidadTrabajadores: c.cantidadTrabajadores ?? undefined,
       idProfesional:  c.idProfesional ?? undefined,
@@ -94,7 +103,7 @@ export default function Clientes() {
     setModalEditar(c);
   }
 
-  async function onEditar(data: ActualizarClienteRequest) {
+  async function onEditar(data: ActualizarEmpresaRequest) {
     if (!modalEditar) return;
     setError(null);
     setGuardando(true);
@@ -130,7 +139,7 @@ export default function Clientes() {
       await cargar();
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg ?? 'Error de integridad: El usuario asociado (ID 3) no puede ser cargado o no existe.');
+      setError(msg ?? 'Error al reactivar el cliente.');
     } finally {
       setReactivandoId(null);
     }
@@ -145,13 +154,156 @@ export default function Clientes() {
       setModalEliminar(null);
       await cargar();
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message; // Mantener el mensaje de error del backend si existe
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
       setError(msg ?? 'Error al eliminar el cliente. Verifique que no tenga registros asociados.');
     } finally {
       setGuardando(false);
     }
   }
 
+  // ---- Contactos / representantes ----
+  const cargarContactos = useCallback(async (idEmpresa: number) => {
+    setCargandoContactos(true);
+    try {
+      setRepresentantes(await listarRepresentantes(idEmpresa));
+    } finally {
+      setCargandoContactos(false);
+    }
+  }, []);
+
+  async function verContactos(c: EmpresaResponse) {
+    setError(null);
+    setEmpresaSel(c);
+    await cargarContactos(c.id);
+  }
+
+  function volverALista() {
+    setEmpresaSel(null);
+    setRepresentantes([]);
+  }
+
+  async function onCrearRepresentante(data: CrearRepresentanteRequest) {
+    if (!empresaSel) return;
+    setError(null);
+    setGuardando(true);
+    try {
+      await crearRepresentante(empresaSel.id, data);
+      setModalNuevoContacto(false);
+      formRep.reset({ conAcceso: true });
+      await cargarContactos(empresaSel.id);
+    } catch (e: unknown) {
+      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      setError(msg ?? 'Error al agregar el representante. Verifique que el correo no esté en uso.');
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  async function onEliminarRepresentante(id: number) {
+    if (!empresaSel) return;
+    try {
+      await eliminarRepresentante(empresaSel.id, id);
+      await cargarContactos(empresaSel.id);
+    } catch { /* noop */ }
+  }
+
+  // ============================ VISTA DE CONTACTOS ============================
+  if (empresaSel) {
+    return (
+      <>
+        <button className="btn btn-sm btn-outline" style={{ marginBottom: 10 }} onClick={volverALista}>← Volver a clientes</button>
+        <div className="page-title">{empresaSel.razonSocial}</div>
+        <div className="page-subtitle">
+          {empresaSel.rut} · {empresaSel.nombreRubro} · Plan {empresaSel.plan} · <Badge variante={badgePorEstado[empresaSel.estado]}>{labelEstado[empresaSel.estado]}</Badge>
+        </div>
+
+        <Panel
+          titulo="👤 Contactos / Representantes"
+          accion={<button className="btn btn-sm btn-primary" onClick={() => { formRep.reset({ conAcceso: true }); setError(null); setModalNuevoContacto(true); }}>+ Nuevo contacto</button>}
+        >
+          {cargandoContactos ? (
+            <div className="placeholder">Cargando contactos...</div>
+          ) : representantes.length === 0 ? (
+            <div className="placeholder">Esta empresa no tiene contactos registrados. Agrega el primero con “+ Nuevo contacto”.</div>
+          ) : (
+            <table className="app-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Cargo</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                  <th>Acceso al portal</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {representantes.map(r => (
+                  <tr key={r.id}>
+                    <td style={{ fontWeight: 600, color: '#1a3a5c' }}>{r.nombre}</td>
+                    <td>{r.cargo ?? '—'}</td>
+                    <td>{r.email}</td>
+                    <td>{r.telefono ?? '—'}</td>
+                    <td><Badge variante={r.tieneAcceso ? 'green' : 'gray'}>{r.tieneAcceso ? 'Con acceso' : 'Sin acceso'}</Badge></td>
+                    <td>
+                      <button className="btn btn-sm btn-danger" onClick={() => onEliminarRepresentante(r.id)}>Quitar</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+
+        {/* Modal agregar contacto */}
+        <Modal
+          abierto={modalNuevoContacto}
+          titulo={`Nuevo contacto — ${empresaSel.razonSocial}`}
+          onCerrar={() => setModalNuevoContacto(false)}
+          footer={
+            <>
+              <button className="btn btn-outline" onClick={() => setModalNuevoContacto(false)}>Cancelar</button>
+              <button className="btn btn-primary" form="form-representante" type="submit" disabled={guardando}>
+                {guardando ? 'Agregando...' : 'Agregar contacto'}
+              </button>
+            </>
+          }
+        >
+          <form id="form-representante" onSubmit={formRep.handleSubmit(onCrearRepresentante)} noValidate>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div>
+                <label className="auth-label">Nombre *</label>
+                <input className={`auth-input ${formRep.formState.errors.nombre ? 'auth-input--error' : ''}`}
+                  {...formRep.register('nombre', { required: 'Obligatorio' })} />
+                {formRep.formState.errors.nombre && <span className="auth-field-error">{formRep.formState.errors.nombre.message}</span>}
+              </div>
+              <div>
+                <label className="auth-label">Cargo</label>
+                <input className="auth-input" placeholder="Encargado de Prevención" {...formRep.register('cargo')} />
+              </div>
+              <div>
+                <label className="auth-label">Email *</label>
+                <input type="email" className={`auth-input ${formRep.formState.errors.email ? 'auth-input--error' : ''}`}
+                  {...formRep.register('email', { required: 'Obligatorio', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email inválido' } })} />
+                {formRep.formState.errors.email && <span className="auth-field-error">{formRep.formState.errors.email.message}</span>}
+              </div>
+              <div>
+                <label className="auth-label">Teléfono</label>
+                <input className="auth-input" {...formRep.register('telefono')} />
+              </div>
+              <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="checkbox" id="conAcceso" {...formRep.register('conAcceso')} />
+                <label htmlFor="conAcceso" style={{ fontSize: 13 }}>Dar acceso al portal (envía invitación por correo)</label>
+              </div>
+            </div>
+            {error && <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>{error}</div>}
+          </form>
+        </Modal>
+      </>
+    );
+  }
+
+  // ============================ VISTA DE LISTADO ============================
   return (
     <>
       <div className="page-title">Clientes</div>
@@ -201,27 +353,27 @@ export default function Clientes() {
             </thead>
             <tbody>
               {filtrados.map(c => (
-                <tr key={c.id}>
+                <tr key={c.id} onClick={() => verContactos(c)} style={{ cursor: 'pointer' }}>
                   <td>
-                    <div style={{ fontWeight: 600, color: '#1a3a5c' }}>{c.razonSocial}</div>
-                    <div style={{ fontSize: 11, color: '#9ca3af' }}>{c.nombreContacto} · {c.email}</div>
+                    <div style={{ fontWeight: 600, color: '#18395a' }}>{c.razonSocial}</div>
+                    {c.comuna && <div style={{ fontSize: 11, color: '#9ca3af' }}>{c.comuna}</div>}
                   </td>
                   <td>{c.rut}</td>
-                  <td>{c.rubro}</td>
+                  <td>{c.nombreRubro}</td>
                   <td><span style={{ fontSize: 11, fontWeight: 600 }}>{c.plan}</span></td>
                   <td>{c.nombreProfesional ?? <span style={{ color: '#9ca3af' }}>Sin asignar</span>}</td>
                   <td><Badge variante={badgePorEstado[c.estado]}>{labelEstado[c.estado]}</Badge></td>
                   <td>
                     <div className="btn-group">
-                      <button className="btn btn-sm btn-outline" onClick={() => abrirEditar(c)}>Editar</button>
+                      <button className="btn btn-sm btn-outline" onClick={e => { e.stopPropagation(); abrirEditar(c); }}>Editar</button>
                       {c.estado === 'SUSPENDIDO' ? (
-                        <button className="btn btn-sm btn-success" disabled={reactivandoId === c.id} onClick={() => onReactivar(c.id)}>
+                        <button className="btn btn-sm btn-success" disabled={reactivandoId === c.id} onClick={e => { e.stopPropagation(); onReactivar(c.id); }}>
                           {reactivandoId === c.id ? 'Cargando...' : 'Reactivar'}
                         </button>
                       ) : (
-                        <button className="btn btn-sm btn-warn" onClick={() => setModalSuspender(c)}>Suspender</button>
+                        <button className="btn btn-sm btn-warn" onClick={e => { e.stopPropagation(); setModalSuspender(c); }}>Suspender</button>
                       )}
-                      <button className="btn btn-sm btn-danger" onClick={() => setModalEliminar(c)}>Eliminar</button>
+                      <button className="btn btn-sm btn-danger" onClick={e => { e.stopPropagation(); setModalEliminar(c); }}>Eliminar</button>
                     </div>
                   </td>
                 </tr>
@@ -229,9 +381,12 @@ export default function Clientes() {
             </tbody>
           </table>
         )}
+        <div className="help" style={{ marginTop: 8, paddingLeft: 12, fontSize: 11, color: '#9ca3af' }}>
+          Haz clic en una empresa para ver y gestionar sus contactos.
+        </div>
       </Panel>
 
-      {/* Modal nuevo cliente */}
+      {/* Modal nuevo cliente (empresa + primer representante) */}
       <Modal
         abierto={modalNuevo}
         titulo="Nuevo Cliente"
@@ -246,6 +401,7 @@ export default function Clientes() {
         }
       >
         <form id="form-cliente-nuevo" onSubmit={formNuevo.handleSubmit(onCrear)} noValidate>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#18395a', marginBottom: 8 }}>Empresa</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div style={{ gridColumn: 'span 2' }}>
               <label className="auth-label">Razón social *</label>
@@ -264,33 +420,21 @@ export default function Clientes() {
               {formNuevo.formState.errors.rut && <span className="auth-field-error">{formNuevo.formState.errors.rut.message}</span>}
             </div>
             <div>
-              <label className="auth-label">Contacto *</label>
-              <input className={`auth-input ${formNuevo.formState.errors.nombreContacto ? 'auth-input--error' : ''}`}
-                placeholder="Nombre del contacto"
-                {...formNuevo.register('nombreContacto', { required: 'Obligatorio' })}
-              />
-              {formNuevo.formState.errors.nombreContacto && <span className="auth-field-error">{formNuevo.formState.errors.nombreContacto.message}</span>}
-            </div>
-            <div>
-              <label className="auth-label">Email *</label>
-              <input type="email" className={`auth-input ${formNuevo.formState.errors.email ? 'auth-input--error' : ''}`}
-                placeholder="contacto@empresa.cl"
-                {...formNuevo.register('email', { required: 'Obligatorio', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email inválido' } })}
-              />
-              {formNuevo.formState.errors.email && <span className="auth-field-error">{formNuevo.formState.errors.email.message}</span>}
-            </div>
-            <div>
-              <label className="auth-label">Teléfono</label>
-              <input className="auth-input" placeholder="+56 9 1234 5678" {...formNuevo.register('telefono')} />
-            </div>
-            <div>
               <label className="auth-label">Rubro *</label>
-              <select className={`auth-input ${formNuevo.formState.errors.rubro ? 'auth-input--error' : ''}`}
-                {...formNuevo.register('rubro', { required: 'Obligatorio' })}>
+              <select className={`auth-input ${formNuevo.formState.errors.idRubro ? 'auth-input--error' : ''}`}
+                {...formNuevo.register('idRubro', { required: 'Obligatorio', valueAsNumber: true })}>
                 <option value="">Seleccionar...</option>
-                {RUBROS.map(r => <option key={r} value={r}>{r}</option>)}
+                {rubros.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
               </select>
-              {formNuevo.formState.errors.rubro && <span className="auth-field-error">{formNuevo.formState.errors.rubro.message}</span>}
+              {formNuevo.formState.errors.idRubro && <span className="auth-field-error">{formNuevo.formState.errors.idRubro.message}</span>}
+            </div>
+            <div>
+              <label className="auth-label">Dirección</label>
+              <input className="auth-input" placeholder="Av. Siempre Viva 742" {...formNuevo.register('direccion')} />
+            </div>
+            <div>
+              <label className="auth-label">Comuna</label>
+              <input className="auth-input" placeholder="Santiago" {...formNuevo.register('comuna')} />
             </div>
             <div>
               <label className="auth-label">Plan *</label>
@@ -308,11 +452,42 @@ export default function Clientes() {
               {formNuevo.formState.errors.cantidadTrabajadores && <span className="auth-field-error">{formNuevo.formState.errors.cantidadTrabajadores.message}</span>}
             </div>
           </div>
+
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#18395a', margin: '16px 0 8px' }}>Representante (contacto)</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label className="auth-label">Nombre *</label>
+              <input className={`auth-input ${formNuevo.formState.errors.nombreContacto ? 'auth-input--error' : ''}`}
+                placeholder="Nombre del contacto"
+                {...formNuevo.register('nombreContacto', { required: 'Obligatorio' })}
+              />
+              {formNuevo.formState.errors.nombreContacto && <span className="auth-field-error">{formNuevo.formState.errors.nombreContacto.message}</span>}
+            </div>
+            <div>
+              <label className="auth-label">Cargo</label>
+              <input className="auth-input" placeholder="Encargado de Prevención" {...formNuevo.register('cargoContacto')} />
+            </div>
+            <div>
+              <label className="auth-label">Email *</label>
+              <input type="email" className={`auth-input ${formNuevo.formState.errors.email ? 'auth-input--error' : ''}`}
+                placeholder="contacto@empresa.cl"
+                {...formNuevo.register('email', { required: 'Obligatorio', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email inválido' } })}
+              />
+              {formNuevo.formState.errors.email && <span className="auth-field-error">{formNuevo.formState.errors.email.message}</span>}
+            </div>
+            <div>
+              <label className="auth-label">Teléfono</label>
+              <input className="auth-input" placeholder="+56 9 1234 5678" {...formNuevo.register('telefono')} />
+            </div>
+          </div>
+          <div className="help" style={{ marginTop: 8, fontSize: 11, color: '#9ca3af' }}>
+            Se le enviará una invitación por correo para que active su acceso al portal.
+          </div>
           {error && <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>{error}</div>}
         </form>
       </Modal>
 
-      {/* Modal editar cliente */}
+      {/* Modal editar cliente (datos de la empresa) */}
       <Modal
         abierto={!!modalEditar}
         titulo="Editar Cliente"
@@ -343,31 +518,21 @@ export default function Clientes() {
               {formEditar.formState.errors.rut && <span className="auth-field-error">{formEditar.formState.errors.rut.message}</span>}
             </div>
             <div>
-              <label className="auth-label">Contacto *</label>
-              <input className={`auth-input ${formEditar.formState.errors.nombreContacto ? 'auth-input--error' : ''}`}
-                {...formEditar.register('nombreContacto', { required: 'Obligatorio' })}
-              />
-              {formEditar.formState.errors.nombreContacto && <span className="auth-field-error">{formEditar.formState.errors.nombreContacto.message}</span>}
-            </div>
-            <div>
-              <label className="auth-label">Email *</label>
-              <input type="email" className={`auth-input ${formEditar.formState.errors.email ? 'auth-input--error' : ''}`}
-                {...formEditar.register('email', { required: 'Obligatorio', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email inválido' } })}
-              />
-              {formEditar.formState.errors.email && <span className="auth-field-error">{formEditar.formState.errors.email.message}</span>}
-            </div>
-            <div>
-              <label className="auth-label">Teléfono</label>
-              <input className="auth-input" {...formEditar.register('telefono')} />
-            </div>
-            <div>
               <label className="auth-label">Rubro *</label>
-              <select className={`auth-input ${formEditar.formState.errors.rubro ? 'auth-input--error' : ''}`}
-                {...formEditar.register('rubro', { required: 'Obligatorio' })}>
+              <select className={`auth-input ${formEditar.formState.errors.idRubro ? 'auth-input--error' : ''}`}
+                {...formEditar.register('idRubro', { required: 'Obligatorio', valueAsNumber: true })}>
                 <option value="">Seleccionar...</option>
-                {RUBROS.map(r => <option key={r} value={r}>{r}</option>)}
+                {rubros.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
               </select>
-              {formEditar.formState.errors.rubro && <span className="auth-field-error">{formEditar.formState.errors.rubro.message}</span>}
+              {formEditar.formState.errors.idRubro && <span className="auth-field-error">{formEditar.formState.errors.idRubro.message}</span>}
+            </div>
+            <div>
+              <label className="auth-label">Dirección</label>
+              <input className="auth-input" {...formEditar.register('direccion')} />
+            </div>
+            <div>
+              <label className="auth-label">Comuna</label>
+              <input className="auth-input" {...formEditar.register('comuna')} />
             </div>
             <div>
               <label className="auth-label">Plan *</label>
