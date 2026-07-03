@@ -30,11 +30,11 @@ public class AsistenteController {
 
     private final AsistenteService asistenteService;
 
-    @Operation(summary = "Listar trabajadores de un cliente")
-    @GetMapping("/cliente/{idCliente}")
+    @Operation(summary = "Listar trabajadores de una empresa")
+    @GetMapping("/empresa/{idEmpresa}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL', 'CLIENTE')")
-    public List<AsistenteResponse> listarPorCliente(@PathVariable Long idCliente) {
-        return asistenteService.listarPorCliente(idCliente);
+    public List<AsistenteResponse> listarPorEmpresa(@PathVariable Long idEmpresa) {
+        return asistenteService.listarPorEmpresa(idEmpresa);
     }
 
     @Operation(summary = "Obtener asistente por id")

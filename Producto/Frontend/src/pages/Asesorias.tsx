@@ -8,7 +8,7 @@ import Modal from '../components/ui/Modal';
 import { useAuth } from '../context/AuthContext';
 import type {
   AsesoriaResponse, CrearAsesoriaRequest,
-  EstadoAsesoria, TipoAsesoria, VarianteBadge, ClienteResponse, ProfesionalResponse,
+  EstadoAsesoria, TipoAsesoria, VarianteBadge, EmpresaResponse, ProfesionalResponse,
 } from '../types';
 import {
   listarAsesorias, crearAsesoria, atenderAsesoria, cerrarAsesoria, cancelarAsesoria,
@@ -50,7 +50,7 @@ export default function Asesorias() {
   const esAdmin = rol === 'ADMIN';
 
   const [asesorias, setAsesorias]       = useState<AsesoriaResponse[]>([]);
-  const [clientes, setClientes]         = useState<ClienteResponse[]>([]);
+  const [clientes, setClientes]         = useState<EmpresaResponse[]>([]);
   const [profesionales, setProfesionales] = useState<ProfesionalResponse[]>([]);
   const [cargando, setCargando]         = useState(true);
   const [busqueda, setBusqueda]         = useState('');
@@ -85,7 +85,7 @@ export default function Asesorias() {
   const filtradas = asesorias.filter(a => {
     const texto = busqueda.toLowerCase();
     const coincide = !texto
-      || a.razonSocialCliente.toLowerCase().includes(texto)
+      || a.razonSocialEmpresa.toLowerCase().includes(texto)
       || a.nombreProfesional.toLowerCase().includes(texto)
       || a.motivo.toLowerCase().includes(texto);
     const estado = !filtroEstado || a.estado === filtroEstado;
@@ -205,7 +205,7 @@ export default function Asesorias() {
               {filtradas.map(a => (
                 <tr key={a.id}>
                   <td>
-                    <div style={{ fontWeight: 600, color: '#1a3a5c' }}>{a.razonSocialCliente}</div>
+                    <div style={{ fontWeight: 600, color: '#1a3a5c' }}>{a.razonSocialEmpresa}</div>
                     {a.esAsesoriaExtra && <div style={{ fontSize: 11, color: '#f0a500', fontWeight: 600 }}>Asesoría extra</div>}
                   </td>
                   <td>{a.nombreProfesional}</td>
@@ -257,12 +257,12 @@ export default function Asesorias() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div style={{ gridColumn: 'span 2' }}>
               <label className="auth-label">Cliente *</label>
-              <select className={`auth-input ${formNueva.formState.errors.idCliente ? 'auth-input--error' : ''}`}
-                {...formNueva.register('idCliente', { required: 'Obligatorio', valueAsNumber: true })}>
+              <select className={`auth-input ${formNueva.formState.errors.idEmpresa ? 'auth-input--error' : ''}`}
+                {...formNueva.register('idEmpresa', { required: 'Obligatorio', valueAsNumber: true })}>
                 <option value="">Seleccionar...</option>
                 {clientes.map(c => <option key={c.id} value={c.id}>{c.razonSocial}</option>)}
               </select>
-              {formNueva.formState.errors.idCliente && <span className="auth-field-error">{formNueva.formState.errors.idCliente.message}</span>}
+              {formNueva.formState.errors.idEmpresa && <span className="auth-field-error">{formNueva.formState.errors.idEmpresa.message}</span>}
             </div>
             <div style={{ gridColumn: 'span 2' }}>
               <label className="auth-label">Profesional *</label>
@@ -315,7 +315,7 @@ export default function Asesorias() {
         }
       >
         <div style={{ background: '#fef2f2', borderLeft: '4px solid #c0392b', padding: 12, borderRadius: 8, fontSize: 13, lineHeight: 1.5 }}>
-          ¿Cancelar la asesoría de <strong>{modalCancelar?.razonSocialCliente}</strong>?
+          ¿Cancelar la asesoría de <strong>{modalCancelar?.razonSocialEmpresa}</strong>?
         </div>
       </Modal>
     </>

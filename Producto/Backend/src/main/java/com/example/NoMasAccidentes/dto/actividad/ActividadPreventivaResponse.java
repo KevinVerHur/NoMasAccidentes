@@ -5,9 +5,9 @@ import java.time.LocalDate;
 
 public record ActividadPreventivaResponse(
     Long id,
-    Long idCliente,
-    String razonSocialCliente,
-    String titulo, 
+    Long idEmpresa,
+    String razonSocialEmpresa,
+    String titulo,
     String descripcion, 
     String normativa,
     String responsable,

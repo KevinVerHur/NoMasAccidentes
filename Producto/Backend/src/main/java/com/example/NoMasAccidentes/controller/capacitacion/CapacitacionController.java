@@ -64,21 +64,21 @@ public class CapacitacionController {
                 .body(pdf);
     }
 
-    @Operation(summary = "Listar capacitaciones de un cliente")
-    @GetMapping("/cliente/{idCliente}")
+    @Operation(summary = "Listar capacitaciones de una empresa")
+    @GetMapping("/empresa/{idEmpresa}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL','CLIENTE')")
-    public List<CapacitacionResponse> listarPorCliente(@PathVariable Long idCliente) {
-        return capacitacionService.listarPorCliente(idCliente);
+    public List<CapacitacionResponse> listarPorEmpresa(@PathVariable Long idEmpresa) {
+        return capacitacionService.listarPorEmpresa(idEmpresa);
     }
 
     @Operation(
-            summary = "Listar capacitaciones extra de un cliente",
+            summary = "Listar capacitaciones extra de una empresa",
             description = "Retorna solo las capacitaciones con esCapacitacionExtra=true que generan costo adicional al plan (RF-CAP4)."
     )
-    @GetMapping("/cliente/{idCliente}/extras")
+    @GetMapping("/empresa/{idEmpresa}/extras")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
-    public List<CapacitacionResponse> listarExtras(@PathVariable Long idCliente) {
-        return capacitacionService.listarExtras(idCliente);
+    public List<CapacitacionResponse> listarExtras(@PathVariable Long idEmpresa) {
+        return capacitacionService.listarExtras(idEmpresa);
     }
 
     @Operation(summary = "Listar capacitaciones que dicta un relator")

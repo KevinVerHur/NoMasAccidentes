@@ -60,7 +60,6 @@ export async function actualizarMiEstadoProfesional(
   const res = await api.patch<ProfesionalResponse>('/api/profesionales/me/estado', data);
   return res.data;
 }
-
 export async function actualizarMiPerfilProfesional(
   data: ActualizarProfesionalRequest
 ): Promise<ProfesionalResponse> {

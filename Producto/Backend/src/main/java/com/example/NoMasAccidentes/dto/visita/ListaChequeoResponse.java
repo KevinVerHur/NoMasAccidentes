@@ -5,7 +5,7 @@ import java.util.List;
 
 public record ListaChequeoResponse(
     Long id,
-    Long idCliente,
+    Long idEmpresa,
     String nombre,
     Integer cambiosRealizadosAnio,
     Integer anioVigente,

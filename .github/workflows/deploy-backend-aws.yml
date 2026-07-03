@@ -1,0 +1,76 @@
+name: Deploy Backend to AWS Elastic Beanstalk
+
+on:
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  AWS_ROLE_TO_ASSUME: ${{ vars.AWS_ROLE_TO_ASSUME }}
+  EB_APPLICATION_NAME: ${{ vars.EB_APPLICATION_NAME }}
+  EB_ENVIRONMENT_NAME: ${{ vars.EB_ENVIRONMENT_NAME }}
+  EB_S3_BUCKET_ARTIFACTS: ${{ vars.EB_S3_BUCKET_ARTIFACTS }}
+  BACKEND_DIR: Producto/Backend
+
+jobs:
+  deploy:
+    name: Build and deploy backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build Spring Boot JAR
+        working-directory: ${{ env.BACKEND_DIR }}
+        run: |
+          chmod +x mvnw
+          ./mvnw clean package -DskipTests
+
+      - name: Configure AWS credentials with OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Prepare Elastic Beanstalk version metadata
+        id: version
+        shell: bash
+        run: |
+          VERSION_LABEL="backend-${GITHUB_SHA::12}-${GITHUB_RUN_NUMBER}"
+          S3_KEY="elasticbeanstalk/backend/${VERSION_LABEL}.jar"
+          echo "version_label=${VERSION_LABEL}" >> "$GITHUB_OUTPUT"
+          echo "s3_key=${S3_KEY}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload JAR artifact to S3
+        shell: bash
+        run: |
+          JAR_PATH="$(find "${BACKEND_DIR}/target" -maxdepth 1 -name '*.jar' ! -name '*.original' | head -n 1)"
+          test -n "$JAR_PATH"
+          aws s3 cp "$JAR_PATH" "s3://${EB_S3_BUCKET_ARTIFACTS}/${{ steps.version.outputs.s3_key }}"
+
+      - name: Create Elastic Beanstalk application version
+        run: |
+          aws elasticbeanstalk create-application-version \
+            --application-name "${EB_APPLICATION_NAME}" \
+            --version-label "${{ steps.version.outputs.version_label }}" \
+            --source-bundle S3Bucket="${EB_S3_BUCKET_ARTIFACTS}",S3Key="${{ steps.version.outputs.s3_key }}"
+
+      - name: Update Elastic Beanstalk environment
+        run: |
+          aws elasticbeanstalk update-environment \
+            --environment-name "${EB_ENVIRONMENT_NAME}" \
+            --version-label "${{ steps.version.outputs.version_label }}"

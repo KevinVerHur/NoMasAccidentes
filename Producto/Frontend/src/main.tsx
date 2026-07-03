@@ -11,18 +11,18 @@ import Clientes from './pages/Clientes';
 import Profesionales from './pages/Profesionales';
 import Visitas from './pages/Visitas';
 import Pagos from './pages/Pagos';
+import Morosidad from './pages/Morosidad';
 import MisPagos from './pages/MisPagos';
-import MisActividades from './pages/MisActividades';
+// import MisActividades from './pages/MisActividades';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Asesorias from './pages/Asesorias';
 import AsesoriaDetalle from './pages/AsesoriaDetalle';
 import Capacitaciones from './pages/Capacitaciones';
 import Reportes from './pages/Reportes';
-import SeguimientoPreventivo from './pages/SeguimientoPreventivo';
-import Comunicaciones from './pages/Comunicaciones';
+// import SeguimientoPreventivo from './pages/SeguimientoPreventivo';
+// import Comunicaciones from './pages/Comunicaciones';
 import './index.css';
-import ConfiguracionAdmin from './pages/ConfiguracionAdmin';
 import Configuracion from './pages/Configuracion';
 
 
@@ -68,26 +68,30 @@ const router = createBrowserRouter([
         element: <ProtectedRoute roles={['ADMIN']}><Pagos /></ProtectedRoute>,
       },
       {
+        path: '/morosidades',
+        element: <ProtectedRoute roles={['ADMIN']}><Morosidad /></ProtectedRoute>,
+      },
+      {
         path: '/mis-pagos',
         element: <ProtectedRoute roles={['CLIENTE']}><MisPagos /></ProtectedRoute>,
       },
-      {
-        path: '/mis-actividades',
-        element: <ProtectedRoute roles={['CLIENTE']}><MisActividades /></ProtectedRoute>,
-      },
+      // {
+      //   path: '/mis-actividades',
+      //   element: <ProtectedRoute roles={['CLIENTE']}><MisActividades /></ProtectedRoute>,
+      // },
     
       {
         path: '/capacitaciones',
         element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CLIENTE']}><Capacitaciones /></ProtectedRoute>,
       },
-      {
-        path: '/seguimiento-preventivo',
-        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><SeguimientoPreventivo /></ProtectedRoute>,
-      },
-      {
-        path: '/comunicaciones',
-        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><Comunicaciones /></ProtectedRoute>,
-      },
+      // {
+      //   path: '/seguimiento-preventivo',
+      //   element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><SeguimientoPreventivo /></ProtectedRoute>,
+      // },
+      // {
+      //   path: '/comunicaciones',
+      //   element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><Comunicaciones /></ProtectedRoute>,
+      // },
       {
         path: '/reportes',
         element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CLIENTE']}><Reportes /></ProtectedRoute>,

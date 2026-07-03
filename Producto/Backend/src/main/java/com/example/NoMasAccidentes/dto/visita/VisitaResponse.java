@@ -7,8 +7,8 @@ import java.time.LocalDateTime;
 
 public record VisitaResponse(
     Long id,
-    Long idCliente,
-    String razonSocialCliente,
+    Long idEmpresa,
+    String razonSocialEmpresa,
     Long idProfesional,
     String nombreProfesional,
     Long idListaChequeo,

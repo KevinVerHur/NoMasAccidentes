@@ -9,23 +9,23 @@ import org.springframework.data.jpa.repository.*;
 
 public interface ActividadPreventivaRepository extends JpaRepository<ActividadPreventiva, Long> {
 
-    Page<ActividadPreventiva> findByClienteId(Long idCliente, Pageable pageable);
+    Page<ActividadPreventiva> findByEmpresaId(Long idEmpresa, Pageable pageable);
 
     Page<ActividadPreventiva> findByEstado(EstadoActividadPreventiva estado, Pageable pageable);
 
-    Page<ActividadPreventiva> findByClienteIdAndEstado(
-            Long idCliente,
+    Page<ActividadPreventiva> findByEmpresaIdAndEstado(
+            Long idEmpresa,
             EstadoActividadPreventiva estado,
             Pageable pageable
     );
 
-    List<ActividadPreventiva> findByClienteUsuarioEmailOrderByFechaCompromisoAsc(String email);
+    List<ActividadPreventiva> findByEmpresaIdOrderByFechaCompromisoAsc(Long idEmpresa);
 
     long countByEstado(EstadoActividadPreventiva estado);
 
     @Query("""
             select a from ActividadPreventiva a
-            join fetch a.cliente c
+            join fetch a.empresa e
             where a.alertaEnviada = false
                 and a.fechaCompromiso < :hoy
                 and a.estado <> com.example.NoMasAccidentes.model.actividad.EstadoActividadPreventiva.CUMPLIDA

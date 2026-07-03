@@ -2,14 +2,14 @@
 -- V7: subdominio visita (RF13–RF17)
 --   RF13: planificar visitas mensuales (mínimo 2 por mes)
 --   RF14: registrar visitas realizadas en terreno
---   RF16: asociar listas de chequeo por cliente
+--   RF16: asociar listas de chequeo por empresa
 --   RF17: modificar listas de chequeo (máximo 2 veces al año)
 -- =====================================================
 
--- Lista de chequeo: una por cliente (RF16). El contador anual controla RF17.
+-- Lista de chequeo: una por empresa (RF16). El contador anual controla RF17.
 CREATE TABLE lista_chequeo (
     id_lista_chequeo           BIGINT       AUTO_INCREMENT PRIMARY KEY,
-    id_cliente                 BIGINT       NOT NULL UNIQUE,
+    id_empresa                 BIGINT       NOT NULL UNIQUE,
     nombre                     VARCHAR(120),
     cambios_realizados_anio    INT          NOT NULL DEFAULT 0,
     anio_vigente               INT,
@@ -19,7 +19,7 @@ CREATE TABLE lista_chequeo (
     fecha_actualizacion        DATETIME,
     creado_por                 VARCHAR(80),
     actualizado_por            VARCHAR(80),
-    CONSTRAINT fk_lista_cliente FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
+    CONSTRAINT fk_lista_empresa FOREIGN KEY (id_empresa) REFERENCES empresa(id_empresa)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Ítems de la lista de chequeo.
@@ -39,10 +39,10 @@ CREATE TABLE item_chequeo (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Visita: planificada (RF13) y registrada en terreno (RF14).
--- Requiere lista de chequeo del cliente (RF16) -> id_lista_chequeo NOT NULL.
+-- Requiere lista de chequeo de la empresa (RF16) -> id_lista_chequeo NOT NULL.
 CREATE TABLE visita (
     id_visita            BIGINT        AUTO_INCREMENT PRIMARY KEY,
-    id_cliente           BIGINT        NOT NULL,
+    id_empresa           BIGINT        NOT NULL,
     id_profesional       BIGINT        NOT NULL,
     id_lista_chequeo     BIGINT        NOT NULL,
     tipo_revision        VARCHAR(20),
@@ -60,7 +60,7 @@ CREATE TABLE visita (
     fecha_actualizacion  DATETIME,
     creado_por           VARCHAR(80),
     actualizado_por      VARCHAR(80),
-    CONSTRAINT fk_visita_cliente      FOREIGN KEY (id_cliente)       REFERENCES cliente(id_cliente),
+    CONSTRAINT fk_visita_empresa      FOREIGN KEY (id_empresa)       REFERENCES empresa(id_empresa),
     CONSTRAINT fk_visita_profesional  FOREIGN KEY (id_profesional)   REFERENCES profesional(id_profesional),
     CONSTRAINT fk_visita_lista        FOREIGN KEY (id_lista_chequeo) REFERENCES lista_chequeo(id_lista_chequeo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

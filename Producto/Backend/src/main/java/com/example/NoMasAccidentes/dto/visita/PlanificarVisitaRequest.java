@@ -8,7 +8,7 @@ import java.time.LocalDate;
 public record PlanificarVisitaRequest(
 
     @NotNull
-    Long idCliente,
+    Long idEmpresa,
 
     @NotNull
     Long idProfesional,

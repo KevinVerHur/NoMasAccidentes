@@ -6,5 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PlanPagoRepository extends JpaRepository<PlanPago, Long> {
 
-    List<PlanPago> findByClienteId(Long idCliente);
+    List<PlanPago> findByEmpresaId(Long idEmpresa);
 }

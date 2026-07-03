@@ -11,12 +11,12 @@ public interface CobroExtraRepository extends JpaRepository<CobroExtra, Long> {
 
     List<CobroExtra> findByPagoId(Long idPago);
 
-    /** Suma de costos extra del cliente (vía pago → plan) generados en el periodo (reporte mensual, RF39). */
+    /** Suma de costos extra de la empresa (vía pago → plan) generados en el periodo (reporte mensual, RF39). */
     @Query("""
             select coalesce(sum(c.monto), 0)
             from CobroExtra c
-            where c.pago.plan.cliente.id = :idCliente
+            where c.pago.plan.empresa.id = :idEmpresa
                 and c.fechaGeneracion between :desde and :hasta
             """)
-    BigDecimal sumMontoByClienteAndFechaGeneracionBetween(Long idCliente, LocalDate desde, LocalDate hasta);
+    BigDecimal sumMontoByEmpresaAndFechaGeneracionBetween(Long idEmpresa, LocalDate desde, LocalDate hasta);
 }

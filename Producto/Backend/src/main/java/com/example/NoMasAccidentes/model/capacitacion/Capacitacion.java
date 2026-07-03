@@ -3,7 +3,7 @@ package com.example.NoMasAccidentes.model.capacitacion;
 import com.example.NoMasAccidentes.common.BaseEntity;
 import com.example.NoMasAccidentes.model.asistencia.Asistencia;
 import com.example.NoMasAccidentes.model.asistente.Asistente;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -48,10 +48,10 @@ public class Capacitacion extends BaseEntity {
     @Column(name = "id_capacitacion")
     private Long id;
 
-    /** Cliente al que está dirigida la capacitación. */
+    /** Empresa a la que está dirigida la capacitación. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_cliente", nullable = false)
-    private Cliente cliente;
+    @JoinColumn(name = "id_empresa", nullable = false)
+    private Empresa empresa;
 
     /** Nombre del curso / tema (campo "Curso" del formulario). */
     @Column(name = "curso", nullable = false, length = 150)

@@ -10,28 +10,28 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface VisitaRepository extends JpaRepository<Visita, Long> {
 
-    Page<Visita> findByClienteId(Long idCliente, Pageable pageable);
+    Page<Visita> findByEmpresaId(Long idEmpresa, Pageable pageable);
 
-    /** Visitas de un cliente para el portal cliente (RF14). */
-    java.util.List<Visita> findByClienteIdOrderByFechaProgramadaDesc(Long idCliente);
+    /** Visitas de una empresa para el portal cliente (RF14). */
+    java.util.List<Visita> findByEmpresaIdOrderByFechaProgramadaDesc(Long idEmpresa);
 
     /** Visitas asignadas al profesional autenticado (dashboard profesional). */
     java.util.List<Visita> findByProfesionalUsuarioEmailOrderByFechaProgramadaAsc(String email);
 
     Page<Visita> findByProfesionalId(Long idProfesional, Pageable pageable);
 
-    /** Apoya RF13 (mínimo 2 visitas por mes por cliente). */
-    long countByClienteIdAndFechaProgramadaBetween(Long idCliente, LocalDate desde, LocalDate hasta);
+    /** Apoya RF13 (mínimo 2 visitas por mes por empresa). */
+    long countByEmpresaIdAndFechaProgramadaBetween(Long idEmpresa, LocalDate desde, LocalDate hasta);
 
-    boolean existsByClienteIdAndFechaProgramadaAndEstado(Long idCliente, LocalDate fecha, EstadoVisita estado);
+    boolean existsByEmpresaIdAndFechaProgramadaAndEstado(Long idEmpresa, LocalDate fecha, EstadoVisita estado);
 
     /** Visitas programadas para mañana sin recordatorio enviado (RF29). */
     java.util.List<Visita> findByEstadoAndRecordatorioEnviadoFalseAndFechaProgramada(
             EstadoVisita estado, LocalDate fechaProgramada);
 
-    /** Visitas realizadas por el cliente en el periodo (reporte mensual, RF39). */
-    long countByClienteIdAndEstadoAndFechaFinBetween(
-            Long idCliente, EstadoVisita estado, LocalDateTime desde, LocalDateTime hasta);
+    /** Visitas realizadas por la empresa en el periodo (reporte mensual, RF39). */
+    long countByEmpresaIdAndEstadoAndFechaFinBetween(
+            Long idEmpresa, EstadoVisita estado, LocalDateTime desde, LocalDateTime hasta);
 
     /** Visitas realizadas por un profesional en el periodo (rendimiento, RF41). */
     long countByProfesionalIdAndEstadoAndFechaFinBetween(

@@ -257,7 +257,7 @@ export default function AsesoriaDetalle() {
   return (
     <>
       <button className="btn btn-sm btn-outline" style={{ marginBottom: 10 }} onClick={() => navigate('/asesorias')}>← Volver a asesorías</button>
-      <div className="page-title">Asesoría #{asesoria.id} — {asesoria.razonSocialCliente}</div>
+      <div className="page-title">Asesoría #{asesoria.id} — {asesoria.razonSocialEmpresa}</div>
       <div className="page-subtitle">{labelTipo[asesoria.tipo]} · {asesoria.nombreProfesional}</div>
 
       {error && <div className="auth-alert auth-alert--error" style={{ marginBottom: 12 }}>{error}</div>}

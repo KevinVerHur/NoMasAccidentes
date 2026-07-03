@@ -7,8 +7,8 @@ import jakarta.validation.constraints.Size;
 
 public record CrearAsesoriaRequest(
 
-    @NotNull(message = "El cliente es obligatorio")
-    Long idCliente,
+    @NotNull(message = "La empresa es obligatoria")
+    Long idEmpresa,
 
     @NotNull(message = "El profesional es obligatorio")
     Long idProfesional,

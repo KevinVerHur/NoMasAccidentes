@@ -8,10 +8,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PagoRepository extends JpaRepository<Pago, Long> {
 
-    /** Historial de pagos de un cliente (RF10), a través de sus planes. */
-    List<Pago> findByPlanClienteIdOrderByFechaVencimientoDesc(Long idCliente);
+    /** Historial de pagos de una empresa (RF10), a través de sus planes. */
+    List<Pago> findByPlanEmpresaIdOrderByFechaVencimientoDesc(Long idEmpresa);
 
-    List<Pago> findByPlanClienteIdAndEstadoPago(Long idCliente, EstadoPago estadoPago);
+    List<Pago> findByPlanEmpresaIdAndEstadoPago(Long idEmpresa, EstadoPago estadoPago);
 
     /** Cuotas vencidas e impagas (RF11). */
     List<Pago> findByEstadoPagoAndFechaVencimientoBefore(EstadoPago estadoPago, LocalDate fecha);

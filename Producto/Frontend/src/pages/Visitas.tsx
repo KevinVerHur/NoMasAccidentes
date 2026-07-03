@@ -7,7 +7,7 @@ import Modal from '../components/ui/Modal';
 import { useAuth } from '../context/AuthContext';
 import type {
   VisitaResponse, PlanificarVisitaRequest, RegistrarVisitaRequest,
-  EstadoVisita, VarianteBadge, ClienteResponse, ProfesionalResponse,
+  EstadoVisita, VarianteBadge, EmpresaResponse, ProfesionalResponse,
 } from '../types';
 import {
   listarVisitas, planificarVisita, iniciarVisita, registrarVisita, cancelarVisita, eliminarVisita,
@@ -46,7 +46,7 @@ export default function Visitas() {
   const esAdmin = rol === 'ADMIN';
 
   const [visitas, setVisitas]           = useState<VisitaResponse[]>([]);
-  const [clientes, setClientes]         = useState<ClienteResponse[]>([]);
+  const [clientes, setClientes]         = useState<EmpresaResponse[]>([]);
   const [profesionales, setProfesionales] = useState<ProfesionalResponse[]>([]);
   const [cargando, setCargando]         = useState(true);
   const [busqueda, setBusqueda]         = useState('');
@@ -84,7 +84,7 @@ export default function Visitas() {
   const filtradas = visitas.filter(v => {
     const texto = busqueda.toLowerCase();
     const coincide = !texto
-      || v.razonSocialCliente.toLowerCase().includes(texto)
+      || v.razonSocialEmpresa.toLowerCase().includes(texto)
       || v.nombreProfesional.toLowerCase().includes(texto);
     const estado = !filtroEstado || v.estado === filtroEstado;
     return coincide && estado;
@@ -240,7 +240,7 @@ export default function Visitas() {
               {filtradas.map(v => (
                 <tr key={v.id}>
                   <td>
-                    <div style={{ fontWeight: 600, color: '#1a3a5c' }}>{v.razonSocialCliente}</div>
+                    <div style={{ fontWeight: 600, color: '#1a3a5c' }}>{v.razonSocialEmpresa}</div>
                     {v.esVisitaExtra && <div style={{ fontSize: 11, color: '#f0a500', fontWeight: 600 }}>Visita extra</div>}
                   </td>
                   <td>{v.nombreProfesional}</td>
@@ -293,12 +293,12 @@ export default function Visitas() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <div style={{ gridColumn: 'span 2' }}>
               <label className="auth-label">Cliente *</label>
-              <select className={`auth-input ${formNueva.formState.errors.idCliente ? 'auth-input--error' : ''}`}
-                {...formNueva.register('idCliente', { required: 'Obligatorio', valueAsNumber: true })}>
+              <select className={`auth-input ${formNueva.formState.errors.idEmpresa ? 'auth-input--error' : ''}`}
+                {...formNueva.register('idEmpresa', { required: 'Obligatorio', valueAsNumber: true })}>
                 <option value="">Seleccionar...</option>
                 {clientes.map(c => <option key={c.id} value={c.id}>{c.razonSocial}</option>)}
               </select>
-              {formNueva.formState.errors.idCliente && <span className="auth-field-error">{formNueva.formState.errors.idCliente.message}</span>}
+              {formNueva.formState.errors.idEmpresa && <span className="auth-field-error">{formNueva.formState.errors.idEmpresa.message}</span>}
             </div>
             <div style={{ gridColumn: 'span 2' }}>
               <label className="auth-label">Profesional *</label>
@@ -348,7 +348,7 @@ export default function Visitas() {
       >
         <form id="form-visita-registro" onSubmit={formRegistro.handleSubmit(onRegistrar)} noValidate>
           <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
-            <strong>{modalRegistrar?.razonSocialCliente}</strong> · {fmtFecha(modalRegistrar?.fechaProgramada ?? null)}
+            <strong>{modalRegistrar?.razonSocialEmpresa}</strong> · {fmtFecha(modalRegistrar?.fechaProgramada ?? null)}
           </div>
           <div>
             <label className="auth-label">Observaciones</label>
@@ -391,7 +391,7 @@ export default function Visitas() {
         }
       >
         <div style={{ background: '#fef2f2', borderLeft: '4px solid #c0392b', padding: 12, borderRadius: 8, fontSize: 13, lineHeight: 1.5 }}>
-          ¿Cancelar la visita a <strong>{modalCancelar?.razonSocialCliente}</strong> del {fmtFecha(modalCancelar?.fechaProgramada ?? null)}?
+          ¿Cancelar la visita a <strong>{modalCancelar?.razonSocialEmpresa}</strong> del {fmtFecha(modalCancelar?.fechaProgramada ?? null)}?
         </div>
       </Modal>
 
@@ -411,7 +411,7 @@ export default function Visitas() {
         }
       >
         <div style={{ background: '#fef2f2', borderLeft: '4px solid #c0392b', padding: 12, borderRadius: 8, fontSize: 13, lineHeight: 1.5 }}>
-          ¿Eliminar la visita a <strong>{modalEliminar?.razonSocialCliente}</strong>? Se mantiene el registro histórico (soft delete).
+          ¿Eliminar la visita a <strong>{modalEliminar?.razonSocialEmpresa}</strong>? Se mantiene el registro histórico (soft delete).
         </div>
       </Modal>
     </>

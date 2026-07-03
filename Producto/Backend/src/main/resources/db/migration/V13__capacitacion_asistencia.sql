@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS asistente (
     id_asistente         BIGINT        AUTO_INCREMENT PRIMARY KEY,
-    id_cliente           BIGINT        NOT NULL,
+    id_empresa           BIGINT        NOT NULL,
     rut                  VARCHAR(12)   NOT NULL UNIQUE,
     nombre               VARCHAR(80)   NOT NULL,
     apellidos            VARCHAR(120)  NOT NULL,
@@ -16,12 +16,12 @@ CREATE TABLE IF NOT EXISTS asistente (
     fecha_actualizacion  DATETIME,
     creado_por           VARCHAR(80),
     actualizado_por      VARCHAR(80),
-    CONSTRAINT fk_asistente_cliente FOREIGN KEY (id_cliente) REFERENCES cliente(id_cliente)
+    CONSTRAINT fk_asistente_empresa FOREIGN KEY (id_empresa) REFERENCES empresa(id_empresa)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS capacitacion (
     id_capacitacion       BIGINT        AUTO_INCREMENT PRIMARY KEY,
-    id_cliente            BIGINT        NOT NULL,
+    id_empresa            BIGINT        NOT NULL,
     curso                 VARCHAR(150)  NOT NULL,
     id_relator            BIGINT        NOT NULL,
     fecha_programada      DATE          NOT NULL,
@@ -38,12 +38,12 @@ CREATE TABLE IF NOT EXISTS capacitacion (
     fecha_actualizacion   DATETIME,
     creado_por            VARCHAR(80),
     actualizado_por       VARCHAR(80),
-    CONSTRAINT fk_capacitacion_cliente FOREIGN KEY (id_cliente)  REFERENCES cliente(id_cliente),
+    CONSTRAINT fk_capacitacion_empresa FOREIGN KEY (id_empresa)  REFERENCES empresa(id_empresa),
     CONSTRAINT fk_capacitacion_relator FOREIGN KEY (id_relator)  REFERENCES profesional(id_profesional)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- En MySQL los índices van sin IF NOT EXISTS
-CREATE INDEX idx_cap_cliente ON capacitacion(id_cliente);
+CREATE INDEX idx_cap_empresa ON capacitacion(id_empresa);
 CREATE INDEX idx_cap_relator ON capacitacion(id_relator);
 CREATE INDEX idx_cap_fecha   ON capacitacion(fecha_programada);
 CREATE INDEX idx_cap_estado  ON capacitacion(estado);

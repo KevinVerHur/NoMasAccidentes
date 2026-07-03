@@ -1,6 +1,6 @@
 import { useAuth } from '../context/AuthContext';
 // import  from './ConfiguracionCliente';
-// import  from './ConfiguracionProfesional';
+import ConfiguracionProfesional from './ConfiguracionProfesional';
 import ConfiguracionAdmin from './ConfiguracionAdmin';
 import ConfiguracionProfesional from './ConfiguracionProfesional';
  
@@ -11,7 +11,7 @@ export default function Configuracion() {
   switch (rol) {
     case 'PROFESIONAL':
       return <ConfiguracionProfesional />;
-    case 'CLIENTE':
+    //case 'CLIENTE':
     //   return <ConfiguracionCliente />;
      case 'ADMIN':
     default:

@@ -13,19 +13,19 @@ public interface CapacitacionRepository extends JpaRepository<Capacitacion, Long
 
     Page<Capacitacion> findAll(Pageable pageable);
 
-    List<Capacitacion> findByClienteId(Long idCliente);
+    List<Capacitacion> findByEmpresaId(Long idEmpresa);
 
-    List<Capacitacion> findByClienteIdAndEstado(Long idCliente, EstadoCapacitacion estado);
+    List<Capacitacion> findByEmpresaIdAndEstado(Long idEmpresa, EstadoCapacitacion estado);
 
-    /** Capacitaciones extra del cliente (generan costo adicional, RF-CAP4). */
-    List<Capacitacion> findByClienteIdAndEsCapacitacionExtraTrue(Long idCliente);
+    /** Capacitaciones extra de la empresa (generan costo adicional, RF-CAP4). */
+    List<Capacitacion> findByEmpresaIdAndEsCapacitacionExtraTrue(Long idEmpresa);
 
     /** Capacitaciones que dicta un relator específico. */
     List<Capacitacion> findByRelatorId(Long idRelator);
 
-    /** Capacitaciones realizadas por el cliente en el periodo (reporte mensual, RF39). */
-    long countByClienteIdAndEstadoAndFechaRealizacionBetween(
-            Long idCliente, EstadoCapacitacion estado, LocalDate desde, LocalDate hasta);
+    /** Capacitaciones realizadas por la empresa en el periodo (reporte mensual, RF39). */
+    long countByEmpresaIdAndEstadoAndFechaRealizacionBetween(
+            Long idEmpresa, EstadoCapacitacion estado, LocalDate desde, LocalDate hasta);
 
     /** Capacitaciones dictadas por un relator en el periodo (rendimiento, RF41). */
     long countByRelatorIdAndEstadoAndFechaRealizacionBetween(
@@ -39,12 +39,12 @@ public interface CapacitacionRepository extends JpaRepository<Capacitacion, Long
 
     /**
      * RF30: capacitaciones PROGRAMADAS para la fecha dada (hoy+3) a las que aún
-     * no se les envió el recordatorio. El cliente se trae con join fetch para
+     * no se les envió el recordatorio. La empresa se trae con join fetch para
      * leer su email/razón social fuera de la sesión Hibernate.
      */
     @Query("""
             select c from Capacitacion c
-            join fetch c.cliente
+            join fetch c.empresa
             where c.estado = com.example.NoMasAccidentes.model.capacitacion.EstadoCapacitacion.PROGRAMADA
                 and c.recordatorioEnviado = false
                 and c.fechaProgramada = :fecha
@@ -57,7 +57,7 @@ public interface CapacitacionRepository extends JpaRepository<Capacitacion, Long
      */
     @Query("""
             select c from Capacitacion c
-            join fetch c.cliente
+            join fetch c.empresa
             where c.estado = com.example.NoMasAccidentes.model.capacitacion.EstadoCapacitacion.PROGRAMADA
                 and c.incumplimientoNotificado = false
                 and c.fechaProgramada < :hoy

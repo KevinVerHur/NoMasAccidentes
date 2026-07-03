@@ -5,9 +5,9 @@ import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
 import com.example.NoMasAccidentes.dto.asistente.AsistenteRequest;
 import com.example.NoMasAccidentes.dto.asistente.AsistenteResponse;
 import com.example.NoMasAccidentes.model.asistente.Asistente;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.repository.asistente.AsistenteRepository;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,15 +21,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class AsistenteService {
 
     private final AsistenteRepository asistenteRepository;
-    private final ClienteRepository   clienteRepository;
+    private final EmpresaRepository   empresaRepository;
 
     // ── Consultas ─────────────────────────────────────────────────────────────
 
-    public List<AsistenteResponse> listarPorCliente(Long idCliente) {
-        if (!clienteRepository.existsById(idCliente)) {
-            throw new RecursoNoEncontradoException("Cliente", idCliente);
+    public List<AsistenteResponse> listarPorEmpresa(Long idEmpresa) {
+        if (!empresaRepository.existsById(idEmpresa)) {
+            throw new RecursoNoEncontradoException("Empresa", idEmpresa);
         }
-        return asistenteRepository.findByClienteId(idCliente)
+        return asistenteRepository.findByEmpresaId(idEmpresa)
                 .stream().map(this::toResponse).toList();
     }
 
@@ -46,11 +46,11 @@ public class AsistenteService {
                     "Ya existe un asistente registrado con el RUT " + request.rut());
         }
 
-        Cliente cliente = clienteRepository.findById(request.idCliente())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", request.idCliente()));
+        Empresa empresa = empresaRepository.findById(request.idEmpresa())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", request.idEmpresa()));
 
         Asistente asistente = Asistente.builder()
-                .cliente(cliente)
+                .empresa(empresa)
                 .rut(request.rut())
                 .nombre(request.nombre())
                 .apellidos(request.apellidos())
@@ -60,7 +60,7 @@ public class AsistenteService {
                 .build();
 
         Asistente guardado = asistenteRepository.save(asistente);
-        log.info("Asistente creado id={} rut={} cliente={}", guardado.getId(), guardado.getRut(), cliente.getRazonSocial());
+        log.info("Asistente creado id={} rut={} empresa={}", guardado.getId(), guardado.getRut(), empresa.getRazonSocial());
         return toResponse(guardado);
     }
 
@@ -102,8 +102,8 @@ public class AsistenteService {
     private AsistenteResponse toResponse(Asistente a) {
         return new AsistenteResponse(
                 a.getId(),
-                a.getCliente().getId(),
-                a.getCliente().getRazonSocial(),
+                a.getEmpresa().getId(),
+                a.getEmpresa().getRazonSocial(),
                 a.getRut(),
                 a.getNombre(),
                 a.getApellidos(),

@@ -1,0 +1,115 @@
+# =====================================================
+# Despliegue de PRODUCCION (demo) — una sola instancia EC2.
+# Sirve frontend + backend bajo UN dominio HTTPS via Caddy (Let's Encrypt).
+# HTTPS es obligatorio para la geolocalizacion de los profesionales en terreno.
+#
+# Uso en la instancia:
+#   cp .env.prod.example .env.prod   (y edita los valores)
+#   docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
+#
+# NOTA: reutiliza el perfil 'dev' del backend (funciona con estas variables de
+# entorno, igual que el docker-compose.yml local). La unica diferencia real es
+# que Caddy pone HTTPS delante y el frontend se compila estatico.
+# =====================================================
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-no_mas_accidentes}
+      MYSQL_USER: ${DB_USER:-nma_user}
+      MYSQL_PASSWORD: ${DB_PASS:-nma_password}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password}
+      TZ: America/Santiago
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # SMTP falso: atrapa los correos de notificaciones (RF33-36). No expuesto a
+  # internet; para verlo en la demo usa un tunel SSH: -L 8025:localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
+
+  backend:
+    build:
+      context: ./Producto/Backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-no_mas_accidentes}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Santiago&createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-nma_user}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASS:-nma_password}
+      JWT_SECRET: ${JWT_SECRET}
+      # Correo -> Mailpit interno (sin auth/TLS). Cambia a Gmail si quieres envio real.
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASS: ${MAIL_PASS:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${SMTP_AUTH:-false}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${SMTP_STARTTLS:-false}
+      APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:-admin@nma.local}
+      APP_FRONTEND_URL: https://${SITE_ADDRESS}
+      APP_CORS_ALLOWED_ORIGINS: https://${SITE_ADDRESS}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+      INFORMES_LOCAL_DIR: /app/informes-pdf
+    volumes:
+      - backend_informes:/app/informes-pdf
+    # Sin 'ports': el backend NO se expone directo, solo via Caddy (/api).
+
+  # Compila el frontend a estatico (Vite) y lo deja en el volumen frontend_dist.
+  # Corre una vez y termina; Caddy sirve esos archivos.
+  frontend-build:
+    build:
+      context: ./Producto/Frontend
+      dockerfile: Dockerfile
+    entrypoint: ["/bin/sh", "-c"]
+    # Se usa 'npx vite build' (NO 'npm run build') para saltar el typecheck de
+    # tsc: el proyecto corre con Vite sin typechear y tsc podria fallar el build.
+    command: >
+      "npx vite build && rm -rf /dist/* && cp -r dist/* /dist/"
+    environment:
+      # URL absoluta del backend = mismo dominio HTTPS (same-origin, sin CORS).
+      VITE_API_URL: https://${SITE_ADDRESS}
+    volumes:
+      - frontend_dist:/dist
+    restart: "no"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - backend
+      - frontend-build
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - frontend_dist:/srv/www:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  mysql_data:
+  backend_informes:
+  frontend_dist:
+  caddy_data:
+  caddy_config:

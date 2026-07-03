@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import { listarClientes } from '../api/clientes';
 import { crearConsulta, listarConsultas, listarConsultasPorCliente } from '../api/consultas';
 import type {
-  ClienteResponse,
+  EmpresaResponse,
   ConsultaResponse,
   CrearConsultaRequest,
   VarianteBadge,
@@ -32,7 +32,7 @@ const badgeHorario = (consulta: ConsultaResponse): { variante: VarianteBadge; te
 export default function Comunicaciones() {
   const { rol } = useAuth();
   const [consultas, setConsultas] = useState<ConsultaResponse[]>([]);
-  const [clientes, setClientes] = useState<ClienteResponse[]>([]);
+  const [clientes, setClientes] = useState<EmpresaResponse[]>([]);
   const [cargando, setCargando] = useState(true);
   const [filtroCliente, setFiltroCliente] = useState('');
   const [busqueda, setBusqueda] = useState('');
@@ -73,7 +73,7 @@ export default function Comunicaciones() {
   const filtradas = consultas.filter((consulta) => {
     const texto = busqueda.toLowerCase();
     return !texto
-      || consulta.cliente.toLowerCase().includes(texto)
+      || consulta.razonSocialEmpresa.toLowerCase().includes(texto)
       || consulta.motivo.toLowerCase().includes(texto)
       || (consulta.detalle ?? '').toLowerCase().includes(texto);
   });
@@ -84,7 +84,7 @@ export default function Comunicaciones() {
 
   function abrirNueva() {
     formNueva.reset({
-      idCliente: filtroCliente ? Number(filtroCliente) : undefined as unknown as number,
+      idEmpresa: filtroCliente ? Number(filtroCliente) : undefined as unknown as number,
       motivo: '',
       detalle: '',
     });
@@ -180,7 +180,7 @@ export default function Comunicaciones() {
                 const horario = badgeHorario(consulta);
                 return (
                   <tr key={consulta.id}>
-                    <td>{consulta.cliente}</td>
+                    <td>{consulta.razonSocialEmpresa}</td>
                     <td>{fmtFecha(consulta.fechaHora)}</td>
                     <td>{consulta.motivo}</td>
                     <td>{consulta.detalle ?? '-'}</td>
@@ -221,7 +221,7 @@ export default function Comunicaciones() {
               <label className="auth-label">Cliente *</label>
               <select
                 className="auth-input"
-                {...formNueva.register('idCliente', {
+                {...formNueva.register('idEmpresa', {
                   required: 'Obligatorio',
                   valueAsNumber: true,
                 })}

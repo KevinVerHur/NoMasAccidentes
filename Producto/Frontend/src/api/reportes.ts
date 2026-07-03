@@ -7,12 +7,12 @@ import api from './axiosConfig';
 
 // ---- Reportes mensuales (RF38, RF39) ----
 export async function generarReporte(idCliente: number, mes: number, anio: number): Promise<ReporteMensualResponse> {
-  const res = await api.post<ReporteMensualResponse>('/api/reportes/generar', null, { params: { idCliente, mes, anio } });
+  const res = await api.post<ReporteMensualResponse>('/api/reportes/generar', null, { params: { idEmpresa: idCliente, mes, anio } });
   return res.data;
 }
 
 export async function listarReportesPorCliente(idCliente: number): Promise<ReporteMensualResponse[]> {
-  const res = await api.get<ReporteMensualResponse[]>('/api/reportes', { params: { idCliente } });
+  const res = await api.get<ReporteMensualResponse[]>('/api/reportes', { params: { idEmpresa: idCliente } });
   return res.data;
 }
 
@@ -24,7 +24,7 @@ export async function ejecutarCierreMensual(mes: number, anio: number): Promise<
 
 // ---- Indicadores (RF40, RF41) ----
 export async function accidentabilidad(idCliente: number, anio: number): Promise<AccidentabilidadMensualResponse[]> {
-  const res = await api.get<AccidentabilidadMensualResponse[]>('/api/indicadores/accidentabilidad', { params: { idCliente, anio } });
+  const res = await api.get<AccidentabilidadMensualResponse[]>('/api/indicadores/accidentabilidad', { params: { idEmpresa: idCliente, anio } });
   return res.data;
 }
 

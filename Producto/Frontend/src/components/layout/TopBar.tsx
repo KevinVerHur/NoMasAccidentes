@@ -13,7 +13,7 @@ const navLinks: { label: string; path: string; roles: Rol[] }[] = [
     { label: 'Reportes',      path: '/reportes',      roles: ['ADMIN', 'PROFESIONAL'] },
     // CLIENTE (vistas aún no construidas, solo navegación)
     { label: 'Inicio',         path: '/dashboard',       roles: ['CLIENTE'] },
-    { label: 'Actividades',    path: '/mis-actividades', roles: ['CLIENTE'] },
+    // { label: 'Actividades',    path: '/mis-actividades', roles: ['CLIENTE'] },
     { label: 'Capacitaciones', path: '/capacitaciones',  roles: ['CLIENTE'] },
     { label: 'Reportes',       path: '/reportes',        roles: ['CLIENTE'] },
     { label: 'Pagos',          path: '/mis-pagos',       roles: ['CLIENTE'] },

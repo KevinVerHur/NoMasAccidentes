@@ -20,8 +20,8 @@ public class CapacitacionMapper {
 
         return new CapacitacionResponse(
                 c.getId(),
-                c.getCliente().getId(),
-                c.getCliente().getRazonSocial(),
+                c.getEmpresa().getId(),
+                c.getEmpresa().getRazonSocial(),
                 c.getCurso(),
                 relator.getId(),
                 nombreRelator,

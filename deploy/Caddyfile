@@ -1,0 +1,21 @@
+# Caddyfile — reverse proxy con HTTPS automatico (Let's Encrypt).
+# SITE_ADDRESS se inyecta desde .env.prod (ej. nomasaccidentes.duckdns.org).
+# Caddy pide y renueva el certificado solo; requiere puertos 80 y 443 abiertos
+# y que el dominio apunte (DNS A) a la IP publica de la instancia.
+
+{$SITE_ADDRESS} {
+	encode gzip
+
+	# --- Backend Spring Boot ---
+	@backend path /api/* /v3/api-docs* /swagger-ui/* /swagger-ui.html /actuator/*
+	handle @backend {
+		reverse_proxy backend:8080
+	}
+
+	# --- Frontend estatico (build de Vite) con fallback SPA para react-router ---
+	handle {
+		root * /srv/www
+		try_files {path} /index.html
+		file_server
+	}
+}

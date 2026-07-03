@@ -40,11 +40,11 @@ public class PagoController {
         return pagoService.obtenerPorId(id);
     }
 
-    @Operation(summary = "Historial de pagos de un cliente (RF10)")
+    @Operation(summary = "Historial de pagos de una empresa (RF10)")
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
-    public List<PagoResponse> historial(@RequestParam Long idCliente) {
-        return pagoService.historialPorCliente(idCliente);
+    public List<PagoResponse> historial(@RequestParam Long idEmpresa) {
+        return pagoService.historialPorEmpresa(idEmpresa);
     }
 
     @Operation(summary = "Historial de pagos del cliente autenticado (portal cliente, RF10)")
@@ -68,11 +68,11 @@ public class PagoController {
         return Map.of("cuotasMarcadas", pagoService.evaluarMorosidad());
     }
 
-    @Operation(summary = "Suspender clientes con pagos atrasados (RF12)")
+    @Operation(summary = "Suspender empresas con pagos atrasados (RF12)")
     @PostMapping("/suspender-morosos")
     @PreAuthorize("hasRole('ADMIN')")
     public Map<String, Integer> suspenderMorosos() {
-        return Map.of("clientesSuspendidos", pagoService.suspenderMorosos());
+        return Map.of("empresasSuspendidas", pagoService.suspenderMorosos());
     }
 
     @Operation(summary = "Agregar un cobro extra a una cuota (RF21, RF24, RF28)")

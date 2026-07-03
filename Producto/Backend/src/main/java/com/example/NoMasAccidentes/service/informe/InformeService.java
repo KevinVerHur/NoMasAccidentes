@@ -6,12 +6,12 @@ import com.example.NoMasAccidentes.dto.informe.InformeMapper;
 import com.example.NoMasAccidentes.dto.informe.InformeResponse;
 import com.example.NoMasAccidentes.model.informe.EstadoInforme;
 import com.example.NoMasAccidentes.model.informe.Informe;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.visita.EstadoVisita;
 import com.example.NoMasAccidentes.model.visita.Visita;
 import com.example.NoMasAccidentes.repository.informe.InformeRepository;
 import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
-import com.example.NoMasAccidentes.service.cliente.ClienteService;
+import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -34,7 +34,7 @@ public class InformeService {
     private final InformePdfService pdfService;
     private final AlmacenamientoInformeService almacenamiento;
     private final InformeMapper informeMapper;
-    private final ClienteService clienteService;
+    private final EmpresaService empresaService;
 
     /**
      * Genera (o regenera) el informe PDF de una visita realizada (RF15).
@@ -58,7 +58,7 @@ public class InformeService {
         informe.setFechaEmision(LocalDate.now());
         informe.setEstado(EstadoInforme.GENERADO);
         informe.setHallazgos(visita.getObservaciones());
-        informe.setContenido("Informe de la visita a " + visita.getCliente().getRazonSocial()
+        informe.setContenido("Informe de la visita a " + visita.getEmpresa().getRazonSocial()
                 + " del " + visita.getFechaProgramada());
         informe.setUrlPdf(clave);
 
@@ -80,19 +80,19 @@ public class InformeService {
 
     // ---- Portal cliente (solo lectura de lo propio) ----
 
-    /** Lista los informes de las visitas del cliente autenticado (RF15). */
+    /** Lista los informes de las visitas de la empresa del usuario autenticado (RF15). */
     public List<InformeResponse> listarMisInformes(String emailUsuario) {
-        Long idCliente = clienteService.clienteAutenticado(emailUsuario).getId();
-        return informeRepository.findByVisitaClienteIdOrderByFechaEmisionDesc(idCliente)
+        Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
+        return informeRepository.findByVisitaEmpresaIdOrderByFechaEmisionDesc(idEmpresa)
                 .stream().map(informeMapper::toResponse).toList();
     }
 
-    /** Descarga un informe verificando que pertenezca al cliente autenticado. */
+    /** Descarga un informe verificando que pertenezca a la empresa del usuario autenticado. */
     public byte[] descargarMiPdf(Long idInforme, String emailUsuario) {
-        Long idCliente = clienteService.clienteAutenticado(emailUsuario).getId();
+        Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
         Informe informe = buscarConArchivo(idInforme);
-        Cliente clienteInforme = informe.getVisita() != null ? informe.getVisita().getCliente() : null;
-        if (clienteInforme == null || !clienteInforme.getId().equals(idCliente)) {
+        Empresa empresaInforme = informe.getVisita() != null ? informe.getVisita().getEmpresa() : null;
+        if (empresaInforme == null || !empresaInforme.getId().equals(idEmpresa)) {
             // No revelar existencia de informes ajenos.
             throw new RecursoNoEncontradoException("Informe", idInforme);
         }

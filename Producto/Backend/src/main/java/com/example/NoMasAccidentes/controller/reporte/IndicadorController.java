@@ -28,9 +28,9 @@ public class IndicadorController {
     @GetMapping("/api/indicadores/accidentabilidad")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public List<AccidentabilidadMensualResponse> accidentabilidad(
-            @RequestParam Long idCliente,
+            @RequestParam Long idEmpresa,
             @RequestParam int anio) {
-        return indicadorService.accidentabilidadAnual(idCliente, anio);
+        return indicadorService.accidentabilidadAnual(idEmpresa, anio);
     }
 
     @Operation(summary = "Rendimiento de los profesionales en un periodo (RF41)")

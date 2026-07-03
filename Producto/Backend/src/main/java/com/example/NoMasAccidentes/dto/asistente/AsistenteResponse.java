@@ -2,8 +2,8 @@ package com.example.NoMasAccidentes.dto.asistente;
 
 public record AsistenteResponse(
         Long id,
-        Long idCliente,
-        String cliente,
+        Long idEmpresa,
+        String razonSocialEmpresa,
         String rut,
         String nombre,
         String apellidos,

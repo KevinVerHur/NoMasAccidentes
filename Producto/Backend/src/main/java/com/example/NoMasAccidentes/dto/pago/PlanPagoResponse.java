@@ -5,8 +5,8 @@ import java.time.LocalDate;
 
 public record PlanPagoResponse(
     Long id,
-    Long idCliente,
-    String razonSocialCliente,
+    Long idEmpresa,
+    String razonSocialEmpresa,
     Long idMensualidad,
     String nombrePlan,
     LocalDate fechaInicio,

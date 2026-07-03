@@ -211,46 +211,86 @@ export interface MiCapacitacion {
   estado: 'Realizada' | 'Programada';
 }
 
-// ---- Cliente ----
-export type EstadoCliente = 'ACTIVO' | 'MOROSO' | 'SUSPENDIDO';
+// ---- Rubro (catálogo) ----
+export interface RubroResponse {
+  id: number;
+  nombre: string;
+  tasaAccidentabilidad: number | null;
+}
 
-export interface ClienteResponse {
+// ---- Empresa (cliente) ----
+export type EstadoEmpresa = 'ACTIVO' | 'MOROSO' | 'SUSPENDIDO';
+
+export interface EmpresaResponse {
   id: number;
   razonSocial: string;
   rut: string;
-  nombreContacto: string;
-  email: string;
-  telefono: string | null;
-  rubro: string;
+  direccion: string | null;
+  comuna: string | null;
+  idRubro: number;
+  nombreRubro: string;
   plan: string;
   cantidadTrabajadores: number | null;
-  estado: EstadoCliente;
+  estado: EstadoEmpresa;
   idProfesional: number | null;
   nombreProfesional: string | null;
   activo: boolean;
 }
 
-export interface CrearClienteRequest {
+/** Alta de empresa + primer representante (persona de contacto con acceso al portal). */
+export interface CrearEmpresaRequest {
   razonSocial: string;
   rut: string;
-  nombreContacto: string;
-  email: string;
-  telefono?: string;
-  rubro: string;
+  direccion?: string;
+  comuna?: string;
+  idRubro: number;
   plan: string;
   cantidadTrabajadores?: number | null;
   idProfesional?: number | null;
+  // Primer representante
+  nombreContacto: string;
+  cargoContacto?: string;
+  email: string;
+  telefono?: string;
 }
 
-export interface ActualizarClienteRequest extends CrearClienteRequest {
-  estado: EstadoCliente;
+export interface ActualizarEmpresaRequest {
+  razonSocial: string;
+  rut: string;
+  direccion?: string;
+  comuna?: string;
+  idRubro: number;
+  plan: string;
+  cantidadTrabajadores?: number | null;
+  estado: EstadoEmpresa;
+  idProfesional?: number | null;
+}
+
+// ---- Representante (contacto de una empresa) ----
+export interface RepresentanteResponse {
+  id: number;
+  idEmpresa: number;
+  nombre: string;
+  cargo: string | null;
+  email: string;
+  telefono: string | null;
+  tieneAcceso: boolean;
+  activo: boolean;
+}
+
+export interface CrearRepresentanteRequest {
+  nombre: string;
+  cargo?: string;
+  email: string;
+  telefono?: string;
+  conAcceso: boolean;
 }
 
 // ---- Reportes e indicadores (RF38–RF42) ----
 export interface ReporteMensualResponse {
   id: number;
-  idCliente: number;
-  razonSocialCliente: string;
+  idEmpresa: number;
+  razonSocialEmpresa: string;
   mes: number;
   anio: number;
   fechaEmision: string;
@@ -347,8 +387,8 @@ export type EstadoVisitaBackend = EstadoVisita;
 
 export interface VisitaResponse {
   id: number;
-  idCliente: number;
-  razonSocialCliente: string;
+  idEmpresa: number;
+  razonSocialEmpresa: string;
   idProfesional: number;
   nombreProfesional: string;
   idListaChequeo: number;
@@ -364,7 +404,7 @@ export interface VisitaResponse {
 }
 
 export interface PlanificarVisitaRequest {
-  idCliente: number;
+  idEmpresa: number;
   idProfesional: number;
   fechaProgramada: string;
   tipoRevision?: string;
@@ -409,8 +449,8 @@ export interface CrearMensualidadRequest {
 
 export interface PlanPagoResponse {
   id: number;
-  idCliente: number;
-  razonSocialCliente: string;
+  idEmpresa: number;
+  razonSocialEmpresa: string;
   idMensualidad: number;
   nombrePlan: string;
   fechaInicio: string;
@@ -421,7 +461,7 @@ export interface PlanPagoResponse {
 }
 
 export interface CrearPlanPagoRequest {
-  idCliente: number;
+  idEmpresa: number;
   idMensualidad: number;
   fechaInicio: string;
   cuotasTotales: number;
@@ -431,8 +471,8 @@ export interface CrearPlanPagoRequest {
 export interface PagoResponse {
   id: number;
   idPlan: number;
-  idCliente: number;
-  razonSocialCliente: string;
+  idEmpresa: number;
+  razonSocialEmpresa: string;
   numeroCuota: number;
   monto: number;
   fechaEmision: string;
@@ -446,13 +486,55 @@ export interface RegistrarPagoRequest {
   medioPago?: string;
 }
 
+// ---- Morosidades (vista frontend sobre pagos/clientes existentes) ----
+export type RiesgoMorosidad = 'CRITICO' | 'ALERTA' | 'OBSERVACION';
+
+export interface MorosidadResumen {
+  clientesMora: number;
+  montoTotalAdeudado: number;
+  serviciosSuspendidos: number;
+  notificacionesEnviadas: number;
+}
+
+export interface MorosidadItem {
+  idCliente: number;
+  cliente: string;
+  email: string;
+  estadoCliente: EstadoCliente;
+  mesesDeuda: number;
+  montoAdeudado: number;
+  riesgo: RiesgoMorosidad;
+  suspendido: boolean;
+  ultimoPago: string | null;
+  pagos: PagoResponse[];
+  cuotasAdeudadas: PagoResponse[];
+}
+
+export interface MorosidadDetalle extends MorosidadItem {
+  historialNotificaciones: string[];
+}
+
+export interface MorosidadPagoRequest {
+  idPago: number;
+  monto: number;
+  fecha: string;
+  metodo: string;
+}
+
+export interface MorosidadNotificacionRequest {
+  idCliente: number;
+  destinatario: string;
+  asunto: string;
+  mensaje: string;
+}
+
 // ---- Informe post-visita (RF15) ----
 export type EstadoInforme = 'GENERADO' | 'ANULADO';
 
 export interface InformeResponse {
   id: number;
   idVisita: number;
-  razonSocialCliente: string;
+  razonSocialEmpresa: string;
   nombreProfesional: string;
   fechaEmision: string;
   estado: EstadoInforme;
@@ -477,8 +559,8 @@ export interface AsistenciaResponse {
  
 export interface CapacitacionResponse {
   id: number;
-  idCliente: number;
-  cliente: string;
+  idEmpresa: number;
+  razonSocialEmpresa: string;
   curso: string;
   idRelator: number;
   relator: string;
@@ -496,7 +578,7 @@ export interface CapacitacionResponse {
 }
  
 export interface CrearCapacitacionRequest {
-  idCliente: number;
+  idEmpresa: number;
   curso: string;
   idRelator: number;
   fechaProgramada: string;
@@ -517,8 +599,8 @@ export interface ConfirmarAsistenciaRequest {
 }
 export interface AsistenteResponse {
   id: number;
-  idCliente: number;
-  cliente: string;
+  idEmpresa: number;
+  razonSocialEmpresa: string;
   rut: string;
   nombre: string;
   apellidos: string;
@@ -529,7 +611,7 @@ export interface AsistenteResponse {
 }
  
 export interface AsistenteRequest {
-  idCliente: number;
+  idEmpresa: number;
   rut: string;
   nombre: string;
   apellidos: string;
@@ -545,8 +627,8 @@ export type EstadoActividadPreventiva = 'PENDIENTE' | 'EN_CURSO' | 'CUMPLIDA' | 
 
 export interface ActividadPreventivaResponse {
   id: number;
-  idCliente: number;
-  razonSocialCliente: string;
+  idEmpresa: number;
+  razonSocialEmpresa: string;
   titulo: string;
   descripcion: string | null;
   normativa: string | null;
@@ -560,7 +642,7 @@ export interface ActividadPreventivaResponse {
 }
 
 export interface CrearActividadPreventivaRequest {
-  idCliente: number;
+  idEmpresa: number;
   titulo: string;
   descripcion?: string;
   normativa?: string;
@@ -582,8 +664,8 @@ export interface CambiarEstadoActividadRequest {
 // ---- Comunicaciones / centro de llamados (RF30-RF32) ----
 export interface ConsultaResponse {
   id: number;
-  idCliente: number;
-  cliente: string;
+  idEmpresa: number;
+  razonSocialEmpresa: string;
   fechaHora: string;
   motivo: string;
   detalle: string | null;
@@ -592,7 +674,7 @@ export interface ConsultaResponse {
 }
 
 export interface CrearConsultaRequest {
-  idCliente: number;
+  idEmpresa: number;
   motivo: string;
   detalle?: string;
 }
@@ -603,8 +685,8 @@ export type EstadoAsesoria = 'SOLICITADA' | 'EN_PROCESO' | 'CERRADA' | 'CANCELAD
 
 export interface AsesoriaResponse {
   id: number;
-  idCliente: number;
-  razonSocialCliente: string;
+  idEmpresa: number;
+  razonSocialEmpresa: string;
   idProfesional: number;
   nombreProfesional: string;
   fechaSolicitud: string;
@@ -616,7 +698,7 @@ export interface AsesoriaResponse {
 }
 
 export interface CrearAsesoriaRequest {
-  idCliente: number;
+  idEmpresa: number;
   idProfesional: number;
   tipo: TipoAsesoria;
   motivo: string;

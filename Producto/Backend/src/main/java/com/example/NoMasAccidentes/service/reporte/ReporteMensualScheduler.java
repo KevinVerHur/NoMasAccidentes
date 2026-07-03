@@ -2,7 +2,9 @@ package com.example.NoMasAccidentes.service.reporte;
 
 import com.example.NoMasAccidentes.dto.reporte.ReporteMensualResponse;
 import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.service.usuario.CorreoService;
 import java.time.YearMonth;
 import java.time.ZoneId;
@@ -13,7 +15,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Cierre mensual automático de reportes (RF46). Genera el reporte del mes recién
- * terminado para todos los clientes. Cada cliente se procesa en su propia
+ * terminado para todas las empresas. Cada empresa se procesa en su propia
  * transacción (la llamada externa a {@link ReporteMensualService#generar}), de
  * modo que un fallo aislado no detiene al resto del lote.
  */
@@ -25,6 +27,7 @@ public class ReporteMensualScheduler {
     private static final ZoneId ZONA = ZoneId.of("America/Santiago");
 
     private final ReporteMensualService reporteService;
+    private final EmpresaRepository empresaRepository;
     private final ClienteRepository clienteRepository;
     private final CorreoService correoService;
 
@@ -37,31 +40,37 @@ public class ReporteMensualScheduler {
     }
 
     /**
-     * Genera el reporte del periodo para todos los clientes y se lo envía por
-     * correo con el PDF adjunto. Devuelve cuántos se generaron.
+     * Genera el reporte del periodo para todas las empresas y se lo envía por
+     * correo (al representante) con el PDF adjunto. Devuelve cuántos se generaron.
      */
     public int generarCierreMensual(int mes, int anio) {
         int generados = 0;
-        for (Cliente cliente : clienteRepository.findAll()) {
+        for (Empresa empresa : empresaRepository.findAll()) {
             try {
-                ReporteMensualResponse reporte = reporteService.generar(cliente.getId(), mes, anio);
+                ReporteMensualResponse reporte = reporteService.generar(empresa.getId(), mes, anio);
                 generados++;
-                enviarPorCorreo(cliente, reporte, mes, anio);
+                enviarPorCorreo(empresa, reporte, mes, anio);
             } catch (Exception e) {
-                log.error("No se pudo generar el reporte {}-{} del cliente id={}: {}",
-                        anio, mes, cliente.getId(), e.getMessage());
+                log.error("No se pudo generar el reporte {}-{} de la empresa id={}: {}",
+                        anio, mes, empresa.getId(), e.getMessage());
             }
         }
         return generados;
     }
 
-    /** Envía el reporte al cliente con el PDF adjunto (un fallo de correo no afecta la generación). */
-    private void enviarPorCorreo(Cliente cliente, ReporteMensualResponse reporte, int mes, int anio) {
-        if (cliente.getEmail() == null || cliente.getEmail().isBlank()) {
-            log.warn("Cliente id={} sin email; no se envía el reporte {}-{}", cliente.getId(), anio, mes);
+    /** Envía el reporte al representante de la empresa con el PDF adjunto (un fallo de correo no afecta la generación). */
+    private void enviarPorCorreo(Empresa empresa, ReporteMensualResponse reporte, int mes, int anio) {
+        String destinatario = clienteRepository.findByEmpresaId(empresa.getId()).stream()
+                .map(Cliente::getEmail)
+                .filter(email -> email != null && !email.isBlank())
+                .findFirst()
+                .orElse(null);
+        if (destinatario == null) {
+            log.warn("Empresa id={} sin representante con email; no se envía el reporte {}-{}",
+                    empresa.getId(), anio, mes);
             return;
         }
         byte[] pdf = reporteService.descargarPdf(reporte.id());
-        correoService.enviarReporteMensual(cliente.getEmail(), cliente.getRazonSocial(), mes, anio, pdf);
+        correoService.enviarReporteMensual(destinatario, empresa.getRazonSocial(), mes, anio, pdf);
     }
 }

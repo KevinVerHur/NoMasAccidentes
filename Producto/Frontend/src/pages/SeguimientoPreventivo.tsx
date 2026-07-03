@@ -13,7 +13,7 @@ import {
 } from '../api/ActividadesPreventivas';
 import type {
   ActividadPreventivaResponse,
-  ClienteResponse,
+  EmpresaResponse,
   CrearActividadPreventivaRequest,
   EstadoActividadPreventiva,
   VarianteBadge,
@@ -43,7 +43,7 @@ function mensajeError(e: unknown, fallback: string) {
 
 export default function SeguimientoPreventivo() {
   const [actividades, setActividades] = useState<ActividadPreventivaResponse[]>([]);
-  const [clientes, setClientes] = useState<ClienteResponse[]>([]);
+  const [clientes, setClientes] = useState<EmpresaResponse[]>([]);
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
@@ -80,7 +80,7 @@ export default function SeguimientoPreventivo() {
     const texto = busqueda.toLowerCase();
 
     return !texto
-      || a.razonSocialCliente.toLowerCase().includes(texto)
+      || a.razonSocialEmpresa.toLowerCase().includes(texto)
       || a.titulo.toLowerCase().includes(texto)
       || (a.normativa ?? '').toLowerCase().includes(texto)
       || (a.responsable ?? '').toLowerCase().includes(texto);
@@ -93,7 +93,7 @@ export default function SeguimientoPreventivo() {
 
   function abrirNueva() {
     formNueva.reset({
-      idCliente: undefined as unknown as number,
+      idEmpresa: undefined as unknown as number,
       titulo: '',
       descripcion: '',
       normativa: '',
@@ -214,7 +214,7 @@ export default function SeguimientoPreventivo() {
             <tbody>
               {filtradas.map((a) => (
                 <tr key={a.id}>
-                  <td>{a.razonSocialCliente}</td>
+                  <td>{a.razonSocialEmpresa}</td>
                   <td>
                     <div style={{ fontWeight: 600, color: '#1a3a5c' }}>{a.titulo}</div>
                     <div style={{ fontSize: 11, color: '#6b7280' }}>{a.descripcion ?? '-'}</div>
@@ -275,7 +275,7 @@ export default function SeguimientoPreventivo() {
               <label className="auth-label">Cliente *</label>
               <select
                 className="auth-input"
-                {...formNueva.register('idCliente', {
+                {...formNueva.register('idEmpresa', {
                   required: 'Obligatorio',
                   valueAsNumber: true,
                 })}

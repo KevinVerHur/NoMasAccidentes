@@ -5,7 +5,7 @@ interface Pagina<T> { content: T[]; totalElements: number; totalPages: number; }
 
 export async function listarVisitas(page = 0, size = 100, idCliente?: number): Promise<Pagina<VisitaResponse>> {
   const res = await api.get<Pagina<VisitaResponse>>('/api/visitas', {
-    params: { page, size, ...(idCliente != null ? { idCliente } : {}) },
+    params: { page, size, ...(idCliente != null ? { idEmpresa: idCliente } : {}) },
   });
   return res.data;
 }

@@ -18,30 +18,9 @@ import type {
   UsuarioResponse,
 } from '../types';
 
-interface PreferenciasAdmin {
-  alertasMorosidad: boolean;
-  recordatoriosVisitas: boolean;
-  alertasCapacitaciones: boolean;
-  reporteAutomatico: boolean;
-}
 
-interface EmpresaAdmin {
-  nombreEmpresa: string;
-  rut: string;
-  emailContacto: string;
-  telefono: string;
-  direccion: string;
-  region: string;
-}
 
-type PasswordForm = CambiarPasswordRequest & { confirmarPassword: string };
 
-const preferenciasIniciales: PreferenciasAdmin = {
-  alertasMorosidad: true,
-  recordatoriosVisitas: true,
-  alertasCapacitaciones: true,
-  reporteAutomatico: false,
-};
 
 function mensajeError(e: unknown, fallback: string): string {
   const data = (e as { response?: { data?: { mensaje?: string; message?: string } } })?.response?.data;
@@ -564,6 +543,15 @@ export default function ConfiguracionAdmin() {
           Los cambios se aplicarán al sistema y a las reglas de notificación.
         </div>
       </Modal>
+            {mensajePassword && (
+              <div className="auth-alert auth-alert--success" style={{ marginTop: 12 }}>
+                {mensajePassword}
+              </div>
+            )}
+          </form>
+        </Panel>
+
+      </div>
     </>
   );
 }

@@ -6,8 +6,8 @@ import jakarta.validation.constraints.Size;
 
 public record CrearConsultaRequest (
     
-    @NotNull(message = "El cliente es obligatorio")
-    Long idCliente,
+    @NotNull(message = "La empresa es obligatoria")
+    Long idEmpresa,
 
     @NotBlank(message = "El motivo es obligatorio")
     @Size(max = 500, message = "El motivo no puede superar 500 caracteres")

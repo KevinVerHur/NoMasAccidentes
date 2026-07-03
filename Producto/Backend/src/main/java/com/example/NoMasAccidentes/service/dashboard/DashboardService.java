@@ -13,8 +13,8 @@ import com.example.NoMasAccidentes.dto.dashboard.DashboardProfesionalResponse.Cl
 import com.example.NoMasAccidentes.model.asesoria.EstadoAsesoria;
 import com.example.NoMasAccidentes.model.capacitacion.Capacitacion;
 import com.example.NoMasAccidentes.model.capacitacion.EstadoCapacitacion;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
-import com.example.NoMasAccidentes.model.cliente.EstadoCliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
+import com.example.NoMasAccidentes.model.empresa.EstadoEmpresa;
 import com.example.NoMasAccidentes.model.pago.EstadoPago;
 import com.example.NoMasAccidentes.model.pago.Pago;
 import com.example.NoMasAccidentes.model.visita.EstadoVisita;
@@ -22,12 +22,12 @@ import com.example.NoMasAccidentes.model.visita.Visita;
 import com.example.NoMasAccidentes.repository.asesoria.AccidenteRepository;
 import com.example.NoMasAccidentes.repository.asesoria.AsesoriaRepository;
 import com.example.NoMasAccidentes.repository.capacitacion.CapacitacionRepository;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.pago.PagoRepository;
 import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
 import com.example.NoMasAccidentes.repository.reporte.ReporteMensualRepository;
 import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
-import com.example.NoMasAccidentes.service.cliente.ClienteService;
+import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -50,12 +50,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class DashboardService {
 
     private static final DateTimeFormatter F_FECHA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-    private static final List<EstadoCliente> ESTADOS_MOROSOS = List.of(EstadoCliente.MOROSO, EstadoCliente.SUSPENDIDO);
+    private static final List<EstadoEmpresa> ESTADOS_MOROSOS = List.of(EstadoEmpresa.MOROSO, EstadoEmpresa.SUSPENDIDO);
     private static final int LIMITE_ASESORIAS = 10;
     private static final int TOPE_ACCIDENTABILIDAD = 5;
     private static final int TOPE_ALERTAS = 6;
 
-    private final ClienteRepository clienteRepository;
+    private final EmpresaRepository empresaRepository;
     private final VisitaRepository visitaRepository;
     private final CapacitacionRepository capacitacionRepository;
     private final AsesoriaRepository asesoriaRepository;
@@ -63,17 +63,17 @@ public class DashboardService {
     private final PagoRepository pagoRepository;
     private final ProfesionalRepository profesionalRepository;
     private final ReporteMensualRepository reporteRepository;
-    private final ClienteService clienteService;
+    private final EmpresaService empresaService;
 
     public DashboardAdminResponse admin() {
         LocalDate hoy = LocalDate.now();
-        List<Cliente> clientes = clienteRepository.findAll();
+        List<Empresa> empresas = empresaRepository.findAll();
         return new DashboardAdminResponse(
                 kpis(hoy),
                 visitasRecientes(),
-                alertas(hoy, clientes),
-                accidentabilidad(hoy.getYear(), clientes),
-                controlPagos(hoy, clientes));
+                alertas(hoy, empresas),
+                accidentabilidad(hoy.getYear(), empresas),
+                controlPagos(hoy, empresas));
     }
 
     private Kpis kpis(LocalDate hoy) {
@@ -83,44 +83,44 @@ public class DashboardService {
         LocalDate finMes = hoy.withDayOfMonth(hoy.lengthOfMonth());
 
         return new Kpis(
-                clienteRepository.countByEstado(EstadoCliente.ACTIVO),
+                empresaRepository.countByEstado(EstadoEmpresa.ACTIVO),
                 visitaRepository.countByEstadoAndFechaProgramadaBetween(EstadoVisita.PROGRAMADA, lunes, domingo),
-                clienteRepository.countByEstadoIn(ESTADOS_MOROSOS),
+                empresaRepository.countByEstadoIn(ESTADOS_MOROSOS),
                 capacitacionRepository.countByFechaProgramadaBetween(inicioMes, finMes));
     }
 
     private List<VisitaReciente> visitasRecientes() {
         return visitaRepository.findTop6ByOrderByFechaProgramadaDesc().stream()
                 .map(v -> new VisitaReciente(
-                        v.getCliente().getId(),
-                        v.getCliente().getRazonSocial(),
+                        v.getEmpresa().getId(),
+                        v.getEmpresa().getRazonSocial(),
                         nombreProfesional(v),
                         v.getFechaProgramada(),
                         v.getEstado().name()))
                 .toList();
     }
 
-    private List<Alerta> alertas(LocalDate hoy, List<Cliente> clientes) {
+    private List<Alerta> alertas(LocalDate hoy, List<Empresa> empresas) {
         List<Alerta> peligros = new ArrayList<>();
         List<Alerta> avisos = new ArrayList<>();
 
-        // Clientes morosos / suspendidos (RF11/RF12).
-        for (Cliente c : clienteRepository.findByEstadoIn(ESTADOS_MOROSOS)) {
+        // Empresas morosas / suspendidas (RF11/RF12).
+        for (Empresa c : empresaRepository.findByEstadoIn(ESTADOS_MOROSOS)) {
             peligros.add(new Alerta("peligro", c.getRazonSocial(),
-                    "Cliente con pagos pendientes; servicio en riesgo de suspensión."));
+                    "Empresa con pagos pendientes; servicio en riesgo de suspensión."));
         }
 
         // Visitas planificadas cuya fecha ya pasó y siguen sin realizarse (RF13/RF36).
         for (Visita v : visitaRepository.findByEstadoAndFechaProgramadaLessThan(EstadoVisita.PROGRAMADA, hoy)) {
-            peligros.add(new Alerta("peligro", v.getCliente().getRazonSocial(),
+            peligros.add(new Alerta("peligro", v.getEmpresa().getRazonSocial(),
                     "Visita planificada del " + v.getFechaProgramada().format(F_FECHA) + " sin realizar."));
         }
 
-        // Clientes cerca del límite de asesorías incluidas en el plan (RF27).
+        // Empresas cerca del límite de asesorías incluidas en el plan (RF27).
         LocalDate inicioAnio = hoy.withDayOfYear(1);
         LocalDate finAnio = hoy.withDayOfYear(hoy.lengthOfYear());
-        for (Cliente c : clientes) {
-            long usadas = asesoriaRepository.countByClienteIdAndFechaSolicitudBetweenAndEstadoNot(
+        for (Empresa c : empresas) {
+            long usadas = asesoriaRepository.countByEmpresaIdAndFechaSolicitudBetweenAndEstadoNot(
                     c.getId(), inicioAnio, finAnio, EstadoAsesoria.CANCELADA);
             if (usadas >= LIMITE_ASESORIAS - 1) {
                 avisos.add(new Alerta("warn", c.getRazonSocial(),
@@ -130,7 +130,7 @@ public class DashboardService {
 
         // Capacitaciones cuya fecha ya pasó y siguen programadas (RF36).
         for (var cap : capacitacionRepository.findByEstadoAndFechaProgramadaLessThan(EstadoCapacitacion.PROGRAMADA, hoy)) {
-            avisos.add(new Alerta("warn", cap.getCliente().getRazonSocial(),
+            avisos.add(new Alerta("warn", cap.getEmpresa().getRazonSocial(),
                     "Capacitación \"" + cap.getCurso() + "\" del " + cap.getFechaProgramada().format(F_FECHA)
                             + " sin registrar."));
         }
@@ -140,14 +140,14 @@ public class DashboardService {
         return alertas.size() > TOPE_ALERTAS ? alertas.subList(0, TOPE_ALERTAS) : alertas;
     }
 
-    private List<AccidentabilidadCliente> accidentabilidad(int anio, List<Cliente> clientes) {
+    private List<AccidentabilidadCliente> accidentabilidad(int anio, List<Empresa> empresas) {
         LocalDate desde = LocalDate.of(anio, 1, 1);
         LocalDate hasta = LocalDate.of(anio, 12, 31);
 
-        return clientes.stream()
+        return empresas.stream()
                 .map(c -> {
                     long accidentes = accidenteRepository
-                            .countByAsesoriaClienteIdAndFechaOcurrenciaBetween(c.getId(), desde, hasta);
+                            .countByAsesoriaEmpresaIdAndFechaOcurrenciaBetween(c.getId(), desde, hasta);
                     Integer trabajadores = c.getCantidadTrabajadores();
                     Double tasa = (trabajadores != null && trabajadores > 0)
                             ? (accidentes * 100.0) / trabajadores
@@ -160,10 +160,10 @@ public class DashboardService {
                 .toList();
     }
 
-    private List<ControlPago> controlPagos(LocalDate hoy, List<Cliente> clientes) {
+    private List<ControlPago> controlPagos(LocalDate hoy, List<Empresa> empresas) {
         List<ControlPago> filas = new ArrayList<>();
-        for (Cliente c : clientes) {
-            List<Pago> pagos = pagoRepository.findByPlanClienteIdOrderByFechaVencimientoDesc(c.getId());
+        for (Empresa c : empresas) {
+            List<Pago> pagos = pagoRepository.findByPlanEmpresaIdOrderByFechaVencimientoDesc(c.getId());
 
             var planMensual = pagos.isEmpty() ? null : pagos.get(0).getMonto();
             var ultimoPago = pagos.stream()
@@ -184,7 +184,7 @@ public class DashboardService {
     // ---- Dashboard del cliente (portal cliente) ----
 
     public DashboardClienteResponse cliente(String email) {
-        Cliente c = clienteService.clienteAutenticado(email);
+        Empresa c = empresaService.empresaAutenticada(email);
         Long id = c.getId();
         LocalDate hoy = LocalDate.now();
         LocalDate inicioMes = hoy.withDayOfMonth(1);
@@ -195,15 +195,15 @@ public class DashboardService {
         LocalDateTime finMesDt = finMes.atTime(LocalTime.MAX);
 
         long visitasRealizadasMes = visitaRepository
-                .countByClienteIdAndEstadoAndFechaFinBetween(id, EstadoVisita.REALIZADA, inicioMesDt, finMesDt);
+                .countByEmpresaIdAndEstadoAndFechaFinBetween(id, EstadoVisita.REALIZADA, inicioMesDt, finMesDt);
         long visitasProgramadasMes = visitaRepository
-                .countByClienteIdAndFechaProgramadaBetween(id, inicioMes, finMes);
+                .countByEmpresaIdAndFechaProgramadaBetween(id, inicioMes, finMes);
         List<Capacitacion> capacitacionesPendientes = capacitacionRepository
-                .findByClienteIdAndEstado(id, EstadoCapacitacion.PROGRAMADA);
+                .findByEmpresaIdAndEstado(id, EstadoCapacitacion.PROGRAMADA);
         long asesoriasUsadas = asesoriaRepository
-                .countByClienteIdAndFechaSolicitudBetweenAndEstadoNot(id, inicioAnio, finAnio, EstadoAsesoria.CANCELADA);
+                .countByEmpresaIdAndFechaSolicitudBetweenAndEstadoNot(id, inicioAnio, finAnio, EstadoAsesoria.CANCELADA);
 
-        List<Pago> pagos = pagoRepository.findByPlanClienteIdOrderByFechaVencimientoDesc(id);
+        List<Pago> pagos = pagoRepository.findByPlanEmpresaIdOrderByFechaVencimientoDesc(id);
         long mesesAdeudados = pagos.stream()
                 .filter(p -> p.getEstadoPago() != EstadoPago.PAGADO && p.getFechaVencimiento().isBefore(hoy))
                 .count();
@@ -244,7 +244,7 @@ public class DashboardService {
                         "Capacitación \"" + cap.getCurso() + "\" programada para el "
                                 + cap.getFechaProgramada().format(F_FECHA) + ".")));
 
-        reporteRepository.findByClienteIdOrderByAnioDescMesDesc(id).stream().findFirst()
+        reporteRepository.findByEmpresaIdOrderByAnioDescMesDesc(id).stream().findFirst()
                 .ifPresent(r -> acciones.add(new DashboardClienteResponse.Accion("info", "Reporte mensual disponible",
                         "Tu reporte más reciente puede revisarse desde el módulo de reportes.")));
 
@@ -255,7 +255,7 @@ public class DashboardService {
             Long id, LocalDate hoy, List<Capacitacion> capacitacionesPendientes) {
         List<DashboardClienteResponse.ProximaActividad> actividades = new ArrayList<>();
 
-        visitaRepository.findByClienteIdOrderByFechaProgramadaDesc(id).stream()
+        visitaRepository.findByEmpresaIdOrderByFechaProgramadaDesc(id).stream()
                 .filter(v -> v.getEstado() == EstadoVisita.PROGRAMADA && !v.getFechaProgramada().isBefore(hoy))
                 .forEach(v -> actividades.add(new DashboardClienteResponse.ProximaActividad(
                         v.getFechaProgramada(), "Visita preventiva", nombreProfesional(v), "Programada")));
@@ -272,32 +272,34 @@ public class DashboardService {
     private DashboardClienteResponse.ResumenPreventivo resumenPreventivo(
             Long id, LocalDate inicioMes, LocalDate finMes, LocalDate inicioAnio, LocalDate finAnio) {
         return new DashboardClienteResponse.ResumenPreventivo(
-                accidenteRepository.countByAsesoriaClienteIdAndFechaOcurrenciaBetween(id, inicioMes, finMes),
-                accidenteRepository.sumDiasPerdidosByClienteAndFechaOcurrenciaBetween(id, inicioMes, finMes),
-                accidenteRepository.countByAsesoriaClienteIdAndFechaOcurrenciaBetween(id, inicioAnio, finAnio),
-                capacitacionRepository.countByClienteIdAndEstadoAndFechaRealizacionBetween(
+                accidenteRepository.countByAsesoriaEmpresaIdAndFechaOcurrenciaBetween(id, inicioMes, finMes),
+                accidenteRepository.sumDiasPerdidosByEmpresaAndFechaOcurrenciaBetween(id, inicioMes, finMes),
+                accidenteRepository.countByAsesoriaEmpresaIdAndFechaOcurrenciaBetween(id, inicioAnio, finAnio),
+                capacitacionRepository.countByEmpresaIdAndEstadoAndFechaRealizacionBetween(
                         id, EstadoCapacitacion.REALIZADA, inicioAnio, finAnio));
     }
 
-    // ---- Dashboard del profesional (clientes asignados) ----
+    // ---- Dashboard del profesional (empresas asignadas) ----
 
     public DashboardProfesionalResponse profesional(String email) {
         profesionalRepository.findByUsuarioEmail(email)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Profesional", email));
 
-        List<Cliente> clientes = clienteRepository.findByProfesionalUsuarioEmailOrderByRazonSocialAsc(email);
-        long morosos = clientes.stream().filter(c -> ESTADOS_MOROSOS.contains(c.getEstado())).count();
+        List<Empresa> empresas = empresaRepository.findByProfesionalUsuarioEmailOrderByRazonSocialAsc(email);
+        long morosos = empresas.stream().filter(c -> ESTADOS_MOROSOS.contains(c.getEstado())).count();
 
-        List<ClienteAsignado> filas = clientes.stream()
+        List<ClienteAsignado> filas = empresas.stream()
                 .map(c -> new ClienteAsignado(
-                        c.getId(), c.getRazonSocial(), c.getRubro(), ultimaVisita(c.getId()), c.getEstado().name()))
+                        c.getId(), c.getRazonSocial(),
+                        c.getRubro() != null ? c.getRubro().getNombre() : null,
+                        ultimaVisita(c.getId()), c.getEstado().name()))
                 .toList();
 
-        return new DashboardProfesionalResponse(clientes.size(), morosos, filas);
+        return new DashboardProfesionalResponse(empresas.size(), morosos, filas);
     }
 
-    private LocalDate ultimaVisita(Long idCliente) {
-        return visitaRepository.findByClienteIdOrderByFechaProgramadaDesc(idCliente).stream()
+    private LocalDate ultimaVisita(Long idEmpresa) {
+        return visitaRepository.findByEmpresaIdOrderByFechaProgramadaDesc(idEmpresa).stream()
                 .filter(v -> v.getEstado() == EstadoVisita.REALIZADA && v.getFechaFin() != null)
                 .map(v -> v.getFechaFin().toLocalDate())
                 .max(LocalDate::compareTo)
@@ -312,7 +314,7 @@ public class DashboardService {
         return u.getNombre() + " " + u.getApellido();
     }
 
-    private String estadoPago(EstadoCliente estado, long mesesAdeudados) {
+    private String estadoPago(EstadoEmpresa estado, long mesesAdeudados) {
         return switch (estado) {
             case SUSPENDIDO -> "Suspendido";
             case MOROSO -> "Moroso";

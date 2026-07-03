@@ -8,10 +8,10 @@ import com.example.NoMasAccidentes.dto.visita.CrearListaChequeoRequest;
 import com.example.NoMasAccidentes.dto.visita.ItemChequeoRequest;
 import com.example.NoMasAccidentes.dto.visita.ListaChequeoMapper;
 import com.example.NoMasAccidentes.dto.visita.ListaChequeoResponse;
-import com.example.NoMasAccidentes.model.cliente.Cliente;
+import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.visita.ItemChequeo;
 import com.example.NoMasAccidentes.model.visita.ListaChequeo;
-import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
+import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.visita.ListaChequeoRepository;
 import java.time.LocalDate;
 import java.time.Year;
@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Gestión de listas de chequeo por cliente (RF16) con control de
+ * Gestión de listas de chequeo por empresa (RF16) con control de
  * modificaciones anuales (RF17: máximo 2 veces al año).
  */
 @Service
@@ -33,7 +33,7 @@ public class ListaChequeoService {
 
     private static final int MAX_MODIFICACIONES_ANIO = 2;
 
-    /** Ítems base con que se siembra la lista al dar de alta un cliente (RF16). */
+    /** Ítems base con que se siembra la lista al dar de alta una empresa (RF16). */
     private static final List<String[]> ITEMS_POR_DEFECTO = List.of(
             new String[]{"Uso de elementos de protección personal (EPP)", "EPP"},
             new String[]{"Señalización de seguridad visible y vigente", "Señalización"},
@@ -44,20 +44,20 @@ public class ListaChequeoService {
     );
 
     private final ListaChequeoRepository listaChequeoRepository;
-    private final ClienteRepository clienteRepository;
+    private final EmpresaRepository empresaRepository;
     private final ListaChequeoMapper listaChequeoMapper;
 
-    /** Crea la lista de chequeo del cliente (RF16). Una sola por cliente. */
+    /** Crea la lista de chequeo de la empresa (RF16). Una sola por empresa. */
     @Transactional
     public ListaChequeoResponse crear(CrearListaChequeoRequest request) {
-        Cliente cliente = clienteRepository.findById(request.idCliente())
-                .orElseThrow(() -> new RecursoNoEncontradoException("Cliente", request.idCliente()));
-        if (listaChequeoRepository.existsByClienteId(cliente.getId())) {
-            throw new ConflictoNegocioException("El cliente ya tiene una lista de chequeo (RF16)");
+        Empresa empresa = empresaRepository.findById(request.idEmpresa())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Empresa", request.idEmpresa()));
+        if (listaChequeoRepository.existsByEmpresaId(empresa.getId())) {
+            throw new ConflictoNegocioException("La empresa ya tiene una lista de chequeo (RF16)");
         }
 
         ListaChequeo lista = ListaChequeo.builder()
-                .cliente(cliente)
+                .empresa(empresa)
                 .nombre(request.nombre())
                 .anioVigente(Year.now().getValue())
                 .cambiosRealizadosAnio(0)
@@ -65,22 +65,22 @@ public class ListaChequeoService {
         agregarItems(lista, request.items());
 
         ListaChequeo guardada = listaChequeoRepository.save(lista);
-        log.info("Lista de chequeo creada id={} cliente={} (RF16)", guardada.getId(), cliente.getId());
+        log.info("Lista de chequeo creada id={} empresa={} (RF16)", guardada.getId(), empresa.getId());
         return listaChequeoMapper.toResponse(guardada);
     }
 
     /**
-     * Siembra una lista de chequeo base para un cliente recién creado (RF16),
+     * Siembra una lista de chequeo base para una empresa recién creada (RF16),
      * de modo que se puedan planificar visitas sin un paso manual previo.
-     * Idempotente: no hace nada si el cliente ya tiene lista.
+     * Idempotente: no hace nada si la empresa ya tiene lista.
      */
     @Transactional
-    public void crearPorDefecto(Cliente cliente) {
-        if (listaChequeoRepository.existsByClienteId(cliente.getId())) {
+    public void crearPorDefecto(Empresa empresa) {
+        if (listaChequeoRepository.existsByEmpresaId(empresa.getId())) {
             return;
         }
         ListaChequeo lista = ListaChequeo.builder()
-                .cliente(cliente)
+                .empresa(empresa)
                 .nombre("Lista de chequeo general")
                 .anioVigente(Year.now().getValue())
                 .cambiosRealizadosAnio(0)
@@ -98,7 +98,7 @@ public class ListaChequeoService {
         }
 
         listaChequeoRepository.save(lista);
-        log.info("Lista de chequeo por defecto creada para cliente={} (RF16)", cliente.getId());
+        log.info("Lista de chequeo por defecto creada para empresa={} (RF16)", empresa.getId());
     }
 
     /** Modifica la lista de chequeo respetando el límite anual (RF17). */
@@ -133,10 +133,10 @@ public class ListaChequeoService {
         return listaChequeoMapper.toResponse(buscarOFallar(id));
     }
 
-    public ListaChequeoResponse obtenerPorCliente(Long idCliente) {
-        return listaChequeoMapper.toResponse(listaChequeoRepository.findByClienteId(idCliente)
+    public ListaChequeoResponse obtenerPorEmpresa(Long idEmpresa) {
+        return listaChequeoMapper.toResponse(listaChequeoRepository.findByEmpresaId(idEmpresa)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Lista de chequeo no encontrada para el cliente id=" + idCliente)));
+                        "Lista de chequeo no encontrada para la empresa id=" + idEmpresa)));
     }
 
     private void agregarItems(ListaChequeo lista, List<ItemChequeoRequest> items) {

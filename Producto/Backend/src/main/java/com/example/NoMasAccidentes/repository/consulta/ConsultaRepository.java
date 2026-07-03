@@ -6,8 +6,8 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
-    List<Consulta> findByClienteIdOrderByFechaHoraDesc(Long idCLiente);
+    List<Consulta> findByEmpresaIdOrderByFechaHoraDesc(Long idEmpresa);
 
-    /** Consultas al centro de llamados del cliente en el periodo (reporte mensual, RF39). */
-    long countByClienteIdAndFechaHoraBetween(Long idCliente, LocalDateTime desde, LocalDateTime hasta);
+    /** Consultas al centro de llamados de la empresa en el periodo (reporte mensual, RF39). */
+    long countByEmpresaIdAndFechaHoraBetween(Long idEmpresa, LocalDateTime desde, LocalDateTime hasta);
 }
