@@ -31,6 +31,20 @@ import type {
   AsesoriaResponse,
 } from '../types';
 
+const HORA_INICIO_JORNADA = 8;
+const HORA_FIN_JORNADA = 18;
+
+function estaDentroDeJornadaLaboralChile() {
+  const ahoraChile = new Date(
+    new Date().toLocaleString('en-US', { timeZone: 'America/Santiago' })
+  );
+
+  const dia = ahoraChile.getDay(); // 0 domingo, 6 sabado
+  const hora = ahoraChile.getHours();
+
+  return dia >= 1 && dia <= 5 && hora >= HORA_INICIO_JORNADA && hora < HORA_FIN_JORNADA;
+}
+
 const CENTRO_FALLBACK: [number, number] = [-33.4489, -70.6693];
 
 const badgePorEstadoVisita: Record<EstadoVisita, VarianteBadge> = {
@@ -350,6 +364,13 @@ export default function DashboardAdmin() {
   }, []);
 
   const cargarMapa = useCallback(async () => {
+    if (!estaDentroDeJornadaLaboralChile()) {
+      setUbicaciones([]);
+      setErrorMapa('Mapa desactivado fuera de jornada laboral: lunes a viernes entre 08:00 y 18:00, hora de Chile.');
+      setUltimaActualizacionMapa(new Date());
+      return;
+    }
+
     setErrorMapa(null);
 
     try {
@@ -371,6 +392,7 @@ export default function DashboardAdmin() {
 
   const profesionalesActualizados = ubicaciones.filter((u) => !estaDesactualizada(u)).length;
   const profesionalesDesactualizados = ubicaciones.filter(estaDesactualizada).length;
+  const mapaFueraDeJornada = !estaDentroDeJornadaLaboralChile();
 
   const kpis = datos?.kpis;
   const visitas = datos?.visitasRecientes ?? [];
@@ -512,6 +534,13 @@ export default function DashboardAdmin() {
             </div>
           }
         >
+
+          {mapaFueraDeJornada && (
+            <div className="alert-item alert-item--info" style={{ margin: '0 0 12px 0' }}>
+              Mapa desactivado fuera de jornada laboral: lunes a viernes entre 08:00 y 18:00, hora de Chile.
+            </div>
+          )}
+
           <div style={{ height: 181, width: '100%', position: 'relative', zIndex: 0 }}>
             <MapaAdmin ubicaciones={ubicaciones} />
           </div>
