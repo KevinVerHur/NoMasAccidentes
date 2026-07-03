@@ -1,11 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useEffect,  useState } from 'react';
 import { useForm } from 'react-hook-form';
+
+import Modal from '../components/ui/Modal';
 import Panel from '../components/ui/Panel';
 import {
-  obtenerMiPerfil,
   actualizarMiPerfil,
   cambiarMiPassword,
+  obtenerMiPerfil,
 } from '../api/auth';
+import {
+  actualizarConfiguracionEmpresa,
+  obtenerConfiguracionEmpresa,
+} from '../api/configuracion';
 import type {
   ActualizarPerfilRequest,
   CambiarPasswordRequest,
@@ -14,88 +20,154 @@ import type {
 
 interface PreferenciasAdmin {
   alertasMorosidad: boolean;
-  alertasVisitas: boolean;
-  resumenSemanal: boolean;
-  actualizacionMapa: string;
+  recordatoriosVisitas: boolean;
+  alertasCapacitaciones: boolean;
+  reporteAutomatico: boolean;
 }
+
+interface EmpresaAdmin {
+  nombreEmpresa: string;
+  rut: string;
+  emailContacto: string;
+  telefono: string;
+  direccion: string;
+  region: string;
+}
+
+type PasswordForm = CambiarPasswordRequest & { confirmarPassword: string };
 
 const preferenciasIniciales: PreferenciasAdmin = {
   alertasMorosidad: true,
-  alertasVisitas: true,
-  resumenSemanal: false,
-  actualizacionMapa: '5',
+  recordatoriosVisitas: true,
+  alertasCapacitaciones: true,
+  reporteAutomatico: false,
 };
 
-function formatearFecha(valor: string | null) {
-  if (!valor) return 'Sin registro';
+function mensajeError(e: unknown, fallback: string): string {
+  const data = (e as { response?: { data?: { mensaje?: string; message?: string } } })?.response?.data;
+  return data?.mensaje ?? data?.message ?? fallback;
+}
 
-  return new Date(valor).toLocaleDateString('es-CL', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+function nombreCompleto(perfil: UsuarioResponse | null) {
+  if (!perfil) return 'Sin registro';
+  return `${perfil.nombre} ${perfil.apellido}`.trim();
+}
+
+function normalizarEmpresa(data: {
+  nombreEmpresa: string;
+  rut: string;
+  emailContacto: string;
+  telefono: string | null;
+  direccion: string | null;
+  region: string | null;
+}): EmpresaAdmin {
+  return {
+    nombreEmpresa: data.nombreEmpresa,
+    rut: data.rut,
+    emailContacto: data.emailContacto,
+    telefono: data.telefono ?? '',
+    direccion: data.direccion ?? '',
+    region: data.region ?? '',
+  };
 }
 
 export default function ConfiguracionAdmin() {
   const [perfil, setPerfil] = useState<UsuarioResponse | null>(null);
+  const [empresa, setEmpresa] = useState<EmpresaAdmin | null>(null);
+
+  const [preferencias, setPreferencias] = useState<PreferenciasAdmin>(preferenciasIniciales);
+  const [preferenciasGuardadas, setPreferenciasGuardadas] = useState<PreferenciasAdmin>(preferenciasIniciales);
+
   const [cargando, setCargando] = useState(true);
-  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
-  const [guardandoPassword, setGuardandoPassword] = useState(false);
-  const [mensajePerfil, setMensajePerfil] = useState<string | null>(null);
-  const [mensajePassword, setMensajePassword] = useState<string | null>(null);
+  const [guardando, setGuardando] = useState(false);
+  const [mensaje, setMensaje] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [preferencias, setPreferencias] = useState(preferenciasIniciales);
+
+  const [modalPerfil, setModalPerfil] = useState(false);
+  const [modalPassword, setModalPassword] = useState(false);
+  const [modalEmpresa, setModalEmpresa] = useState(false);
+  const [modalCancelar, setModalCancelar] = useState(false);
+  const [modalGuardar, setModalGuardar] = useState(false);
 
   const formPerfil = useForm<ActualizarPerfilRequest>();
-  const formPassword = useForm<CambiarPasswordRequest & { confirmarPassword: string }>();
+  const formPassword = useForm<PasswordForm>();
+  const formEmpresa = useForm<EmpresaAdmin>();
+
 
   useEffect(() => {
-    async function cargarPerfil() {
+    async function cargarConfiguracion() {
       setCargando(true);
       setError(null);
 
       try {
-        const data = await obtenerMiPerfil();
-        setPerfil(data);
+        const [datosPerfil, datosEmpresa] = await Promise.all([
+          obtenerMiPerfil(),
+          obtenerConfiguracionEmpresa(),
+        ]);
+
+        const empresaNormalizada = normalizarEmpresa(datosEmpresa);
+
+        setPerfil(datosPerfil);
+        setEmpresa(empresaNormalizada);
 
         formPerfil.reset({
-          nombre: data.nombre,
-          apellido: data.apellido,
-          email: data.email,
+          nombre: datosPerfil.nombre,
+          apellido: datosPerfil.apellido,
+          email: datosPerfil.email,
         });
-      } catch {
-        setError('No se pudo cargar la información de la cuenta.');
+
+        formEmpresa.reset(empresaNormalizada);
+      } catch (e: unknown) {
+        setError(mensajeError(e, 'No se pudo cargar la configuración.'));
       } finally {
         setCargando(false);
       }
     }
 
-    cargarPerfil();
-  }, [formPerfil]);
+    cargarConfiguracion();
+  }, [formEmpresa, formPerfil]);
+
+
+
+  function abrirPerfil() {
+    if (perfil) {
+      formPerfil.reset({
+        nombre: perfil.nombre,
+        apellido: perfil.apellido,
+        email: perfil.email,
+      });
+    }
+
+    setModalPerfil(true);
+  }
+
+  function abrirEmpresa() {
+    if (empresa) {
+      formEmpresa.reset(empresa);
+    }
+
+    setModalEmpresa(true);
+  }
 
   async function onGuardarPerfil(data: ActualizarPerfilRequest) {
-    setGuardandoPerfil(true);
-    setMensajePerfil(null);
+    setGuardando(true);
+    setMensaje(null);
     setError(null);
 
     try {
       const actualizado = await actualizarMiPerfil(data);
       setPerfil(actualizado);
-      setMensajePerfil('Perfil actualizado correctamente.');
+      setModalPerfil(false);
+      setMensaje('Perfil actualizado correctamente.');
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg ?? 'No se pudo actualizar el perfil.');
+      setError(mensajeError(e, 'No se pudo actualizar el perfil.'));
     } finally {
-      setGuardandoPerfil(false);
+      setGuardando(false);
     }
   }
 
-  async function onCambiarPassword(
-    data: CambiarPasswordRequest & { confirmarPassword: string }
-  ) {
-    setMensajePassword(null);
+  async function onCambiarPassword(data: PasswordForm) {
+    setMensaje(null);
     setError(null);
 
     if (data.passwordNueva !== data.confirmarPassword) {
@@ -103,7 +175,7 @@ export default function ConfiguracionAdmin() {
       return;
     }
 
-    setGuardandoPassword(true);
+    setGuardando(true);
 
     try {
       await cambiarMiPassword({
@@ -112,281 +184,386 @@ export default function ConfiguracionAdmin() {
       });
 
       formPassword.reset();
-      setMensajePassword('Contraseña actualizada correctamente.');
+      setModalPassword(false);
+      setMensaje('Contraseña actualizada correctamente.');
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      setError(msg ?? 'No se pudo cambiar la contraseña.');
+      setError(mensajeError(e, 'No se pudo cambiar la contraseña.'));
     } finally {
-      setGuardandoPassword(false);
+      setGuardando(false);
     }
   }
 
-  function actualizarPreferencia<K extends keyof PreferenciasAdmin>(
-    campo: K,
-    valor: PreferenciasAdmin[K]
-  ) {
-    setPreferencias((actual) => ({
-      ...actual,
-      [campo]: valor,
-    }));
+  async function onGuardarEmpresa(data: EmpresaAdmin) {
+    setGuardando(true);
+    setMensaje(null);
+    setError(null);
+
+    try {
+      const actualizada = await actualizarConfiguracionEmpresa(data);
+      const empresaNormalizada = normalizarEmpresa(actualizada);
+
+      setEmpresa(empresaNormalizada);
+      formEmpresa.reset(empresaNormalizada);
+      setModalEmpresa(false);
+      setMensaje('Datos de empresa actualizados correctamente.');
+    } catch (e: unknown) {
+      setError(mensajeError(e, 'No se pudieron actualizar los datos de empresa.'));
+    } finally {
+      setGuardando(false);
+    }
+  }
+
+  function guardarPreferencias() {
+    setPreferenciasGuardadas(preferencias);
+    setModalGuardar(false);
+    setMensaje('Los cambios se aplicarán al sistema y a las reglas de notificación.');
+  }
+
+  function descartarCambios() {
+    setPreferencias(preferenciasGuardadas);
+    setModalCancelar(false);
+    setMensaje('Los cambios no guardados se descartaron.');
   }
 
   return (
     <>
       <div className="page-title">Configuración</div>
-      <div className="page-subtitle">Cuenta administrativa y preferencias del sistema</div>
+      <div className="page-subtitle">Preferencias del sistema.</div>
 
       {error && (
         <div className="alert-item alert-item--peligro" style={{ marginBottom: 12 }}>
-          <span>●</span>
           <div>{error}</div>
         </div>
       )}
 
-      <div className="grid-2">
-        <Panel titulo="Perfil de administrador">
-          {cargando ? (
-            <div className="placeholder">Cargando perfil...</div>
-          ) : (
-            <form
-              onSubmit={formPerfil.handleSubmit(onGuardarPerfil)}
-              style={{ padding: 16 }}
-              noValidate
-            >
-              <div className="form-grid">
+      {mensaje && (
+        <div className="alert-item alert-item--ok" style={{ marginBottom: 12 }}>
+          <div>{mensaje}</div>
+        </div>
+      )}
+
+      {cargando ? (
+        <div className="placeholder">Cargando configuración...</div>
+      ) : (
+        <>
+          <div className="grid-2">
+          
+            <Panel titulo="Seguridad">
+              <div style={{ padding: 16, display: 'grid', gap: 8, fontSize: 13 }}>
                 <div>
-                  <label className="auth-label">Nombre</label>
-                  <input
-                    className={`auth-input ${formPerfil.formState.errors.nombre ? 'auth-input--error' : ''}`}
-                    {...formPerfil.register('nombre', { required: 'El nombre es obligatorio' })}
-                  />
-                  {formPerfil.formState.errors.nombre && (
-                    <span className="auth-field-error">
-                      {formPerfil.formState.errors.nombre.message}
-                    </span>
-                  )}
+                  <strong style={{ display: 'block', color: '#6b7280', fontSize: 11 }}>
+                    Contraseña actual
+                  </strong>
+                  <span>••••••••••••</span>
                 </div>
 
                 <div>
-                  <label className="auth-label">Apellido</label>
-                  <input
-                    className={`auth-input ${formPerfil.formState.errors.apellido ? 'auth-input--error' : ''}`}
-                    {...formPerfil.register('apellido', { required: 'El apellido es obligatorio' })}
-                  />
-                  {formPerfil.formState.errors.apellido && (
-                    <span className="auth-field-error">
-                      {formPerfil.formState.errors.apellido.message}
-                    </span>
-                  )}
+                  <strong style={{ display: 'block', color: '#6b7280', fontSize: 11 }}>
+                    Nueva contraseña
+                  </strong>
+                  <span>Sin cambios pendientes</span>
                 </div>
 
-                <div className="span2">
-                  <label className="auth-label">Email</label>
-                  <input
-                    type="email"
-                    className={`auth-input ${formPerfil.formState.errors.email ? 'auth-input--error' : ''}`}
-                    {...formPerfil.register('email', {
-                      required: 'El email es obligatorio',
-                      pattern: {
-                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                        message: 'Email inválido',
-                      },
-                    })}
-                  />
-                  {formPerfil.formState.errors.email && (
-                    <span className="auth-field-error">
-                      {formPerfil.formState.errors.email.message}
-                    </span>
-                  )}
+                <div>
+                  <strong style={{ display: 'block', color: '#6b7280', fontSize: 11 }}>
+                    Confirmar contraseña
+                  </strong>
+                  <span>Sin cambios pendientes</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                  <button className="btn btn-outline btn-sm" onClick={() => setModalPassword(true)}>
+                    Cambiar contraseña
+                  </button>
                 </div>
               </div>
+            </Panel>
 
-              <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
-                <button className="btn btn-primary" type="submit" disabled={guardandoPerfil}>
-                  {guardandoPerfil ? 'Guardando...' : 'Guardar perfil'}
+            <Panel titulo="Perfil de usuario">
+              <div style={{ padding: 16, display: 'grid', gap: 12 }}>
+                <div className="form-grid">
+                  <div>
+                    <label className="auth-label">Nombre completo</label>
+                    <input className="auth-input" value={nombreCompleto(perfil)} readOnly />
+                  </div>
+
+                  <div>
+                    <label className="auth-label">Email</label>
+                    <input className="auth-input" value={perfil?.email ?? 'Sin registro'} readOnly />
+                  </div>
+
+                  <div>
+                    <label className="auth-label">Teléfono</label>
+                    <input className="auth-input" value="+56 9 7777 7777" readOnly />
+                  </div>
+
+                  <div>
+                    <label className="auth-label">Rol</label>
+                    <input className="auth-input" value={perfil?.rol ?? 'ADMIN'} readOnly />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button className="btn btn-primary btn-sm" onClick={abrirPerfil}>
+                    Guardar cambios
+                  </button>
+                </div>
+              </div>
+            </Panel>
+
+            <Panel
+              titulo="Datos empresa"
+              accion={
+                <button className="btn btn-outline btn-sm" onClick={abrirEmpresa}>
+                  Editar
                 </button>
-              </div>
+              }
+            >
+              <div style={{ padding: 16 }}>
+                <div className="form-grid">
+                  <div>
+                    <label className="auth-label">Nombre empresa</label>
+                    <input className="auth-input" value={empresa?.nombreEmpresa ?? ''} readOnly />
+                  </div>
 
-              {mensajePerfil && (
-                <div className="auth-alert auth-alert--success" style={{ marginTop: 12 }}>
-                  {mensajePerfil}
+                  <div>
+                    <label className="auth-label">RUT</label>
+                    <input className="auth-input" value={empresa?.rut ?? ''} readOnly />
+                  </div>
+
+                  <div>
+                    <label className="auth-label">Email contacto</label>
+                    <input className="auth-input" value={empresa?.emailContacto ?? ''} readOnly />
+                  </div>
+
+                  <div>
+                    <label className="auth-label">Teléfono</label>
+                    <input className="auth-input" value={empresa?.telefono ?? ''} readOnly />
+                  </div>
+
+                  <div>
+                    <label className="auth-label">Dirección</label>
+                    <input className="auth-input" value={empresa?.direccion ?? ''} readOnly />
+                  </div>
+
+                  <div>
+                    <label className="auth-label">Región</label>
+                    <input className="auth-input" value={empresa?.region ?? ''} readOnly />
+                  </div>
                 </div>
-              )}
-            </form>
-          )}
-        </Panel>
+              </div>
+            </Panel>
+          </div>
 
-        <Panel titulo="Información de la cuenta">
-          <div style={{ padding: 16, display: 'grid', gap: 12, fontSize: 13 }}>
+         
+        </>
+      )}
+
+      <Modal
+        abierto={modalPassword}
+        titulo="Cambiar contraseña"
+        ancho="sm"
+        onCerrar={() => setModalPassword(false)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalPassword(false)}>
+              Cancelar
+            </button>
+            <button className="btn btn-primary" form="form-password-admin" type="submit" disabled={guardando}>
+              {guardando ? 'Actualizando...' : 'Actualizar'}
+            </button>
+          </>
+        }
+      >
+        <form id="form-password-admin" onSubmit={formPassword.handleSubmit(onCambiarPassword)} noValidate>
+          <div style={{ display: 'grid', gap: 12 }}>
             <div>
-              <div style={{ color: '#9ca3af', fontSize: 11 }}>Rol</div>
-              <strong>{perfil?.rol ?? 'ADMIN'}</strong>
+              <label className="auth-label">Contraseña actual</label>
+              <input
+                type="password"
+                className="auth-input"
+                {...formPassword.register('passwordActual', { required: true })}
+              />
             </div>
 
             <div>
-              <div style={{ color: '#9ca3af', fontSize: 11 }}>Estado</div>
-              <strong>{perfil?.activo ? 'Activo' : 'Inactivo'}</strong>
+              <label className="auth-label">Nueva contraseña</label>
+              <input
+                type="password"
+                className="auth-input"
+                {...formPassword.register('passwordNueva', {
+                  required: true,
+                  minLength: 8,
+                  pattern: /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/,
+                })}
+              />
             </div>
 
             <div>
-              <div style={{ color: '#9ca3af', fontSize: 11 }}>Último acceso</div>
-              <strong>{formatearFecha(perfil?.ultimoAcceso ?? null)}</strong>
-            </div>
-
-            <div>
-              <div style={{ color: '#9ca3af', fontSize: 11 }}>Fecha de creación</div>
-              <strong>{formatearFecha(perfil?.fechaCreacion ?? null)}</strong>
+              <label className="auth-label">Confirmar contraseña</label>
+              <input
+                type="password"
+                className="auth-input"
+                {...formPassword.register('confirmarPassword', { required: true })}
+              />
             </div>
           </div>
-        </Panel>
-      </div>
+        </form>
+      </Modal>
 
-      <div className="grid-2">
-        <Panel titulo="Cambiar contraseña">
-          <form
-            onSubmit={formPassword.handleSubmit(onCambiarPassword)}
-            style={{ padding: 16 }}
-            noValidate
-          >
-            <div style={{ display: 'grid', gap: 12 }}>
-              <div>
-                <label className="auth-label">Contraseña actual</label>
-                <input
-                  type="password"
-                  className={`auth-input ${formPassword.formState.errors.passwordActual ? 'auth-input--error' : ''}`}
-                  {...formPassword.register('passwordActual', {
-                    required: 'La contraseña actual es obligatoria',
-                  })}
-                />
-                {formPassword.formState.errors.passwordActual && (
-                  <span className="auth-field-error">
-                    {formPassword.formState.errors.passwordActual.message}
-                  </span>
-                )}
-              </div>
-
-              <div>
-                <label className="auth-label">Nueva contraseña</label>
-                <input
-                  type="password"
-                  className={`auth-input ${formPassword.formState.errors.passwordNueva ? 'auth-input--error' : ''}`}
-                  {...formPassword.register('passwordNueva', {
-                    required: 'La nueva contraseña es obligatoria',
-                    minLength: {
-                      value: 8,
-                      message: 'Mínimo 8 caracteres',
-                    },
-                    pattern: {
-                      value: /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).+$/,
-                      message: 'Debe incluir mayúscula, número y símbolo',
-                    },
-                  })}
-                />
-                {formPassword.formState.errors.passwordNueva && (
-                  <span className="auth-field-error">
-                    {formPassword.formState.errors.passwordNueva.message}
-                  </span>
-                )}
-              </div>
-
-              <div>
-                <label className="auth-label">Confirmar nueva contraseña</label>
-                <input
-                  type="password"
-                  className={`auth-input ${formPassword.formState.errors.confirmarPassword ? 'auth-input--error' : ''}`}
-                  {...formPassword.register('confirmarPassword', {
-                    required: 'Confirma la nueva contraseña',
-                  })}
-                />
-                {formPassword.formState.errors.confirmarPassword && (
-                  <span className="auth-field-error">
-                    {formPassword.formState.errors.confirmarPassword.message}
-                  </span>
-                )}
-              </div>
+      <Modal
+        abierto={modalEmpresa}
+        titulo="Editar Datos Empresa"
+        onCerrar={() => setModalEmpresa(false)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalEmpresa(false)}>
+              Cancelar
+            </button>
+            <button className="btn btn-primary" form="form-empresa-admin" type="submit" disabled={guardando}>
+              {guardando ? 'Guardando...' : 'Guardar configuración'}
+            </button>
+          </>
+        }
+      >
+        <form id="form-empresa-admin" onSubmit={formEmpresa.handleSubmit(onGuardarEmpresa)} noValidate>
+          <div className="form-grid">
+            <div>
+              <label className="auth-label">Nombre empresa</label>
+              <input className="auth-input" {...formEmpresa.register('nombreEmpresa', { required: true })} />
             </div>
-
-            <div style={{ marginTop: 14, display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-primary" type="submit" disabled={guardandoPassword}>
-                {guardandoPassword ? 'Actualizando...' : 'Cambiar contraseña'}
-              </button>
-            </div>
-
-            {mensajePassword && (
-              <div className="auth-alert auth-alert--success" style={{ marginTop: 12 }}>
-                {mensajePassword}
-              </div>
-            )}
-          </form>
-        </Panel>
-
-        <Panel titulo="Preferencias operativas">
-          <div style={{ padding: 16, display: 'grid', gap: 14 }}>
-            <label className="check-row">
-              <span className="left">
-                <input
-                  type="checkbox"
-                  checked={preferencias.alertasMorosidad}
-                  onChange={(e) => actualizarPreferencia('alertasMorosidad', e.target.checked)}
-                />
-                <span>
-                  <strong>Alertas de morosidad</strong>
-                  <br />
-                  <small>Notificar clientes con pagos vencidos.</small>
-                </span>
-              </span>
-            </label>
-
-            <label className="check-row">
-              <span className="left">
-                <input
-                  type="checkbox"
-                  checked={preferencias.alertasVisitas}
-                  onChange={(e) => actualizarPreferencia('alertasVisitas', e.target.checked)}
-                />
-                <span>
-                  <strong>Alertas de visitas próximas</strong>
-                  <br />
-                  <small>Mostrar avisos de agenda semanal.</small>
-                </span>
-              </span>
-            </label>
-
-            <label className="check-row">
-              <span className="left">
-                <input
-                  type="checkbox"
-                  checked={preferencias.resumenSemanal}
-                  onChange={(e) => actualizarPreferencia('resumenSemanal', e.target.checked)}
-                />
-                <span>
-                  <strong>Resumen semanal</strong>
-                  <br />
-                  <small>Preparar resumen operativo para administración.</small>
-                </span>
-              </span>
-            </label>
 
             <div>
-              <label className="auth-label">Actualización del mapa</label>
-              <select
+              <label className="auth-label">RUT</label>
+              <input
                 className="auth-input"
-                value={preferencias.actualizacionMapa}
-                onChange={(e) => actualizarPreferencia('actualizacionMapa', e.target.value)}
-              >
-                <option value="5">Cada 5 segundos</option>
-                <option value="10">Cada 10 segundos</option>
-                <option value="30">Cada 30 segundos</option>
-                <option value="60">Cada 1 minuto</option>
+                {...formEmpresa.register('rut', {
+                  required: true,
+                  pattern: /^\d{7,8}-[\dkK]$/,
+                })}
+              />
+            </div>
+
+            <div>
+              <label className="auth-label">Email contacto</label>
+              <input
+                type="email"
+                className="auth-input"
+                {...formEmpresa.register('emailContacto', {
+                  required: true,
+                  pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                })}
+              />
+            </div>
+
+            <div>
+              <label className="auth-label">Teléfono</label>
+              <input className="auth-input" {...formEmpresa.register('telefono')} />
+            </div>
+
+            <div className="span2">
+              <label className="auth-label">Dirección</label>
+              <input className="auth-input" {...formEmpresa.register('direccion')} />
+            </div>
+
+            <div>
+              <label className="auth-label">Región</label>
+              <select className="auth-input" {...formEmpresa.register('region')}>
+                <option value="Metropolitana">Metropolitana</option>
+                <option value="Valparaíso">Valparaíso</option>
+                <option value="Biobío">Biobío</option>
+                <option value="Coquimbo">Coquimbo</option>
+                <option value="Antofagasta">Antofagasta</option>
+                <option value="Los Lagos">Los Lagos</option>
               </select>
             </div>
+          </div>
+        </form>
+      </Modal>
 
-            <div className="info-box" style={{ marginBottom: 0 }}>
-              Estas preferencias quedan listas en la interfaz, pero requieren endpoint de configuración si deben guardarse en base de datos.
+      <Modal
+        abierto={modalPerfil}
+        titulo="Editar Perfil Usuario"
+        onCerrar={() => setModalPerfil(false)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalPerfil(false)}>
+              Cancelar
+            </button>
+            <button className="btn btn-primary" form="form-perfil-admin" type="submit" disabled={guardando}>
+              {guardando ? 'Guardando...' : 'Guardar cambios'}
+            </button>
+          </>
+        }
+      >
+        <form id="form-perfil-admin" onSubmit={formPerfil.handleSubmit(onGuardarPerfil)} noValidate>
+          <div className="form-grid">
+            <div>
+              <label className="auth-label">Nombre</label>
+              <input className="auth-input" {...formPerfil.register('nombre', { required: true })} />
+            </div>
+
+            <div>
+              <label className="auth-label">Apellido</label>
+              <input className="auth-input" {...formPerfil.register('apellido', { required: true })} />
+            </div>
+
+            <div className="span2">
+              <label className="auth-label">Email</label>
+              <input
+                type="email"
+                className="auth-input"
+                {...formPerfil.register('email', {
+                  required: true,
+                  pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                })}
+              />
             </div>
           </div>
-        </Panel>
-      </div>
+        </form>
+      </Modal>
+
+      <Modal
+        abierto={modalCancelar}
+        titulo="Confirmación: Cancelar cambios"
+        ancho="sm"
+        onCerrar={() => setModalCancelar(false)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalCancelar(false)}>
+              Volver
+            </button>
+            <button className="btn btn-danger" onClick={descartarCambios}>
+              Descartar
+            </button>
+          </>
+        }
+      >
+        <div className="warning-box" style={{ marginBottom: 0 }}>
+          Los cambios no guardados se perderán.
+        </div>
+      </Modal>
+
+      <Modal
+        abierto={modalGuardar}
+        titulo="Confirmación: Guardar configuración"
+        ancho="sm"
+        onCerrar={() => setModalGuardar(false)}
+        footer={
+          <>
+            <button className="btn btn-outline" onClick={() => setModalGuardar(false)}>
+              Cancelar
+            </button>
+            <button className="btn btn-primary" onClick={guardarPreferencias}>
+              Guardar
+            </button>
+          </>
+        }
+      >
+        <div className="success-box" style={{ marginBottom: 0 }}>
+          Los cambios se aplicarán al sistema y a las reglas de notificación.
+        </div>
+      </Modal>
     </>
   );
 }

@@ -191,4 +191,25 @@ public class ProfesionalService {
                 cantidad
         );
     }
+    @Transactional
+    public ProfesionalResponse actualizarMiPerfil(String emailUsuario, ActualizarProfesionalRequest request) {
+        Profesional profesional = buscarPorEmailOFallar(emailUsuario);
+
+        if (!profesional.getRut().equals(request.rut())) {
+            profesionalRepository.findByRut(request.rut()).ifPresent(otro -> {
+                if (!otro.getId().equals(profesional.getId())) {
+                    throw new ConflictoNegocioException("Ya existe un profesional con RUT " + request.rut());
+            }
+        });
+
+        profesional.setRut(request.rut());
+        }
+
+        profesional.setTelefono(request.telefono());
+        profesional.setEspecialidad(request.especialidad());
+
+        log.info("Perfil profesional propio actualizado id={}", profesional.getId());
+
+        return toResponseConCarga(profesional);
+    }
 }
