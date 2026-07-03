@@ -14,6 +14,9 @@ public interface AsesoriaRepository extends JpaRepository<Asesoria, Long> {
 
     List<Asesoria> findByProfesionalUsuarioEmailOrderByFechaSolicitudDesc(String email);
 
+    /** Asesorías de la empresa (historial del cliente, RF07), más recientes primero. */
+    List<Asesoria> findByEmpresaIdOrderByFechaSolicitudDesc(Long idEmpresa);
+
     /** Asesorías contabilizables de la empresa en el rango (excluye el estado dado). Apoya RF23. */
     long countByEmpresaIdAndFechaSolicitudBetweenAndEstadoNot(
             Long idEmpresa, LocalDate desde, LocalDate hasta, EstadoAsesoria estado);

@@ -14,6 +14,8 @@ import com.example.NoMasAccidentes.repository.asistencia.AsistenciaRepository;
 import com.example.NoMasAccidentes.repository.capacitacion.CapacitacionRepository;
 import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
+import com.example.NoMasAccidentes.service.empresa.EmpresaService;
+import com.example.NoMasAccidentes.service.notificacion.NotificacionEventoService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -51,6 +53,8 @@ public class CapacitacionService {
     private final EmpresaRepository      empresaRepository;
     private final ProfesionalRepository  profesionalRepository;
     private final CapacitacionMapper     mapper;
+    private final NotificacionEventoService notificacionEventoService;
+    private final EmpresaService         empresaService;
 
     // ─────────────────────────────────────────────
     //  Consultas
@@ -66,6 +70,13 @@ public class CapacitacionService {
 
     public List<CapacitacionResponse> listarPorEmpresa(Long idEmpresa) {
         validarExisteEmpresa(idEmpresa);
+        return capacitacionRepository.findByEmpresaId(idEmpresa)
+                .stream().map(mapper::toResponse).toList();
+    }
+
+    /** Capacitaciones de la empresa del cliente autenticado (portal cliente, solo lectura, RF07). */
+    public List<CapacitacionResponse> misCapacitaciones(String emailUsuario) {
+        Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
         return capacitacionRepository.findByEmpresaId(idEmpresa)
                 .stream().map(mapper::toResponse).toList();
     }
@@ -126,6 +137,8 @@ public class CapacitacionService {
                 guardada.getHoraProgramada(),
                 guardada.getCupos(),
                 guardada.isEsCapacitacionExtra());
+
+        notificacionEventoService.notificarCapacitacionProgramada(guardada);
 
         return mapper.toResponse(guardada);
     }

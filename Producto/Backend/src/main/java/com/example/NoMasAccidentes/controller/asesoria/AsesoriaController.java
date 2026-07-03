@@ -65,6 +65,13 @@ public class AsesoriaController {
         return asesoriaService.misAsignaciones(principal.getName());
     }
 
+    @Operation(summary = "Asesorías de la empresa del cliente autenticado (solo lectura, RF07)")
+    @GetMapping("/mias")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public List<AsesoriaResponse> misAsesorias(Principal principal) {
+        return asesoriaService.misAsesorias(principal.getName());
+    }
+
     @Operation(summary = "El profesional inicia la atención de la asesoría (RF25)")
     @PatchMapping("/{id}/atender")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")

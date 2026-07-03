@@ -38,7 +38,8 @@ function fmtFecha(iso: string | null) {
 }
 
 function mensajeError(e: unknown, fallback: string) {
-  return (e as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje ?? fallback;
+  const data = (e as { response?: { data?: { message?: string; errores?: string[] } } })?.response?.data;
+  return data?.message ?? (data?.errores?.length ? data.errores.join(' · ') : null) ?? fallback;
 }
 
 export default function SeguimientoPreventivo() {
@@ -218,6 +219,11 @@ export default function SeguimientoPreventivo() {
                   <td>
                     <div style={{ fontWeight: 600, color: '#1a3a5c' }}>{a.titulo}</div>
                     <div style={{ fontSize: 11, color: '#6b7280' }}>{a.descripcion ?? '-'}</div>
+                    {a.reportadoPorCliente && a.estado !== 'CUMPLIDA' && (
+                      <div style={{ fontSize: 11, color: '#1a7f37', fontWeight: 600, marginTop: 2 }}>
+                        ✓ Cliente reportó cumplimiento{a.comentarioCliente ? `: ${a.comentarioCliente}` : ''}
+                      </div>
+                    )}
                   </td>
                   <td>{a.normativa ?? '-'}</td>
                   <td>{a.responsable ?? '-'}</td>

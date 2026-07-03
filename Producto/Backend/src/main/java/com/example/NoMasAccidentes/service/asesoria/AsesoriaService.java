@@ -12,6 +12,8 @@ import com.example.NoMasAccidentes.model.profesional.Profesional;
 import com.example.NoMasAccidentes.repository.asesoria.AsesoriaRepository;
 import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
+import com.example.NoMasAccidentes.service.empresa.EmpresaService;
+import com.example.NoMasAccidentes.service.notificacion.NotificacionEventoService;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +40,8 @@ public class AsesoriaService {
     private final EmpresaRepository empresaRepository;
     private final ProfesionalRepository profesionalRepository;
     private final AsesoriaMapper asesoriaMapper;
+    private final NotificacionEventoService notificacionEventoService;
+    private final EmpresaService empresaService;
 
     /** Registra una asesoría (RF22) y determina si es extra según el límite anual (RF23, RF24). */
     @Transactional
@@ -63,6 +67,7 @@ public class AsesoriaService {
         Asesoria guardada = asesoriaRepository.save(asesoria);
         log.info("Asesoría creada id={} empresa={} tipo={} extra={} (RF22-RF24)",
                 guardada.getId(), empresa.getId(), request.tipo(), esExtra);
+        notificacionEventoService.notificarAsesoriaRegistrada(guardada);
         return asesoriaMapper.toResponse(guardada);
     }
 
@@ -119,6 +124,21 @@ public class AsesoriaService {
     public List<AsesoriaResponse> misAsignaciones(String emailUsuario) {
         return asesoriaRepository.findByProfesionalUsuarioEmailOrderByFechaSolicitudDesc(emailUsuario)
                 .stream().map(asesoriaMapper::toResponse).toList();
+    }
+
+    /** Asesorías de la empresa del cliente autenticado (portal cliente, solo lectura, RF07). */
+    public List<AsesoriaResponse> misAsesorias(String emailUsuario) {
+        Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
+        return asesoriaRepository.findByEmpresaIdOrderByFechaSolicitudDesc(idEmpresa)
+                .stream().map(asesoriaMapper::toResponse).toList();
+    }
+
+    /**
+     * Sugerencia para el admin: ¿una nueva asesoría de esta empresa se cobraría extra
+     * según el límite anual incluido (RF23/RF24)? Usado al aprobar una solicitud.
+     */
+    public boolean seriaExtra(Long idEmpresa) {
+        return excedeLimiteIncluidas(idEmpresa, LocalDate.now().getYear());
     }
 
     /** True si la empresa ya consumió sus asesorías incluidas en el año (RF23 → cobro extra RF24). */

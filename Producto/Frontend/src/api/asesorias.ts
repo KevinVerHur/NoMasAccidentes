@@ -21,6 +21,12 @@ export async function misAsesorias(): Promise<AsesoriaResponse[]> {
   return res.data;
 }
 
+/** Asesorías de la empresa del cliente autenticado (solo lectura, RF07). */
+export async function misAsesoriasCliente(): Promise<AsesoriaResponse[]> {
+  const res = await api.get<AsesoriaResponse[]>('/api/asesorias/mias');
+  return res.data;
+}
+
 export async function crearAsesoria(data: CrearAsesoriaRequest): Promise<AsesoriaResponse> {
   const res = await api.post<AsesoriaResponse>('/api/asesorias', data);
   return res.data;

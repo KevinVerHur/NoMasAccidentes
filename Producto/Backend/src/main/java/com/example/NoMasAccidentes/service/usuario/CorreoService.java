@@ -338,4 +338,250 @@ public class CorreoService {
         """.formatted(cliente, actividad, normativaTexto, responsableTexto, vencimiento);
     }
 
+    // ─────────────────────────────────────────────
+    //  Notificaciones por evento (Fase 1) — envío inmediato al crear el registro
+    // ─────────────────────────────────────────────
+
+    /** Avisa al profesional que se le planificó una nueva visita. */
+    @Async
+    public void enviarAvisoVisitaPlanificada(String destinatario, String empresa, String fecha, String direccion){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Nueva visita planificada");
+            helper.setText(construirHtmlAvisoVisitaPlanificada(empresa, fecha, direccion), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de visita planificada enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de visita planificada a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    /** Avisa al cliente que se le programó una capacitación. */
+    @Async
+    public void enviarAvisoCapacitacionProgramada(String destinatario, String empresa, String curso, String fecha, String hora, String lugar){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Nueva capacitacion programada");
+            helper.setText(construirHtmlAvisoCapacitacionProgramada(empresa, curso, fecha, hora, lugar), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de capacitacion programada enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de capacitacion programada a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    /** Avisa al cliente que se registró una asesoría a su nombre. */
+    @Async
+    public void enviarAvisoAsesoriaRegistrada(String destinatario, String empresa, String tipo, String motivo){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Asesoria registrada");
+            helper.setText(construirHtmlAvisoAsesoriaRegistrada(empresa, tipo, motivo), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de asesoria registrada enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de asesoria registrada a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    private String construirHtmlAvisoVisitaPlanificada(String empresa, String fecha, String direccion){
+        String direccionTexto = direccion == null || direccion.isBlank() ? "Por confirmar" : direccion;
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Se te asigno una nueva visita en terreno.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Empresa:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha programada:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Direccion:</strong> %s</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, fecha, direccionTexto);
+    }
+
+    private String construirHtmlAvisoCapacitacionProgramada(String empresa, String curso, String fecha, String hora, String lugar){
+        String lugarTexto = lugar == null || lugar.isBlank() ? "Por confirmar" : lugar;
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Hola %s, se programo una nueva capacitacion para tu empresa.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Curso:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Hora:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Lugar:</strong> %s</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, curso, fecha, hora, lugarTexto);
+    }
+
+    /** Avisa al administrador que un cliente envió una solicitud de servicio. */
+    @Async
+    public void enviarAvisoSolicitudRecibida(String empresa, String tipo, String descripcion){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(adminEmail);
+            helper.setSubject("No Mas Accidentes - Nueva solicitud de " + tipo.toLowerCase());
+            helper.setText(construirHtmlSolicitudRecibida(empresa, tipo, descripcion), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de solicitud recibida enviado al administrador (empresa {})", empresa);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de solicitud recibida al administrador: {}", e.getMessage());
+        }
+    }
+
+    /** Avisa al cliente la respuesta del admin a su solicitud (aprobada/rechazada). */
+    @Async
+    public void enviarAvisoSolicitudRespondida(String destinatario, String tipo, boolean aprobada, boolean esExtra, String comentario){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Respuesta a tu solicitud de " + tipo.toLowerCase());
+            helper.setText(construirHtmlSolicitudRespondida(tipo, aprobada, esExtra, comentario), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de solicitud respondida enviado a {} (aprobada={})", destinatario, aprobada);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de solicitud respondida a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    /** Avisa al cliente que una de sus actividades preventivas venció sin cumplirse (RF49). */
+    @Async
+    public void enviarAvisoActividadVencidaCliente(String destinatario, String actividad, String normativa, String vencimiento){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Actividad preventiva vencida");
+            helper.setText(construirHtmlActividadVencidaCliente(actividad, normativa, vencimiento), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de actividad vencida enviado al cliente {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de actividad vencida al cliente {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    /** Avisa a la consultora que un cliente reportó haber cumplido su parte de una actividad. */
+    @Async
+    public void enviarAvisoCumplimientoReportado(String empresa, String actividad, String comentario){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(adminEmail);
+            helper.setSubject("No Mas Accidentes - Cliente reporto cumplimiento");
+            helper.setText(construirHtmlCumplimientoReportado(empresa, actividad, comentario), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de cumplimiento reportado enviado al administrador (empresa {})", empresa);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de cumplimiento reportado al administrador: {}", e.getMessage());
+        }
+    }
+
+    private String construirHtmlActividadVencidaCliente(String actividad, String normativa, String vencimiento){
+        String normativaTexto = normativa == null || normativa.isBlank() ? "No especificada" : normativa;
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;background:#fff7ed;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Una actividad preventiva de tu empresa venció sin registrarse como cumplida.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Actividad:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Normativa:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha limite:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px">Por favor regularizala a la brevedad para mantener el cumplimiento normativo.</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(actividad, normativaTexto, vencimiento);
+    }
+
+    private String construirHtmlCumplimientoReportado(String empresa, String actividad, String comentario){
+        String comentarioTexto = comentario == null || comentario.isBlank() ? "Sin comentario" : comentario;
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Un cliente reportó haber cumplido su parte de una actividad preventiva.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Empresa:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Actividad:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Comentario del cliente:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px">Verifica en terreno y marca la actividad como cumplida cuando corresponda.</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, actividad, comentarioTexto);
+    }
+
+    private String construirHtmlSolicitudRecibida(String empresa, String tipo, String descripcion){
+        String descripcionTexto = descripcion == null || descripcion.isBlank() ? "Sin detalle" : descripcion;
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;background:#fff7ed;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Un cliente envió una nueva solicitud de servicio.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Empresa:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Tipo:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Detalle:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px">Revisa la solicitud en el panel para aprobarla o rechazarla.</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, tipo, descripcionTexto);
+    }
+
+    private String construirHtmlSolicitudRespondida(String tipo, boolean aprobada, boolean esExtra, String comentario){
+        String estado = aprobada ? "APROBADA" : "RECHAZADA";
+        String color = aprobada ? "#f5f7fa" : "#fff7ed";
+        String extraTexto = aprobada
+                ? (esExtra
+                    ? "<p style=\"color:#b45309;font-size:14px\"><strong>Nota:</strong> este servicio queda fuera de tu plan, por lo que se cobrará como adicional.</p>"
+                    : "<p style=\"color:#3d4856;font-size:14px\">Este servicio está incluido en tu plan.</p>")
+                : "";
+        String comentarioTexto = comentario == null || comentario.isBlank() ? "" :
+                "<p style=\"color:#3d4856;font-size:14px\"><strong>Comentario:</strong> %s</p>".formatted(comentario);
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;background:%s;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Tu solicitud de <strong>%s</strong> fue <strong>%s</strong>.</p>
+              %s
+              %s
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(color, tipo.toLowerCase(), estado, extraTexto, comentarioTexto);
+    }
+
+    private String construirHtmlAvisoAsesoriaRegistrada(String empresa, String tipo, String motivo){
+        String motivoTexto = motivo == null || motivo.isBlank() ? "Sin detalle" : motivo;
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Hola %s, se registro una asesoria a nombre de tu empresa.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Tipo:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Motivo:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px">Un profesional de prevencion se pondra en contacto para dar seguimiento.</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, tipo, motivoTexto);
+    }
+
 }

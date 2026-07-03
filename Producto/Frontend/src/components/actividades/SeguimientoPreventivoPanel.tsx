@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Panel from '../ui/Panel';
 import Badge from '../ui/Badge';
+import Modal from '../ui/Modal';
 import {
   cambiarEstadoActividadPreventiva,
   listarActividadesPreventivas,
   misActividadesPreventivas,
+  reportarCumplimiento,
 } from '../../api/ActividadesPreventivas';
 import type {
   ActividadPreventivaResponse,
@@ -48,6 +50,9 @@ export default function SeguimientoPreventivoPanel({
   const [cargando, setCargando] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [estado, setEstado] = useState('');
+  const [reportando, setReportando] = useState<ActividadPreventivaResponse | null>(null);
+  const [comentarioReporte, setComentarioReporte] = useState('');
+  const [guardandoReporte, setGuardandoReporte] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -90,7 +95,21 @@ export default function SeguimientoPreventivoPanel({
     await cargar();
   }
 
+  async function confirmarReporte() {
+    if (!reportando) return;
+    setGuardandoReporte(true);
+    try {
+      await reportarCumplimiento(reportando.id, comentarioReporte.trim());
+      setReportando(null);
+      setComentarioReporte('');
+      await cargar();
+    } finally {
+      setGuardandoReporte(false);
+    }
+  }
+
   return (
+    <>
     <Panel titulo={titulo}>
       {!compacto && (
         <div className="searchbar">
@@ -124,6 +143,7 @@ export default function SeguimientoPreventivoPanel({
               <th>Fecha limite</th>
               <th>Estado</th>
               {!compacto && <th>Observaciones</th>}
+              {modoCliente && <th>Cumplimiento</th>}
               {editable && <th>Accion</th>}
             </tr>
           </thead>
@@ -143,6 +163,19 @@ export default function SeguimientoPreventivoPanel({
                   </Badge>
                 </td>
                 {!compacto && <td>{a.observaciones ?? '-'}</td>}
+                {modoCliente && (
+                  <td>
+                    {a.reportadoPorCliente ? (
+                      <span className="text-[12px] text-ok font-bold">Reportado ✓</span>
+                    ) : a.estado !== 'CUMPLIDA' ? (
+                      <button className="btn btn-sm btn-primary" onClick={() => { setReportando(a); setComentarioReporte(''); }}>
+                        Reportar cumplimiento
+                      </button>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
+                )}
                 {editable && (
                   <td>
                     <div className="btn-group">
@@ -165,5 +198,36 @@ export default function SeguimientoPreventivoPanel({
         </table>
       )}
     </Panel>
+
+    <Modal
+      abierto={!!reportando}
+      titulo="Reportar cumplimiento"
+      ancho="sm"
+      onCerrar={() => setReportando(null)}
+      footer={
+        <>
+          <button className="btn btn-outline" onClick={() => setReportando(null)} disabled={guardandoReporte}>
+            Cancelar
+          </button>
+          <button className="btn btn-primary" onClick={confirmarReporte} disabled={guardandoReporte}>
+            {guardandoReporte ? 'Enviando…' : 'Reportar'}
+          </button>
+        </>
+      }
+    >
+      <p className="text-[13px] text-gray-600" style={{ marginBottom: 8 }}>
+        Le avisarás a la consultora que cumpliste tu parte de <strong>{reportando?.titulo}</strong>.
+        Un profesional lo verificará y la marcará como cumplida.
+      </p>
+      <textarea
+        className="auth-input"
+        rows={3}
+        maxLength={500}
+        placeholder="Comentario o detalle de la evidencia (opcional)"
+        value={comentarioReporte}
+        onChange={(e) => setComentarioReporte(e.target.value)}
+      />
+    </Modal>
+    </>
   );
 }

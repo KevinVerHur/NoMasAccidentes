@@ -4,6 +4,7 @@ import com.example.NoMasAccidentes.common.BaseEntity;
 import com.example.NoMasAccidentes.model.empresa.Empresa;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -60,6 +61,17 @@ public class ActividadPreventiva extends BaseEntity{
     @Column(name = "alerta_enviada", nullable = false)
     @Builder.Default
     private boolean alertaEnviada = false;
+
+    /** El cliente reportó que cumplió su parte (señal para que la consultora verifique). */
+    @Column(name = "reportado_por_cliente", nullable = false)
+    @Builder.Default
+    private boolean reportadoPorCliente = false;
+
+    @Column(name = "fecha_reporte_cliente")
+    private LocalDateTime fechaReporteCliente;
+
+    @Column(name = "comentario_cliente", length = 500)
+    private String comentarioCliente;
 
     @Column(nullable = false)
     @Builder.Default

@@ -67,6 +67,16 @@ public class ActividadPreventivaController {
         return service.misActividades(principal.getName());
     }
 
+    /** El cliente reporta que cumplió su parte (la consultora luego verifica). */
+    @PatchMapping("/{id}/reportar-cumplimiento")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public ActividadPreventivaResponse reportarCumplimiento(
+            @PathVariable Long id,
+            @Valid @RequestBody ReportarCumplimientoRequest request,
+            Principal principal){
+        return service.reportarCumplimiento(id, principal.getName(), request.comentario());
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {

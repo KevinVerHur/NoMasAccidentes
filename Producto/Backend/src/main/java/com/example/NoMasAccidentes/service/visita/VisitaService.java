@@ -17,6 +17,7 @@ import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
 import com.example.NoMasAccidentes.repository.visita.ListaChequeoRepository;
 import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
 import com.example.NoMasAccidentes.service.empresa.EmpresaService;
+import com.example.NoMasAccidentes.service.notificacion.NotificacionEventoService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -43,6 +44,7 @@ public class VisitaService {
     private final ProfesionalRepository profesionalRepository;
     private final VisitaMapper visitaMapper;
     private final EmpresaService empresaService;
+    private final NotificacionEventoService notificacionEventoService;
 
     /** Planifica una visita (RF13). Requiere que la empresa tenga lista de chequeo (RF16). */
     @Transactional
@@ -77,6 +79,7 @@ public class VisitaService {
         Visita guardada = visitaRepository.save(visita);
         log.info("Visita planificada id={} empresa={} fecha={} (RF13)",
                 guardada.getId(), empresa.getId(), request.fechaProgramada());
+        notificacionEventoService.notificarVisitaPlanificada(guardada);
         return visitaMapper.toResponse(guardada);
     }
 
