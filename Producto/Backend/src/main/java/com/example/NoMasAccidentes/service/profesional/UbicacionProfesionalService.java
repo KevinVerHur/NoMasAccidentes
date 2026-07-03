@@ -12,6 +12,11 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.NoMasAccidentes.common.ConflictoNegocioException;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -19,14 +24,26 @@ public class UbicacionProfesionalService {
 
     private static final long MINUTOS_UBICACION_ACTIVA = 30;
 
+    //regla de negocio hora legal uso mapa
+    private static final ZoneId ZONA_CHILE = ZoneId.of("America/Santiago");
+    private static final LocalTime INICIO_JORNADA = LocalTime.of(8, 0);
+    private static final LocalTime FIN_JORNADA = LocalTime.of(18, 0);
+
     private final ProfesionalRepository profesionalRepository;
     private final UbicacionProfesionalRepository ubicacionRepository;
+
+    
 
     @Transactional
     public UbicacionProfesionalResponse registrarMiUbicacion(
             String emailUsuario,
             RegistrarUbicacionRequest request
     ) {
+        if (!estaDentroDeJornadaLaboralChile()) {
+                throw new ConflictoNegocioException(
+                        "El seguimiento de ubicacion solo esta permitido de lunes a viernes entre 08:00 y 18:00, hora de Chile."
+                );
+        }
         Profesional profesional = profesionalRepository.findByUsuarioEmail(emailUsuario)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Profesional asociado al usuario no encontrado"
@@ -49,6 +66,11 @@ public class UbicacionProfesionalService {
 
     @Transactional(readOnly = true)
     public List<UbicacionProfesionalResponse> listarUbicacionesActivas() {
+        //regla de negocio hora legal uso mapa admin
+        if (!estaDentroDeJornadaLaboralChile()){
+                return List.of();
+        }
+
         LocalDateTime desde = LocalDateTime.now().minusMinutes(MINUTOS_UBICACION_ACTIVA);
 
         return ubicacionRepository.findUltimasUbicacionesActivas(desde)
@@ -78,5 +100,17 @@ public class UbicacionProfesionalService {
                 ubicacion.getLongitud(),
                 ubicacion.getFechaRegistro()
         );
+    }
+
+    //regla de negocio hora legal uso mapa
+    private boolean estaDentroDeJornadaLaboralChile() {
+        ZonedDateTime ahoraChile = ZonedDateTime.now(ZONA_CHILE);
+        DayOfWeek dia = ahoraChile.getDayOfWeek();
+        LocalTime hora = ahoraChile.toLocalTime();
+
+        boolean diaLaboral = dia != DayOfWeek.SATURDAY && dia != DayOfWeek.SUNDAY;
+        boolean dentroHorario = !hora.isBefore(INICIO_JORNADA) && hora.isBefore(FIN_JORNADA);
+
+        return diaLaboral && dentroHorario;
     }
 }

@@ -78,6 +78,20 @@ const iconoImpreciso = L.divIcon({
   iconAnchor: [9, 9],
 });
 
+const HORA_INICIO_JORNADA = 8;
+const HORA_FIN_JORNADA = 18;
+
+function estaDentroDeJornadaLaboralChile() {
+  const ahoraChile = new Date(
+    new Date().toLocaleString('en-US', { timeZone: 'America/Santiago' })
+  );
+
+  const dia = ahoraChile.getDay(); // 0 domingo, 6 sabado
+  const hora = ahoraChile.getHours();
+
+  return dia >= 1 && dia <= 5 && hora >= HORA_INICIO_JORNADA && hora < HORA_FIN_JORNADA;
+}
+
 function distanciaMetros(a: UbicacionActual, b: UbicacionActual) {
   const radioTierra = 6371000;
   const lat1 = (a.latitud * Math.PI) / 180;
@@ -324,6 +338,12 @@ export default function DashboardProfesional() {
   }
 
   const enviarUbicacion = useCallback(async (nuevaUbicacion: UbicacionActual, forzar = false) => {
+
+    if (!estaDentroDeJornadaLaboralChile()) {
+      setMensajeUbicacion('Fuera de jornada laboral. La ubicacion no se enviara al sistema.')
+      return;
+    }
+
     const ahora = Date.now();
     const ultimaEnviada = ultimaUbicacionEnviadaRef.current;
     const pasoTiempoMinimo = ahora - ultimoEnvioRef.current >= 10000;
@@ -369,6 +389,12 @@ export default function DashboardProfesional() {
   }, [enviarUbicacion]);
 
   const actualizarUnaVez = useCallback(() => {
+
+    if (!estaDentroDeJornadaLaboralChile()) {
+      setMensajeUbicacion('El mapa solo funciona de lunes a viernes entre las 08:00 y las 18:00, hora de Chile.');
+      return;
+    }
+
     setMensajeUbicacion(null);
 
     if (!navigator.geolocation) {
@@ -392,6 +418,12 @@ export default function DashboardProfesional() {
   }, [aplicarLecturaUbicacion]);
 
   const iniciarSeguimiento = useCallback(() => {
+
+    if (!estaDentroDeJornadaLaboralChile()) {
+      setMensajeUbicacion('El seguimiento solo puede iniciarse de lunes a viernes entre las 08:00 y las 18:00, hora de Chile.');
+      return;
+    }
+
     setMensajeUbicacion(null);
 
     if (!navigator.geolocation) {
