@@ -1,5 +1,5 @@
 import type {
-  ClienteResponse,
+  EmpresaResponse,
   MorosidadDetalle,
   MorosidadItem,
   MorosidadNotificacionRequest,
@@ -13,7 +13,7 @@ import { historialPagos, registrarPago } from './pagos';
 const esCuotaAdeudada = (pago: PagoResponse) => pago.estadoPago === 'PENDIENTE' || pago.estadoPago === 'ATRASADO';
 const fechaTiempo = (fecha: string | null) => fecha ? new Date(fecha).getTime() : 0;
 
-function riesgoPorCliente(cliente: ClienteResponse, cuotasAdeudadas: PagoResponse[]): MorosidadItem['riesgo'] {
+function riesgoPorCliente(cliente: EmpresaResponse, cuotasAdeudadas: PagoResponse[]): MorosidadItem['riesgo'] {
   const atrasadas = cuotasAdeudadas.filter((pago) => pago.estadoPago === 'ATRASADO').length;
 
   if (cliente.estado === 'SUSPENDIDO' || atrasadas >= 2) return 'CRITICO';
@@ -21,7 +21,7 @@ function riesgoPorCliente(cliente: ClienteResponse, cuotasAdeudadas: PagoRespons
   return 'OBSERVACION';
 }
 
-function construirItem(cliente: ClienteResponse, pagos: PagoResponse[]): MorosidadItem | null {
+function construirItem(cliente: EmpresaResponse, pagos: PagoResponse[]): MorosidadItem | null {
   const cuotasAdeudadas = pagos
     .filter(esCuotaAdeudada)
     .sort((a, b) => fechaTiempo(a.fechaVencimiento) - fechaTiempo(b.fechaVencimiento));
@@ -37,7 +37,7 @@ function construirItem(cliente: ClienteResponse, pagos: PagoResponse[]): Morosid
   return {
     idCliente: cliente.id,
     cliente: cliente.razonSocial,
-    email: cliente.email,
+    email: '', // el email de contacto vive ahora en el representante, no en la empresa
     estadoCliente: cliente.estado,
     mesesDeuda: cuotasAdeudadas.length,
     montoAdeudado: cuotasAdeudadas.reduce((total, pago) => total + pago.monto, 0),

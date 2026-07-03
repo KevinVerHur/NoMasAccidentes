@@ -14,9 +14,23 @@ import {
 } from '../api/configuracion';
 import type {
   ActualizarPerfilRequest,
-  CambiarPasswordRequest,
   UsuarioResponse,
 } from '../types';
+
+interface EmpresaAdmin {
+  nombreEmpresa: string;
+  rut: string;
+  emailContacto: string;
+  telefono: string;
+  direccion: string;
+  region: string;
+}
+
+interface PasswordForm {
+  passwordActual: string;
+  passwordNueva: string;
+  confirmarPassword: string;
+}
 
 
 
@@ -54,9 +68,6 @@ export default function ConfiguracionAdmin() {
   const [perfil, setPerfil] = useState<UsuarioResponse | null>(null);
   const [empresa, setEmpresa] = useState<EmpresaAdmin | null>(null);
 
-  const [preferencias, setPreferencias] = useState<PreferenciasAdmin>(preferenciasIniciales);
-  const [preferenciasGuardadas, setPreferenciasGuardadas] = useState<PreferenciasAdmin>(preferenciasIniciales);
-
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
@@ -65,8 +76,6 @@ export default function ConfiguracionAdmin() {
   const [modalPerfil, setModalPerfil] = useState(false);
   const [modalPassword, setModalPassword] = useState(false);
   const [modalEmpresa, setModalEmpresa] = useState(false);
-  const [modalCancelar, setModalCancelar] = useState(false);
-  const [modalGuardar, setModalGuardar] = useState(false);
 
   const formPerfil = useForm<ActualizarPerfilRequest>();
   const formPassword = useForm<PasswordForm>();
@@ -192,22 +201,10 @@ export default function ConfiguracionAdmin() {
     }
   }
 
-  function guardarPreferencias() {
-    setPreferenciasGuardadas(preferencias);
-    setModalGuardar(false);
-    setMensaje('Los cambios se aplicarán al sistema y a las reglas de notificación.');
-  }
-
-  function descartarCambios() {
-    setPreferencias(preferenciasGuardadas);
-    setModalCancelar(false);
-    setMensaje('Los cambios no guardados se descartaron.');
-  }
-
   return (
     <>
       <div className="page-title">Configuración</div>
-      <div className="page-subtitle">Preferencias del sistema.</div>
+      <div className="page-subtitle">Datos de tu cuenta y empresa.</div>
 
       {error && (
         <div className="alert-item alert-item--peligro" style={{ marginBottom: 12 }}>
@@ -502,56 +499,6 @@ export default function ConfiguracionAdmin() {
         </form>
       </Modal>
 
-      <Modal
-        abierto={modalCancelar}
-        titulo="Confirmación: Cancelar cambios"
-        ancho="sm"
-        onCerrar={() => setModalCancelar(false)}
-        footer={
-          <>
-            <button className="btn btn-outline" onClick={() => setModalCancelar(false)}>
-              Volver
-            </button>
-            <button className="btn btn-danger" onClick={descartarCambios}>
-              Descartar
-            </button>
-          </>
-        }
-      >
-        <div className="warning-box" style={{ marginBottom: 0 }}>
-          Los cambios no guardados se perderán.
-        </div>
-      </Modal>
-
-      <Modal
-        abierto={modalGuardar}
-        titulo="Confirmación: Guardar configuración"
-        ancho="sm"
-        onCerrar={() => setModalGuardar(false)}
-        footer={
-          <>
-            <button className="btn btn-outline" onClick={() => setModalGuardar(false)}>
-              Cancelar
-            </button>
-            <button className="btn btn-primary" onClick={guardarPreferencias}>
-              Guardar
-            </button>
-          </>
-        }
-      >
-        <div className="success-box" style={{ marginBottom: 0 }}>
-          Los cambios se aplicarán al sistema y a las reglas de notificación.
-        </div>
-      </Modal>
-            {mensajePassword && (
-              <div className="auth-alert auth-alert--success" style={{ marginTop: 12 }}>
-                {mensajePassword}
-              </div>
-            )}
-          </form>
-        </Panel>
-
-      </div>
     </>
   );
 }

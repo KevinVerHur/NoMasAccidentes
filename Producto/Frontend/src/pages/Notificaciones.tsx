@@ -12,6 +12,10 @@ const iconoPorTipo: Record<TipoNotificacion, string> = {
   VISITA_PLANIFICADA: '📅',
   CAPACITACION_PROGRAMADA: '🎓',
   ASESORIA_REGISTRADA: '📋',
+  SOLICITUD_RECIBIDA: '📨',
+  SOLICITUD_RESPONDIDA: '✅',
+  ACTIVIDAD_VENCIDA: '⏰',
+  CUMPLIMIENTO_REPORTADO: '🛡️',
 };
 
 const fmtFecha = (iso: string) =>

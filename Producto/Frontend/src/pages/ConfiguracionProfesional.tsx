@@ -43,12 +43,6 @@ const labelEstado: Record<EstadoProfesional, string> = {
   EN_CAPACITACION: 'En capacitacion',
 };
 
-const badgeEstado: Record<EstadoProfesional, VarianteBadge> = {
-  DISPONIBLE: 'green',
-  EN_VISITA: 'blue',
-  EN_CAPACITACION: 'yellow',
-};
-
 const colorPorEstado: Record<EstadoProfesional, string> = {
   DISPONIBLE: '#27ae60',
   EN_VISITA: '#2563eb',
