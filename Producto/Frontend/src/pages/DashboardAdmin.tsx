@@ -325,11 +325,12 @@ function eventosDesdeAsesorias(asesorias: AsesoriaResponse[]): EventInput[] {
 export default function DashboardAdmin() {
   const [modalMapa, setModalMapa] = useState(false);
   const [ubicaciones, setUbicaciones] = useState<UbicacionProfesionalResponse[]>([]);
-  const [errorMapa, setErrorMapa] = useState<string | null>(null);
+
   const [ultimaActualizacionMapa, setUltimaActualizacionMapa] = useState<Date | null>(null);
   const [datos, setDatos] = useState<DashboardAdminResponse | null>(null);
   const [errorDatos, setErrorDatos] = useState<string | null>(null);
   const [eventosAgenda, setEventosAgenda] = useState<EventInput[]>([]);
+  const [mensajeMapa, setMensajeMapa] = useState<string | null>(null);
   const [errorAgenda, setErrorAgenda] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -363,22 +364,25 @@ export default function DashboardAdmin() {
     cargarAgenda();
   }, []);
 
+  
+
   const cargarMapa = useCallback(async () => {
     if (!estaDentroDeJornadaLaboralChile()) {
       setUbicaciones([]);
-      setErrorMapa('Mapa desactivado fuera de jornada laboral: lunes a viernes entre 08:00 y 18:00, hora de Chile.');
+      setMensajeMapa(null);
       setUltimaActualizacionMapa(new Date());
       return;
     }
 
-    setErrorMapa(null);
+    setMensajeMapa(null);
 
     try {
       const data = await listarUbicacionesActivas();
       setUbicaciones(data);
       setUltimaActualizacionMapa(new Date());
     } catch {
-      setErrorMapa('No se pudieron cargar las ubicaciones activas.');
+      setUbicaciones([]);
+      setMensajeMapa('No se pudieron cargar las ubicaciones activas.');
     }
   }, []);
 
@@ -536,7 +540,7 @@ export default function DashboardAdmin() {
         >
 
           {mapaFueraDeJornada && (
-            <div className="alert-item alert-item--info" style={{ margin: '0 0 12px 0' }}>
+            <div className="alert-item alert-item--peligro" style={{ margin: '0 0 12px 0' }}>
               Mapa desactivado fuera de jornada laboral: lunes a viernes entre 08:00 y 18:00, hora de Chile.
             </div>
           )}
@@ -562,7 +566,8 @@ export default function DashboardAdmin() {
             {ultimaActualizacionMapa && (
               <span>Ultima lectura: {ultimaActualizacionMapa.toLocaleTimeString('es-CL')}</span>
             )}
-            {errorMapa && <span style={{ color: '#c0392b' }}>{errorMapa}</span>}
+            {mensajeMapa && <span style={{ color: '#c0392b' }}>{mensajeMapa}</span>}
+            
           </div>
         </Panel>
 
