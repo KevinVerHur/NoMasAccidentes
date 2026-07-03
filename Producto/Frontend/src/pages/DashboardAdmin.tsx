@@ -31,6 +31,20 @@ import type {
   AsesoriaResponse,
 } from '../types';
 
+const HORA_INICIO_JORNADA = 8;
+const HORA_FIN_JORNADA = 18;
+
+function estaDentroDeJornadaLaboralChile() {
+  const ahoraChile = new Date(
+    new Date().toLocaleString('en-US', { timeZone: 'America/Santiago' })
+  );
+
+  const dia = ahoraChile.getDay(); // 0 domingo, 6 sabado
+  const hora = ahoraChile.getHours();
+
+  return dia >= 1 && dia <= 5 && hora >= HORA_INICIO_JORNADA && hora < HORA_FIN_JORNADA;
+}
+
 const CENTRO_FALLBACK: [number, number] = [-33.4489, -70.6693];
 
 const badgePorEstadoVisita: Record<EstadoVisita, VarianteBadge> = {
@@ -350,6 +364,13 @@ export default function DashboardAdmin() {
   }, []);
 
   const cargarMapa = useCallback(async () => {
+    if (!estaDentroDeJornadaLaboralChile()) {
+      setUbicaciones([]);
+      setErrorMapa('Mapa desactivado fuera de jornada laboral: lunes a viernes entre 08:00 y 18:00, hora de Chile.');
+      setUltimaActualizacionMapa(new Date());
+      return;
+    }
+
     setErrorMapa(null);
 
     try {
