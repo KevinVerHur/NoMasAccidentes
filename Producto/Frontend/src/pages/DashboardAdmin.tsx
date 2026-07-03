@@ -392,6 +392,7 @@ export default function DashboardAdmin() {
 
   const profesionalesActualizados = ubicaciones.filter((u) => !estaDesactualizada(u)).length;
   const profesionalesDesactualizados = ubicaciones.filter(estaDesactualizada).length;
+  const mapaFueraDeJornada = !estaDentroDeJornadaLaboralChile();
 
   const kpis = datos?.kpis;
   const visitas = datos?.visitasRecientes ?? [];
@@ -533,6 +534,13 @@ export default function DashboardAdmin() {
             </div>
           }
         >
+
+          {mapaFueraDeJornada && (
+            <div className="alert-item alert-item--info" style={{ margin: '0 0 12px 0' }}>
+              Mapa desactivado fuera de jornada laboral: lunes a viernes entre 08:00 y 18:00, hora de Chile.
+            </div>
+          )}
+
           <div style={{ height: 181, width: '100%', position: 'relative', zIndex: 0 }}>
             <MapaAdmin ubicaciones={ubicaciones} />
           </div>
