@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import esLocale from '@fullcalendar/core/locales/es';
+import type { EventInput } from '@fullcalendar/core';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +15,9 @@ import Panel from '../components/ui/Panel';
 import Modal from '../components/ui/Modal';
 import { listarUbicacionesActivas } from '../api/ubicaciones';
 import { obtenerDashboardAdmin } from '../api/dashboard';
+import { listarVisitas } from '../api/visitas';
+import { listarCapacitaciones } from '../api/capacitaciones';
+import { listarAsesorias } from '../api/asesorias';
 import type {
   DashboardAdminResponse,
   EstadoVisita,
@@ -18,8 +26,10 @@ import type {
   VarianteBarra,
   EstadoProfesional,
   UbicacionProfesionalResponse,
+  VisitaResponse,
+  CapacitacionResponse,
+  AsesoriaResponse,
 } from '../types';
-
 
 const CENTRO_FALLBACK: [number, number] = [-33.4489, -70.6693];
 
@@ -38,10 +48,10 @@ const labelEstadoVisita: Record<EstadoVisita, string> = {
 };
 
 const iconoAlerta: Record<VarianteAlerta, string> = {
-  peligro: '🔴',
-  warn: '🟡',
-  info: '🔵',
-  ok: '🟢',
+  peligro: '!',
+  warn: '!',
+  info: 'i',
+  ok: 'OK',
 };
 
 const claseAlerta: Record<VarianteAlerta, string> = {
@@ -58,6 +68,18 @@ const colorBarra: Record<VarianteBarra, string> = {
   peligro: 'bg-peligro',
 };
 
+const labelEstado: Record<EstadoProfesional, string> = {
+  DISPONIBLE: 'Disponible',
+  EN_VISITA: 'En visita',
+  EN_CAPACITACION: 'En capacitacion',
+};
+
+const colorPorEstado: Record<EstadoProfesional, string> = {
+  DISPONIBLE: '#27ae60',
+  EN_VISITA: '#2563eb',
+  EN_CAPACITACION: '#e07b00',
+};
+
 function varianteTasa(tasa: number | null): VarianteBarra {
   if (tasa === null) return 'default';
   if (tasa >= 5) return 'peligro';
@@ -67,35 +89,24 @@ function varianteTasa(tasa: number | null): VarianteBarra {
 }
 
 function badgePorEstadoPago(estado: string): VarianteBadge {
+  if (estado === 'Al dia') return 'green';
   if (estado === 'Al día') return 'green';
   if (estado === 'Atrasado') return 'yellow';
-  return 'red'; // Moroso / Suspendido
+  return 'red';
 }
 
-const fmtCLP = (v: number | null) => (v === null ? '—' : `$${v.toLocaleString('es-CL')}`);
+const fmtCLP = (v: number | null) => (v === null ? '-' : `$${v.toLocaleString('es-CL')}`);
 
 const fmtFecha = (iso: string | null) =>
   iso
     ? new Date(`${iso}T00:00:00`).toLocaleDateString('es-CL', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    })
-    : '—';
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '-';
 
 const mesActual = new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
-
-const labelEstado: Record<EstadoProfesional, string> = {
-  DISPONIBLE: 'Disponible',
-  EN_VISITA: 'En visita',
-  EN_CAPACITACION: 'En capacitación',
-};
-
-const colorPorEstado: Record<EstadoProfesional, string> = {
-  DISPONIBLE: '#27ae60',
-  EN_VISITA: '#2563eb',
-  EN_CAPACITACION: '#e07b00',
-};
 
 function minutosDesde(fechaRegistro: string) {
   return Math.floor((Date.now() - new Date(fechaRegistro).getTime()) / 60000);
@@ -107,7 +118,6 @@ function estaDesactualizada(ubicacion: UbicacionProfesionalResponse) {
 
 function textoFrescura(ubicacion: UbicacionProfesionalResponse) {
   const minutos = minutosDesde(ubicacion.fechaRegistro);
-
   if (minutos < 1) return 'Actualizada hace menos de 1 minuto';
   if (minutos === 1) return 'Actualizada hace 1 minuto';
   return `Actualizada hace ${minutos} minutos`;
@@ -212,7 +222,7 @@ function MapaAdmin({
                 {desactualizada && (
                   <>
                     <br />
-                    Ubicación desactualizada
+                    Ubicacion desactualizada
                   </>
                 )}
               </Popup>
@@ -244,6 +254,60 @@ function MapaAdmin({
   );
 }
 
+function eventosDesdeVisitas(visitas: VisitaResponse[]): EventInput[] {
+  return visitas
+    .filter((v) => v.estado !== 'CANCELADA')
+    .map((v) => ({
+      id: `visita-${v.id}`,
+      title: `Visita - ${v.razonSocialEmpresa}`,
+      start: v.fechaProgramada,
+      allDay: true,
+      backgroundColor: '#2563eb',
+      borderColor: '#2563eb',
+      extendedProps: {
+        tipo: 'Visita',
+        estado: v.estado,
+        profesional: v.nombreProfesional,
+      },
+    }));
+}
+
+function eventosDesdeCapacitaciones(capacitaciones: CapacitacionResponse[]): EventInput[] {
+  return capacitaciones
+    .filter((c) => c.estado !== 'CANCELADA')
+    .map((c) => ({
+      id: `capacitacion-${c.id}`,
+      title: `Capacitacion - ${c.curso}`,
+      start: c.fechaProgramada,
+      allDay: true,
+      backgroundColor: '#16a34a',
+      borderColor: '#16a34a',
+      extendedProps: {
+        tipo: 'Capacitacion',
+        estado: c.estado,
+        profesional: c.relator,
+      },
+    }));
+}
+
+function eventosDesdeAsesorias(asesorias: AsesoriaResponse[]): EventInput[] {
+  return asesorias
+    .filter((a) => a.estado !== 'CANCELADA' && a.fechaAtencion)
+    .map((a) => ({
+      id: `asesoria-${a.id}`,
+      title: `Asesoria - ${a.razonSocialEmpresa}`,
+      start: a.fechaAtencion ?? undefined,
+      allDay: true,
+      backgroundColor: '#f59e0b',
+      borderColor: '#f59e0b',
+      extendedProps: {
+        tipo: 'Asesoria',
+        estado: a.estado,
+        profesional: a.nombreProfesional,
+      },
+    }));
+}
+
 export default function DashboardAdmin() {
   const [modalMapa, setModalMapa] = useState(false);
   const [ubicaciones, setUbicaciones] = useState<UbicacionProfesionalResponse[]>([]);
@@ -251,8 +315,9 @@ export default function DashboardAdmin() {
   const [ultimaActualizacionMapa, setUltimaActualizacionMapa] = useState<Date | null>(null);
   const [datos, setDatos] = useState<DashboardAdminResponse | null>(null);
   const [errorDatos, setErrorDatos] = useState<string | null>(null);
+  const [eventosAgenda, setEventosAgenda] = useState<EventInput[]>([]);
+  const [errorAgenda, setErrorAgenda] = useState<string | null>(null);
   const navigate = useNavigate();
-
 
   useEffect(() => {
     obtenerDashboardAdmin()
@@ -260,8 +325,31 @@ export default function DashboardAdmin() {
       .catch(() => setErrorDatos('No se pudieron cargar los datos del panel.'));
   }, []);
 
+  useEffect(() => {
+    async function cargarAgenda() {
+      setErrorAgenda(null);
+
+      try {
+        const [visitasData, capacitacionesData, asesoriasData] = await Promise.all([
+          listarVisitas(0, 200),
+          listarCapacitaciones(0, 200),
+          listarAsesorias(0, 200),
+        ]);
+
+        setEventosAgenda([
+          ...eventosDesdeVisitas(visitasData.content),
+          ...eventosDesdeCapacitaciones(capacitacionesData.content),
+          ...eventosDesdeAsesorias(asesoriasData.content),
+        ]);
+      } catch {
+        setErrorAgenda('No se pudo cargar la agenda semanal.');
+      }
+    }
+
+    cargarAgenda();
+  }, []);
+
   const cargarMapa = useCallback(async () => {
-    // setCargandoMapa(true);
     setErrorMapa(null);
 
     try {
@@ -270,8 +358,6 @@ export default function DashboardAdmin() {
       setUltimaActualizacionMapa(new Date());
     } catch {
       setErrorMapa('No se pudieron cargar las ubicaciones activas.');
-    } finally {
-      // setCargandoMapa(false);
     }
   }, []);
 
@@ -292,7 +378,6 @@ export default function DashboardAdmin() {
   const accidentabilidad = datos?.accidentabilidad ?? [];
   const pagos = datos?.controlPagos ?? [];
 
-  // Magnitud de la barra de accidentabilidad: usa la tasa si hay nº de trabajadores; si no, los accidentes.
   const magnitud = (a: { tasa: number | null; accidentes: number }) => a.tasa ?? a.accidentes;
   const maxMagnitud = Math.max(1, ...accidentabilidad.map(magnitud));
 
@@ -300,12 +385,12 @@ export default function DashboardAdmin() {
     <>
       <div className="page-title">Dashboard General</div>
       <div className="page-subtitle" style={{ textTransform: 'capitalize' }}>
-        Resumen operativo — {mesActual}
+        Resumen operativo - {mesActual}
       </div>
 
       {errorDatos && (
         <div className="alert-item alert-item--peligro" style={{ marginBottom: 12 }}>
-          <span>🔴</span>
+          <span>!</span>
           <div>{errorDatos}</div>
         </div>
       )}
@@ -317,16 +402,51 @@ export default function DashboardAdmin() {
         <KpiCard label="Capacitaciones este mes" value={kpis?.capacitacionesMes ?? 0} sub="Mes en curso" />
       </div>
 
+      <Panel titulo="Agenda semanal">
+        {errorAgenda && (
+          <div className="alert-item alert-item--peligro" style={{ margin: 12 }}>
+            <span>!</span>
+            <div>{errorAgenda}</div>
+          </div>
+        )}
+
+        <div className="agenda-semanal">
+          <FullCalendar
+            plugins={[dayGridPlugin, interactionPlugin]}
+            initialView="dayGridWeek"
+            locale={esLocale}
+            firstDay={1}
+            height="auto"
+            events={eventosAgenda}
+            headerToolbar={{
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridWeek,dayGridMonth',
+            }}
+            buttonText={{
+              today: 'Hoy',
+              week: 'Semana',
+              month: 'Mes',
+            }}
+            eventClick={(info) => {
+              const props = info.event.extendedProps;
+              alert(
+                `${props.tipo}\n${info.event.title}\nEstado: ${props.estado}\nProfesional: ${props.profesional ?? 'Sin asignar'}`
+              );
+            }}
+          />
+        </div>
+      </Panel>
+
       <div className="grid-2">
         <Panel
-          titulo="📅 Visitas recientes"
+          titulo="Visitas recientes"
           accion={
             <button className="btn btn-sm btn-outline" onClick={() => navigate('/visitas')}>
               Ver visitas
             </button>
           }
         >
-
           <table className="app-table">
             <thead>
               <tr>
@@ -358,11 +478,11 @@ export default function DashboardAdmin() {
           </table>
         </Panel>
 
-        <Panel titulo="🔔 Alertas del sistema">
+        <Panel titulo="Alertas del sistema">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 12 }}>
             {alertas.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#9ca3af', padding: 16 }}>
-                Sin alertas activas. 🎉
+                Sin alertas activas.
               </div>
             ) : (
               alertas.map((a, i) => (
@@ -380,7 +500,7 @@ export default function DashboardAdmin() {
 
       <div className="grid-2">
         <Panel
-          titulo="📍 Profesionales en terreno"
+          titulo="Profesionales en terreno"
           accion={
             <div className="btn-group">
               <button className="btn btn-sm btn-outline" onClick={() => navigate('/profesionales')}>
@@ -407,18 +527,18 @@ export default function DashboardAdmin() {
               flexWrap: 'wrap',
             }}
           >
-            <span>🟢 Actualizados: {profesionalesActualizados}</span>
-            <span>⚪ Desactualizados: {profesionalesDesactualizados}</span>
+            <span>Actualizados: {profesionalesActualizados}</span>
+            <span>Desactualizados: {profesionalesDesactualizados}</span>
             <span>Total visibles: {ubicaciones.length}</span>
             {ultimaActualizacionMapa && (
-              <span>Última lectura: {ultimaActualizacionMapa.toLocaleTimeString('es-CL')}</span>
+              <span>Ultima lectura: {ultimaActualizacionMapa.toLocaleTimeString('es-CL')}</span>
             )}
             {errorMapa && <span style={{ color: '#c0392b' }}>{errorMapa}</span>}
           </div>
         </Panel>
 
         <Panel
-          titulo="📈 Accidentabilidad por cliente"
+          titulo="Accidentabilidad por cliente"
           accion={
             <button className="btn btn-sm btn-outline" onClick={() => navigate('/reportes')}>
               Ver reportes
@@ -462,7 +582,7 @@ export default function DashboardAdmin() {
       </div>
 
       <Panel
-        titulo="💰 Control de pagos y morosidades"
+        titulo="Control de pagos y morosidades"
         accion={
           <button className="btn btn-sm btn-outline" onClick={() => navigate('/pagos')}>
             Ver pagos
@@ -472,7 +592,7 @@ export default function DashboardAdmin() {
         <table className="app-table">
           <thead>
             <tr>
-              {['Cliente', 'Plan mensual', 'Último pago', 'Meses adeudados', 'Estado'].map((h) => (
+              {['Cliente', 'Plan mensual', 'Ultimo pago', 'Meses adeudados', 'Estado'].map((h) => (
                 <th key={h}>{h}</th>
               ))}
             </tr>
@@ -520,7 +640,7 @@ export default function DashboardAdmin() {
           >
             <span>
               {ultimaActualizacionMapa
-                ? `Actualización automática cada 5 segundos · Última lectura: ${ultimaActualizacionMapa.toLocaleTimeString('es-CL')}`
+                ? `Actualizacion automatica cada 5 segundos - Ultima lectura: ${ultimaActualizacionMapa.toLocaleTimeString('es-CL')}`
                 : 'Esperando ubicaciones activas.'}
             </span>
 
@@ -544,10 +664,10 @@ export default function DashboardAdmin() {
             flexWrap: 'wrap',
           }}
         >
-          <span>🟢 Disponible</span>
-          <span>🔵 En visita</span>
-          <span>🟠 En capacitación</span>
-          <span>⚪ Ubicación desactualizada</span>
+          <span>Disponible</span>
+          <span>En visita</span>
+          <span>En capacitacion</span>
+          <span>Ubicacion desactualizada</span>
         </div>
       </Modal>
     </>
