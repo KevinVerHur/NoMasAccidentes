@@ -57,7 +57,6 @@ const seccionesOperativas: SeccionNav[] = [
         titulo: 'Cuenta',
         items: [
             { icono: '🔔', label: 'Notificaciones', path: '/notificaciones', roles: ['PROFESIONAL', 'ADMIN'] },
-            { icono: '👤', label: 'Mi perfil', path: '/configuracion', roles: ['PROFESIONAL'] },
         ],
     },
 ];

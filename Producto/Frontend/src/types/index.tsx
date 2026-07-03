@@ -500,7 +500,7 @@ export interface MorosidadItem {
   idCliente: number;
   cliente: string;
   email: string;
-  estadoCliente: EstadoCliente;
+  estadoCliente: EstadoEmpresa;
   mesesDeuda: number;
   montoAdeudado: number;
   riesgo: RiesgoMorosidad;
@@ -835,7 +835,9 @@ export type TipoNotificacion =
   | 'CAPACITACION_PROGRAMADA'
   | 'ASESORIA_REGISTRADA'
   | 'SOLICITUD_RECIBIDA'
-  | 'SOLICITUD_RESPONDIDA';
+  | 'SOLICITUD_RESPONDIDA'
+  | 'ACTIVIDAD_VENCIDA'
+  | 'CUMPLIMIENTO_REPORTADO';
 
 export interface NotificacionResponse {
   id: number;
