@@ -639,6 +639,9 @@ export interface ActividadPreventivaResponse {
   estado: EstadoActividadPreventiva;
   observaciones: string | null;
   vencida: boolean;
+  reportadoPorCliente: boolean;
+  fechaReporteCliente: string | null;
+  comentarioCliente: string | null;
 }
 
 export interface CrearActividadPreventivaRequest {
@@ -824,4 +827,66 @@ export interface ActualizarPerfilRequest {
 export interface CambiarPasswordRequest {
   passwordActual: string;
   passwordNueva: string;
+}
+
+// ---- Notificaciones in-app (Fase 4) ----
+export type TipoNotificacion =
+  | 'VISITA_PLANIFICADA'
+  | 'CAPACITACION_PROGRAMADA'
+  | 'ASESORIA_REGISTRADA'
+  | 'SOLICITUD_RECIBIDA'
+  | 'SOLICITUD_RESPONDIDA';
+
+export interface NotificacionResponse {
+  id: number;
+  tipo: TipoNotificacion;
+  titulo: string;
+  mensaje: string;
+  enlace: string | null;
+  leida: boolean;
+  fechaCreacion: string;
+  fechaLeida: string | null;
+}
+
+// ---- Solicitudes del cliente (mejora web) ----
+export type TipoSolicitud = 'ASESORIA' | 'CAPACITACION' | 'VISITA';
+export type EstadoSolicitud = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
+
+export interface SolicitudResponse {
+  id: number;
+  idEmpresa: number;
+  razonSocialEmpresa: string;
+  tipo: TipoSolicitud;
+  estado: EstadoSolicitud;
+  descripcion: string;
+  fechaPreferida: string | null;
+  esExtra: boolean;
+  respuestaAdmin: string | null;
+  fechaCreacion: string;
+  fechaRespuesta: string | null;
+  sugerenciaExtra: boolean | null;
+}
+
+export interface CrearSolicitudRequest {
+  tipo: TipoSolicitud;
+  descripcion: string;
+  fechaPreferida?: string | null;
+}
+
+export interface AprobarSolicitudRequest {
+  comentario?: string | null;
+  esExtra?: boolean | null;
+  idProfesional?: number | null;
+  tipoAsesoria?: TipoAsesoria | null;
+  fechaProgramada?: string | null;
+  tipoRevision?: string | null;
+  curso?: string | null;
+  horaProgramada?: string | null;
+  lugar?: string | null;
+  cupos?: number | null;
+  objetivo?: string | null;
+}
+
+export interface RechazarSolicitudRequest {
+  comentario: string;
 }

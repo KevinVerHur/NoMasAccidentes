@@ -44,6 +44,13 @@ public class CapacitacionController {
         return capacitacionService.obtener(id);
     }
 
+    @Operation(summary = "Capacitaciones de la empresa del cliente autenticado (solo lectura, RF07)")
+    @GetMapping("/mias")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public List<CapacitacionResponse> misCapacitaciones(java.security.Principal principal) {
+        return capacitacionService.misCapacitaciones(principal.getName());
+    }
+
     @Operation(summary = "Generar acta de capacitación en PDF")
     @GetMapping("/{id}/acta-pdf")
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL','CLIENTE')")

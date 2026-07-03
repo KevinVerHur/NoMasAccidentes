@@ -7,8 +7,10 @@ import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.repository.actividad.ActividadPreventivaRepository;
 import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.service.empresa.EmpresaService;
+import com.example.NoMasAccidentes.service.notificacion.NotificacionEventoService;
 import com.example.NoMasAccidentes.service.usuario.CorreoService;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -26,6 +28,7 @@ public class ActividadPreventivaService {
     private final EmpresaService empresaService;
     private final ActividadPreventivaMapper mapper;
     private final CorreoService correoService;
+    private final NotificacionEventoService notificacionEventoService;
 
     @Transactional
     public ActividadPreventivaResponse crear(CrearActividadPreventivaRequest r) {
@@ -105,6 +108,29 @@ public class ActividadPreventivaService {
         repository.delete(buscar(id));
     }
 
+    /**
+     * El cliente reporta que cumplió su parte de una actividad preventiva.
+     * No cambia el estado (la consultora verifica y marca CUMPLIDA); solo deja
+     * la señal y notifica a la consultora.
+     */
+    @Transactional
+    public ActividadPreventivaResponse reportarCumplimiento(Long id, String email, String comentario) {
+        ActividadPreventiva a = buscar(id);
+        Long idEmpresa = empresaService.empresaAutenticada(email).getId();
+        if (!a.getEmpresa().getId().equals(idEmpresa)) {
+            // No revelar la existencia de actividades de otras empresas.
+            throw new RecursoNoEncontradoException("Actividad preventiva", id);
+        }
+        if (a.getEstado() == EstadoActividadPreventiva.CUMPLIDA) {
+            throw new ConflictoNegocioException("La actividad ya está cumplida");
+        }
+        a.setReportadoPorCliente(true);
+        a.setFechaReporteCliente(LocalDateTime.now());
+        a.setComentarioCliente(comentario);
+        notificacionEventoService.notificarCumplimientoReportado(a);
+        return mapper.toResponse(a);
+    }
+
     @Transactional
     public List<ActividadPreventivaResponse> misActividades(String email) {
         repository.marcarVencidas(LocalDate.now());
@@ -130,6 +156,8 @@ public class ActividadPreventivaService {
                     actividad.getResponsable(),
                     actividad.getFechaCompromiso().toString()
             );
+            // Además del admin, avisar al cliente (bandeja + correo).
+            notificacionEventoService.notificarActividadVencidaAlCliente(actividad);
             actividad.setAlertaEnviada(true);
         });
 

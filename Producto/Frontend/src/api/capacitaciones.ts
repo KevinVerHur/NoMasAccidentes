@@ -10,6 +10,12 @@ import api from './axiosConfig';
 
 interface Pagina<T> { content: T[]; totalElements: number; totalPages: number; }
 
+/** Capacitaciones de la empresa del cliente autenticado (solo lectura, RF07). */
+export async function misCapacitaciones(): Promise<CapacitacionResponse[]> {
+  const res = await api.get<CapacitacionResponse[]>('/api/capacitaciones/mias');
+  return res.data;
+}
+
 export async function listarCapacitaciones(page = 0, size = 200): Promise<Pagina<CapacitacionResponse>> {
   const res = await api.get<Pagina<CapacitacionResponse>>('/api/capacitaciones', { params: { page, size } });
   return res.data;

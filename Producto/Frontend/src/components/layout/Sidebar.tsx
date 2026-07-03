@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { contarNoLeidas } from '../../api/notificaciones';
+import { contarSolicitudesPendientes } from '../../api/solicitudes';
 import type { Rol } from '../../types';
 
 interface ItemNav {
@@ -18,7 +21,7 @@ interface SeccionNav {
 const TODOS: Rol[] = ['ADMIN', 'PROFESIONAL', 'CLIENTE', 'CAPACITADOR'];
 // Pestañas comentadas temporalmente: Comunicaciones y Seguimiento preventivo
 // para ADMIN/PROFESIONAL, y Mis actividades para CLIENTE.
-const RUTAS_COMENTADAS = new Set(['/comunicaciones', '/seguimiento-preventivo', '/mis-actividades']);
+const RUTAS_COMENTADAS = new Set(['/comunicaciones']);
 
 // Menú operativo: ADMIN y PROFESIONAL.
 const seccionesOperativas: SeccionNav[] = [
@@ -31,6 +34,7 @@ const seccionesOperativas: SeccionNav[] = [
             { icono: '📅', label: 'Visitas', path: '/visitas', roles: ['ADMIN', 'PROFESIONAL'] },
             { icono: '🎓', label: 'Capacitaciones', path: '/capacitaciones', roles: ['ADMIN', 'PROFESIONAL', 'CAPACITADOR'] },
             { icono: '📋', label: 'Asesorías', path: '/asesorias', roles: ['ADMIN', 'PROFESIONAL'] },
+            { icono: '📨', label: 'Solicitudes', path: '/solicitudes', roles: ['ADMIN'] },
             { icono: '✅', label: 'Seguimiento preventivo', path: '/seguimiento-preventivo', roles: ['ADMIN', 'PROFESIONAL'] },
             { icono: '☎️', label: 'Comunicaciones', path: '/comunicaciones', roles: ['ADMIN', 'PROFESIONAL'] },
         ],
@@ -46,13 +50,14 @@ const seccionesOperativas: SeccionNav[] = [
         titulo: 'Sistema',
         items: [
             { icono: '📄', label: 'Reportes', path: '/reportes', roles: ['ADMIN', 'PROFESIONAL'] },
-            { icono: '🔔', label: 'Alertas', path: '/alertas', badge: 5, roles: ['ADMIN'] },
+            { icono: '🔔', label: 'Alertas', path: '/alertas', roles: ['ADMIN'] },
             { icono: '⚙️', label: 'Configuración', path: '/configuracion', roles: ['ADMIN'] },
         ],
     },
     {
         titulo: 'Cuenta',
         items: [
+            { icono: '🔔', label: 'Notificaciones', path: '/notificaciones', roles: ['PROFESIONAL', 'ADMIN'] },
             { icono: '👤', label: 'Mi perfil', path: '/configuracion', roles: ['PROFESIONAL'] },
         ],
     },
@@ -65,7 +70,7 @@ const seccionesCliente: SeccionNav[] = [
         items: [
             { icono: '🏠', label: 'Inicio', path: '/dashboard', roles: ['CLIENTE'] },
             { icono: '📅', label: 'Mis actividades', path: '/mis-actividades', roles: ['CLIENTE'] },
-            { icono: '🎓', label: 'Capacitaciones', path: '/capacitaciones', roles: ['CLIENTE'] },
+            { icono: '🛡️', label: 'Cumplimiento', path: '/mi-cumplimiento', roles: ['CLIENTE'] },
             { icono: '📄', label: 'Reportes', path: '/reportes', roles: ['CLIENTE'] },
             { icono: '💰', label: 'Pagos', path: '/mis-pagos', roles: ['CLIENTE'] },
             { icono: '📋', label: 'Solicitudes', path: '/mis-solicitudes', roles: ['CLIENTE'] },
@@ -74,7 +79,7 @@ const seccionesCliente: SeccionNav[] = [
     {
         titulo: 'Cuenta',
         items: [
-            { icono: '🔔', label: 'Notificaciones', path: '/notificaciones', badge: 3, roles: ['CLIENTE'] },
+            { icono: '🔔', label: 'Notificaciones', path: '/notificaciones', roles: ['CLIENTE'] },
             { icono: '🏢', label: 'Mi empresa', path: '/mi-empresa', roles: ['CLIENTE'] },
         ],
     },
@@ -84,6 +89,18 @@ export default function Sidebar() {
     const navigate = useNavigate();
     const location = useLocation();
     const { rol } = useAuth();
+    const [noLeidas, setNoLeidas] = useState(0);
+    const [solicitudesPendientes, setSolicitudesPendientes] = useState(0);
+
+    // Badge real de notificaciones sin leer (bandeja disponible para los 3 roles).
+    useEffect(() => {
+        if (rol === 'CLIENTE' || rol === 'PROFESIONAL' || rol === 'ADMIN') {
+            contarNoLeidas().then(setNoLeidas).catch(() => setNoLeidas(0));
+        }
+        if (rol === 'ADMIN') {
+            contarSolicitudesPendientes().then(setSolicitudesPendientes).catch(() => setSolicitudesPendientes(0));
+        }
+    }, [rol, location.pathname]);
 
     const fuente = rol === 'CLIENTE' ? seccionesCliente : seccionesOperativas;
 
@@ -105,6 +122,10 @@ export default function Sidebar() {
                     </div>
                     {seccion.items.map((item) => {
                         const activo = location.pathname === item.path;
+                        const badge =
+                            item.path === '/notificaciones' ? noLeidas :
+                            item.path === '/solicitudes' ? solicitudesPendientes :
+                            item.badge;
                         return (
                             <a
                                 key={item.path}
@@ -117,11 +138,11 @@ export default function Sidebar() {
                             >
                                 <span>{item.icono}</span>
                                 <span className="flex-1">{item.label}</span>
-                                {item.badge && (
-                                    <span className="bg-peligro text-white text-[9px] rounded-full w-[14px] h-[14px] flex items-center justify-center font-bold">
-                                        {item.badge}
+                                {badge ? (
+                                    <span className="bg-peligro text-white text-[9px] rounded-full min-w-[14px] h-[14px] px-1 flex items-center justify-center font-bold">
+                                        {badge}
                                     </span>
-                                )}
+                                ) : null}
                             </a>
                         );
                     })}

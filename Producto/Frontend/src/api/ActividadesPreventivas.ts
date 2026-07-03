@@ -58,6 +58,18 @@ export async function eliminarActividadPreventiva(id: number): Promise<void> {
   await api.delete(`/api/actividades-preventivas/${id}`);
 }
 
+/** El cliente reporta que cumplió su parte de una actividad preventiva. */
+export async function reportarCumplimiento(
+  id: number,
+  comentario: string,
+): Promise<ActividadPreventivaResponse> {
+  const res = await api.patch<ActividadPreventivaResponse>(
+    `/api/actividades-preventivas/${id}/reportar-cumplimiento`,
+    { comentario },
+  );
+  return res.data;
+}
+
 export async function misActividadesPreventivas(): Promise<ActividadPreventivaResponse[]> {
   const res = await api.get<ActividadPreventivaResponse[]>('/api/actividades-preventivas/mis-actividades');
   return res.data;

@@ -25,7 +25,10 @@ public class ActividadPreventivaMapper {
                 a.getFechaCumplimiento(),
                 vencida ? EstadoActividadPreventiva.VENCIDA : a.getEstado(),
                 a.getObservaciones(),
-                vencida
+                vencida,
+                a.isReportadoPorCliente(),
+                a.getFechaReporteCliente(),
+                a.getComentarioCliente()
         );
     }
 }
