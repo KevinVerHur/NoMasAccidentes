@@ -202,11 +202,13 @@ public class ProfesionalService {
             }
         });
 
-            profesional.setRut(request.rut());
+        profesional.setRut(request.rut());
         }
 
         profesional.setTelefono(request.telefono());
         profesional.setEspecialidad(request.especialidad());
+
+        log.info("Perfil profesional propio actualizado id={}", profesional.getId());
 
         return toResponseConCarga(profesional);
     }

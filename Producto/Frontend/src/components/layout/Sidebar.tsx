@@ -36,7 +36,6 @@ const seccionesOperativas: SeccionNav[] = [
             { icono: '📋', label: 'Asesorías', path: '/asesorias', roles: ['ADMIN', 'PROFESIONAL'] },
             { icono: '📨', label: 'Solicitudes', path: '/solicitudes', roles: ['ADMIN'] },
             { icono: '✅', label: 'Seguimiento preventivo', path: '/seguimiento-preventivo', roles: ['ADMIN', 'PROFESIONAL'] },
-            { icono: '☎️', label: 'Comunicaciones', path: '/comunicaciones', roles: ['ADMIN', 'PROFESIONAL'] },
         ],
     },
     {
@@ -51,7 +50,7 @@ const seccionesOperativas: SeccionNav[] = [
         items: [
             { icono: '📄', label: 'Reportes', path: '/reportes', roles: ['ADMIN', 'PROFESIONAL'] },
             { icono: '🔔', label: 'Alertas', path: '/alertas', roles: ['ADMIN'] },
-            { icono: '⚙️', label: 'Configuración', path: '/configuracion', roles: ['ADMIN'] },
+            { icono: '⚙️', label: 'Configuración', path: '/configuracion', roles: ['ADMIN','PROFESIONAL'] },
         ],
     },
     {

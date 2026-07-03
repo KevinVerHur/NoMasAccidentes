@@ -890,3 +890,22 @@ export interface AprobarSolicitudRequest {
 export interface RechazarSolicitudRequest {
   comentario: string;
 }
+
+export interface ConfiguracionEmpresaResponse {
+  id: number;
+  nombreEmpresa: string;
+  rut: string;
+  emailContacto: string;
+  telefono: string | null;
+  direccion: string | null;
+  region: string | null;
+}
+
+export interface ActualizarConfiguracionEmpresaRequest {
+  nombreEmpresa: string;
+  rut: string;
+  emailContacto: string;
+  telefono?: string;
+  direccion?: string;
+  region?: string;
+}
