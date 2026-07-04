@@ -890,7 +890,7 @@ export default function DashboardProfesional() {
             position: 'fixed',
             inset: 0,
             background: 'rgba(0,0,0,.45)',
-            zIndex: 3000,
+            zIndex: 4000,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -908,7 +908,7 @@ export default function DashboardProfesional() {
               overflow: 'hidden',
               boxShadow: '0 12px 40px rgba(0,0,0,.22)',
               position: 'relative',
-              zIndex: 3001,
+              zIndex: 4001,
             }}
           >
             <div

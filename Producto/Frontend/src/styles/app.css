@@ -398,6 +398,8 @@
 .responsive-modal-shell {
     width: min(460px, calc(100vw - 24px));
     max-height: calc(100dvh - 24px);
+    max-width: 100%;
+    overscroll-behavior: contain;
 }
 
 .check-list {
@@ -492,6 +494,24 @@ body,
     box-sizing: border-box;
 }
 
+img,
+svg,
+canvas,
+video {
+    max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+    max-width: 100%;
+}
+
+textarea {
+    resize: vertical;
+}
+
 .app-shell {
     width: 100%;
     min-width: 0;
@@ -557,6 +577,11 @@ body,
 
 .panel {
     max-width: 100%;
+    min-width: 0;
+}
+
+.panel > * {
+    min-width: 0;
 }
 
 .panel-header {
@@ -584,6 +609,7 @@ section:has(.app-table),
     width: 100%;
     max-width: 100%;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .app-table {
@@ -593,6 +619,7 @@ section:has(.app-table),
 .app-table th,
 .app-table td {
     vertical-align: top;
+    overflow-wrap: anywhere;
 }
 
 .agenda-semanal {
@@ -635,6 +662,147 @@ section:has(.app-table),
     height: min(520px, 68vh);
     position: relative;
     z-index: 1;
+}
+
+.app-modal-overlay {
+    isolation: isolate;
+}
+
+.app-modal {
+    overscroll-behavior: contain;
+}
+
+.app-modal-content {
+    min-width: 0;
+}
+
+.app-modal-content form,
+.app-modal-content .auth-input,
+.app-modal-content select,
+.app-modal-content textarea {
+    max-width: 100%;
+}
+
+.responsive-action-row,
+.responsive-bar-row,
+.responsive-summary-row {
+    display: flex;
+    gap: 8px;
+    min-width: 0;
+}
+
+.responsive-action-row {
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.responsive-bar-row {
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 11px;
+}
+
+.responsive-bar-label {
+    width: 110px;
+    text-align: right;
+    color: #6b7280;
+    flex-shrink: 0;
+    overflow-wrap: anywhere;
+}
+
+.responsive-bar-track {
+    flex: 1;
+    min-width: 0;
+    background: #e5e7eb;
+    border-radius: 6px;
+    height: 14px;
+    overflow: hidden;
+}
+
+.responsive-bar-value {
+    width: 48px;
+    font-weight: bold;
+    color: #374151;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.responsive-summary-row {
+    justify-content: space-between;
+    padding: 7px 0;
+    font-size: 12px;
+    color: #5e6a78;
+}
+
+.responsive-summary-row > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.client-payments-mobile {
+    display: none;
+}
+
+.client-payment-card {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border-bottom: 1px solid #eef2f7;
+    background: white;
+}
+
+.client-payment-card:last-child {
+    border-bottom: 0;
+}
+
+.client-payment-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.client-payment-card__header > div {
+    min-width: 0;
+}
+
+.client-payment-card__eyebrow {
+    display: block;
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+
+.client-payment-card__amount {
+    color: var(--color-azul);
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.client-payment-card__grid {
+    display: grid;
+    grid-template-columns: minmax(96px, auto) 1fr;
+    gap: 7px 12px;
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.client-payment-card__grid strong {
+    color: #374151;
+    font-weight: 600;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    text-align: right;
+}
+
+.client-payment-card__button {
+    width: 100%;
 }
 
 .prof-location-status,
@@ -957,6 +1125,12 @@ section:has(.app-table),
         border-radius: 10px !important;
     }
 
+    .app-modal-overlay {
+        align-items: flex-start !important;
+        padding: 12px !important;
+        overflow-y: auto;
+    }
+
     .app-modal-header,
     .app-modal-content,
     .app-modal-footer {
@@ -982,6 +1156,24 @@ section:has(.app-table),
         width: 100%;
     }
 
+    .responsive-action-row,
+    .responsive-bar-row,
+    .responsive-summary-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .responsive-bar-label,
+    .responsive-bar-value {
+        width: auto;
+        text-align: left;
+    }
+
+    .responsive-bar-track {
+        width: 100%;
+        flex: none;
+    }
+
     .mapa-profesionales {
         height: 340px;
     }
@@ -989,6 +1181,12 @@ section:has(.app-table),
     .responsive-map,
     .responsive-map--compact {
         height: 340px;
+    }
+
+    .responsive-modal-shell {
+        width: 100%;
+        max-height: calc(100dvh - 24px);
+        padding: 14px !important;
     }
 
     .map-modal-body {
@@ -1036,5 +1234,22 @@ section:has(.app-table),
     .alert-item {
         font-size: 12px;
         line-height: 1.45;
+    }
+
+    .app-table {
+        min-width: 560px;
+    }
+
+    .app-table th,
+    .app-table td {
+        padding: 8px 10px;
+    }
+
+    .client-payments-mobile {
+        display: grid;
+    }
+
+    .client-payments-table {
+        display: none;
     }
 }

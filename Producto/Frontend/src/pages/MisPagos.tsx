@@ -130,7 +130,49 @@ export default function MisPagos() {
         ) : pagos.length === 0 ? (
           <div className="placeholder">No tienes cuotas registradas.</div>
         ) : (
-          <table className="app-table">
+          <>
+            <div className="client-payments-mobile">
+              {pagos.map(p => (
+                <article className="client-payment-card" key={p.id}>
+                  <div className="client-payment-card__header">
+                    <div>
+                      <span className="client-payment-card__eyebrow">Cuota</span>
+                      <strong>#{p.numeroCuota}</strong>
+                    </div>
+                    <Badge variante={badgePorEstadoPago[p.estadoPago]}>{p.estadoPago}</Badge>
+                  </div>
+
+                  <div className="client-payment-card__amount">{clp(p.monto)}</div>
+
+                  <div className="client-payment-card__grid">
+                    <span>Vencimiento</span>
+                    <strong>{fmtFecha(p.fechaVencimiento)}</strong>
+
+                    <span>Fecha pago</span>
+                    <strong>{fmtFecha(p.fechaPago)}</strong>
+
+                    <span>Medio</span>
+                    <strong>{p.medioPago ?? '-'}</strong>
+                  </div>
+
+                  {p.estadoPago === 'PAGADO' ? (
+                    <button className="btn btn-outline client-payment-card__button" onClick={() => descargarMiBoleta(p.id)}>
+                      Comprobante
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-primary client-payment-card__button"
+                      disabled={procesando === p.id}
+                      onClick={() => onPagar(p.id)}
+                    >
+                      {procesando === p.id ? 'Redirigiendo...' : 'Pagar'}
+                    </button>
+                  )}
+                </article>
+              ))}
+            </div>
+
+            <table className="app-table client-payments-table">
             <thead>
               <tr>
                 <th>Cuota</th><th>Monto</th><th>Vencimiento</th><th>Fecha pago</th><th>Medio</th><th>Estado</th><th>Acción</th>
@@ -163,7 +205,8 @@ export default function MisPagos() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </>
         )}
       </Panel>
     </>

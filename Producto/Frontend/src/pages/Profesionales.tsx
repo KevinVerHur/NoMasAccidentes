@@ -178,8 +178,8 @@ export default function Profesionales() {
                                     <td><Badge variante={badgePorEstado[p.estado]}>{labelEstado[p.estado]}</Badge></td>
                                     <td style={{ textAlign: 'center' }}>{p.cantidadClientes}</td>
                                     <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                            <div style={{ flex: 1, background: '#e5e7eb', borderRadius: 6, height: 8, minWidth: 60 }}>
+                                        <div className="responsive-bar-row">
+                                            <div className="responsive-bar-track" style={{ height: 8 }}>
                                                 <div style={{ width: `${pct}%`, height: '100%', borderRadius: 6, background: pct >= 90 ? '#c0392b' : pct >= 70 ? '#e07b00' : '#27ae60', transition: 'width .3s' }} />
                                             </div>
                                             <Badge variante={varianteCarga(pct)}>{pct}%</Badge>

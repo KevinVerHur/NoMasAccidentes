@@ -194,7 +194,7 @@ export default function SolicitudesAdmin() {
       </Panel>
 
       {sel && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-3">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[4000] p-3 overflow-y-auto">
           <div className="responsive-modal-shell bg-white rounded-lg p-5 overflow-y-auto">
             <div className="font-bold text-azul mb-1">
               {modo === 'aprobar' ? 'Aprobar' : 'Rechazar'} solicitud — {etiquetaTipo[sel.tipo]}

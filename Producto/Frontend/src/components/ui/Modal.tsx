@@ -23,10 +23,11 @@ export default function Modal({ abierto, titulo, onCerrar, children, footer, anc
 
     return (
         <div
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}
+            className="app-modal-overlay"
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 4000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 18 }}
             onClick={(e) => { if (e.target === e.currentTarget) onCerrar(); }}
         >
-            <div className="app-modal" style={{ background: 'white', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,.22)', width: '100%', maxWidth: anchos[ancho], maxHeight: '92vh', overflow: 'auto' }}>
+            <div className="app-modal" style={{ background: 'white', borderRadius: 12, boxShadow: '0 12px 40px rgba(0,0,0,.22)', width: '100%', maxWidth: anchos[ancho], maxHeight: '92dvh', overflow: 'auto' }}>
                 <div className="app-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1px solid #e8edf3', background: '#f8fafc' }}>
                     <span style={{ fontWeight: 'bold', color: '#18395a', fontSize: 15 }}>{titulo}</span>
                     <button onClick={onCerrar} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8994a3', lineHeight: 1 }}>×</button>
