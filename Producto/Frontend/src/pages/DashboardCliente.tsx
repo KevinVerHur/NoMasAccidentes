@@ -441,13 +441,7 @@ export default function DashboardCliente() {
             {resumenFilas.map((r, i) => (
               <div
                 key={i}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  padding: '7px 0',
-                  fontSize: 12,
-                  color: '#5e6a78',
-                }}
+                className="responsive-summary-row"
               >
                 <span>{r.label}</span>
                 <b style={{ color: '#243041' }}>{r.valor}</b>

@@ -606,24 +606,18 @@ export default function DashboardAdmin() {
               accidentabilidad.map((a) => (
                 <div
                   key={a.idCliente}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    marginBottom: 10,
-                    fontSize: 11,
-                  }}
+                  className="responsive-bar-row"
                 >
-                  <span style={{ width: 110, textAlign: 'right', color: '#6b7280', flexShrink: 0 }}>
+                  <span className="responsive-bar-label">
                     {a.cliente}
                   </span>
-                  <div style={{ flex: 1, background: '#e5e7eb', borderRadius: 6, height: 14, overflow: 'hidden' }}>
+                  <div className="responsive-bar-track">
                     <div
                       className={`h-full rounded ${colorBarra[varianteTasa(a.tasa)]}`}
                       style={{ width: `${(magnitud(a) / maxMagnitud) * 100}%` }}
                     />
                   </div>
-                  <span style={{ width: 48, fontWeight: 'bold', color: '#374151', textAlign: 'right' }}>
+                  <span className="responsive-bar-value">
                     {a.tasa !== null ? `${a.tasa.toFixed(1)}%` : `${a.accidentes} acc.`}
                   </span>
                 </div>

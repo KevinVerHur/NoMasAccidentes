@@ -257,7 +257,7 @@ export default function Morosidad() {
       </Panel>
 
       <Panel titulo="Gestión rápida de cobranza">
-        <div style={{ padding: 16, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="responsive-action-row" style={{ padding: 16 }}>
           <div style={{ fontSize: 12, color: '#6b7280' }}>
             Filtra clientes morosos, registra pagos completos de cuotas existentes y suspende servicios usando los endpoints actuales del sistema.
           </div>
