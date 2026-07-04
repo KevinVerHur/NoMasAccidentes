@@ -30,5 +30,7 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     );
     boolean existsByPlanIdAndFechaEmision(Long idPlan, LocalDate fechaEmision);
 
-    int countByPlanId(Long idPlan);        
+    int countByPlanId(Long idPlan);  
+    
+
 }
