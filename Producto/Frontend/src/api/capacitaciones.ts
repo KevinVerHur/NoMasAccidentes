@@ -114,3 +114,8 @@ export async function descargarCertificadoAsistente(
 
   return response.data;
 }
+
+export async function listarCapacitacionesPorRelator(idRelator: number): Promise<CapacitacionResponse[]> {
+  const res = await api.get<CapacitacionResponse[]>(`/api/capacitaciones/relator/${idRelator}`);
+  return res.data;
+}
