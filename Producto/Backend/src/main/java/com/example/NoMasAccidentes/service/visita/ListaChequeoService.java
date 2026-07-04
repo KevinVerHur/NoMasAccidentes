@@ -35,12 +35,12 @@ public class ListaChequeoService {
 
     /** Ítems base con que se siembra la lista al dar de alta una empresa (RF16). */
     private static final List<String[]> ITEMS_POR_DEFECTO = List.of(
-            new String[]{"Uso de elementos de protección personal (EPP)", "EPP"},
-            new String[]{"Señalización de seguridad visible y vigente", "Señalización"},
-            new String[]{"Extintores operativos y con carga vigente", "Emergencias"},
-            new String[]{"Vías de evacuación despejadas", "Emergencias"},
-            new String[]{"Orden y limpieza en áreas de trabajo", "Condiciones generales"},
-            new String[]{"Instalaciones eléctricas sin riesgos visibles", "Condiciones generales"}
+            new String[]{"Uso de elementos de protección personal (EPP)", "EPP", "Art. 53 D.S. 594/1999 MINSAL"},
+            new String[]{"Señalización de seguridad visible y vigente", "Señalización", "Art. 37 D.S. 594/1999 MINSAL"},
+            new String[]{"Extintores operativos y con carga vigente", "Emergencias", "Art. 45 y 51 D.S. 594/1999 MINSAL"},
+            new String[]{"Vías de evacuación despejadas", "Emergencias", "Art. 7 D.S. 594/1999 MINSAL"},
+            new String[]{"Orden y limpieza en áreas de trabajo", "Condiciones generales", "Art. 11 D.S. 594/1999 MINSAL"},
+            new String[]{"Instalaciones eléctricas sin riesgos visibles", "Condiciones generales", "Art. 39 D.S. 594/1999 MINSAL"}
     );
 
     private final ListaChequeoRepository listaChequeoRepository;
@@ -92,6 +92,7 @@ public class ListaChequeoService {
                     .listaChequeo(lista)
                     .descripcion(base[0])
                     .categoria(base[1])
+                    .normaLegal(base[2])
                     .obligatorio(true)
                     .orden(orden++)
                     .build());
@@ -148,6 +149,7 @@ public class ListaChequeoService {
                     .listaChequeo(lista)
                     .descripcion(it.descripcion())
                     .categoria(it.categoria())
+                    .normaLegal(it.normaLegal())
                     .obligatorio(it.obligatorio() == null || it.obligatorio())
                     .orden(it.orden())
                     .build();

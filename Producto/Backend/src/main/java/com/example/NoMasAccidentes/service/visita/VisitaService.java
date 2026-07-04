@@ -4,17 +4,22 @@ import com.example.NoMasAccidentes.common.ConflictoNegocioException;
 import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
 import com.example.NoMasAccidentes.dto.visita.PlanificarVisitaRequest;
 import com.example.NoMasAccidentes.dto.visita.RegistrarVisitaRequest;
+import com.example.NoMasAccidentes.dto.visita.ResultadoChequeoRequest;
+import com.example.NoMasAccidentes.dto.visita.ResultadoChequeoResponse;
 import com.example.NoMasAccidentes.dto.visita.VisitaMapper;
 import com.example.NoMasAccidentes.dto.visita.VisitaResponse;
 import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.profesional.EstadoProfesional;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
 import com.example.NoMasAccidentes.model.visita.EstadoVisita;
+import com.example.NoMasAccidentes.model.visita.ItemChequeo;
 import com.example.NoMasAccidentes.model.visita.ListaChequeo;
+import com.example.NoMasAccidentes.model.visita.ResultadoChequeo;
 import com.example.NoMasAccidentes.model.visita.Visita;
 import com.example.NoMasAccidentes.repository.empresa.EmpresaRepository;
 import com.example.NoMasAccidentes.repository.profesional.ProfesionalRepository;
 import com.example.NoMasAccidentes.repository.visita.ListaChequeoRepository;
+import com.example.NoMasAccidentes.repository.visita.ResultadoChequeoRepository;
 import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
 import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import com.example.NoMasAccidentes.service.notificacion.NotificacionEventoService;
@@ -40,6 +45,7 @@ public class VisitaService {
 
     private final VisitaRepository visitaRepository;
     private final ListaChequeoRepository listaChequeoRepository;
+    private final ResultadoChequeoRepository resultadoChequeoRepository;
     private final EmpresaRepository empresaRepository;
     private final ProfesionalRepository profesionalRepository;
     private final VisitaMapper visitaMapper;
@@ -114,9 +120,46 @@ public class VisitaService {
         visita.setLatitud(request.latitud());
         visita.setLongitud(request.longitud());
         visita.getProfesional().setEstado(EstadoProfesional.DISPONIBLE);
+        guardarResultados(visita, request.resultados());
         log.info("Visita registrada en terreno id={} (RF14); profesional={} -> DISPONIBLE",
                 id, visita.getProfesional().getId());
         return visitaMapper.toResponse(visita);
+    }
+
+    /** Persiste el marcado de la lista de chequeo de la visita (RF19), en modo upsert. */
+    private void guardarResultados(Visita visita, List<ResultadoChequeoRequest> resultados) {
+        if (resultados == null || resultados.isEmpty()) {
+            return;
+        }
+        for (ResultadoChequeoRequest req : resultados) {
+            ItemChequeo item = visita.getListaChequeo().getItems().stream()
+                    .filter(it -> it.getId().equals(req.idItem()))
+                    .findFirst()
+                    .orElseThrow(() -> new ConflictoNegocioException(
+                            "El ítem " + req.idItem() + " no pertenece a la lista de chequeo de la visita"));
+
+            ResultadoChequeo resultado = resultadoChequeoRepository
+                    .findByVisitaIdAndItemId(visita.getId(), item.getId())
+                    .orElseGet(() -> ResultadoChequeo.builder().visita(visita).item(item).build());
+            resultado.setEstado(req.estado());
+            resultado.setObservacion(req.observacion());
+            resultadoChequeoRepository.save(resultado);
+        }
+    }
+
+    /** Resultado del chequeo registrado en una visita (RF19). */
+    public List<ResultadoChequeoResponse> resultadosDeVisita(Long idVisita) {
+        buscarOFallar(idVisita);
+        return resultadoChequeoRepository.findByVisitaIdOrderByIdAsc(idVisita).stream()
+                .map(r -> new ResultadoChequeoResponse(
+                        r.getId(),
+                        r.getItem().getId(),
+                        r.getItem().getDescripcion(),
+                        r.getItem().getCategoria(),
+                        r.getItem().getNormaLegal(),
+                        r.getEstado(),
+                        r.getObservacion()))
+                .toList();
     }
 
     @Transactional

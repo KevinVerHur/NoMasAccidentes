@@ -18,6 +18,7 @@ import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfTemplate;
 import org.openpdf.text.pdf.PdfWriter;
+import com.example.NoMasAccidentes.service.pdf.PdfMarca;
 import org.springframework.stereotype.Service;
 
 /**
@@ -31,8 +32,8 @@ public class ReporteMensualPdfService {
     private static final DateTimeFormatter F_FECHA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     private static final Locale ES = new Locale("es", "CL");
 
-    private static final Font TITULO    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
-    private static final Font SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
+    private static final Font TITULO    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, PdfMarca.NAVY);
+    private static final Font SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, PdfMarca.NAVY);
     private static final Font NORMAL    = FontFactory.getFont(FontFactory.HELVETICA, 10);
     private static final Font CABECERA  = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
     private static final Font PIE       = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 8, Color.GRAY);
@@ -47,10 +48,12 @@ public class ReporteMensualPdfService {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Document doc = new Document();
         PdfWriter writer = PdfWriter.getInstance(doc, out);
+        PdfMarca.aplicar(doc, writer);
         doc.open();
 
-        doc.add(new Paragraph("Reporte Mensual de Gestión", TITULO));
-        doc.add(new Paragraph("No Más Accidentes — Prevención de riesgos laborales", NORMAL));
+        Paragraph titulo = new Paragraph("Reporte Mensual de Gestión", TITULO);
+        titulo.setSpacingAfter(2);
+        doc.add(titulo);
         doc.add(espacio());
 
         doc.add(seccion("Datos del reporte"));

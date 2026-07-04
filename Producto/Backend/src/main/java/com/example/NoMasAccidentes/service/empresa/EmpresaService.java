@@ -3,9 +3,11 @@ package com.example.NoMasAccidentes.service.empresa;
 import com.example.NoMasAccidentes.common.ConflictoNegocioException;
 import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
 import com.example.NoMasAccidentes.dto.empresa.ActualizarEmpresaRequest;
+import com.example.NoMasAccidentes.dto.empresa.ActualizarMiContactoRequest;
 import com.example.NoMasAccidentes.dto.empresa.CrearEmpresaRequest;
 import com.example.NoMasAccidentes.dto.empresa.EmpresaMapper;
 import com.example.NoMasAccidentes.dto.empresa.EmpresaResponse;
+import com.example.NoMasAccidentes.dto.empresa.MiContactoResponse;
 import com.example.NoMasAccidentes.model.cliente.Cliente;
 import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.empresa.EstadoEmpresa;
@@ -219,6 +221,41 @@ public class EmpresaService {
 
     public EmpresaResponse empresaPorEmail(String email) {
         return empresaMapper.toResponse(empresaAutenticada(email));
+    }
+
+    /** Datos de contacto del representante autenticado (portal cliente). */
+    public MiContactoResponse miContacto(String email) {
+        return toContactoResponse(representanteAutenticado(email));
+    }
+
+    /**
+     * El representante autenticado edita solo sus propios datos de contacto
+     * (nombre, cargo, teléfono). El email —credencial de acceso— y los datos de
+     * la empresa no se modifican aquí.
+     */
+    @Transactional
+    public MiContactoResponse actualizarMiContacto(String email, ActualizarMiContactoRequest request) {
+        Cliente representante = representanteAutenticado(email);
+        representante.setNombre(request.nombre());
+        representante.setCargo(request.cargo());
+        representante.setTelefono(request.telefono());
+        log.info("Representante id={} actualizó sus datos de contacto (portal cliente)", representante.getId());
+        return toContactoResponse(representante);
+    }
+
+    private Cliente representanteAutenticado(String email) {
+        return clienteRepository.findByUsuarioEmail(email)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "No hay un representante asociado al usuario " + email));
+    }
+
+    private MiContactoResponse toContactoResponse(Cliente representante) {
+        return new MiContactoResponse(
+                representante.getId(),
+                representante.getNombre(),
+                representante.getCargo(),
+                representante.getEmail(),
+                representante.getTelefono());
     }
 
     private Empresa buscarOFallar(Long id) {

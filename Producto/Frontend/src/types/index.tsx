@@ -286,6 +286,22 @@ export interface CrearRepresentanteRequest {
   conAcceso: boolean;
 }
 
+/** Contacto del representante autenticado (portal cliente → "Mi empresa"). */
+export interface MiContactoResponse {
+  id: number;
+  nombre: string;
+  cargo: string | null;
+  email: string;
+  telefono: string | null;
+}
+
+/** El cliente edita solo su nombre, cargo y teléfono (email read-only). */
+export interface ActualizarMiContactoRequest {
+  nombre: string;
+  cargo?: string;
+  telefono?: string;
+}
+
 // ---- Reportes e indicadores (RF38–RF42) ----
 export interface ReporteMensualResponse {
   id: number;
@@ -415,6 +431,45 @@ export interface RegistrarVisitaRequest {
   observaciones?: string;
   latitud?: number;
   longitud?: number;
+  resultados?: ResultadoChequeoRequest[];
+}
+
+// ---- Lista de chequeo (RF16/RF19) ----
+export type EstadoCumplimiento = 'CUMPLE' | 'NO_CUMPLE' | 'NO_APLICA';
+
+export interface ItemChequeoResponse {
+  id: number;
+  descripcion: string;
+  categoria: string | null;
+  normaLegal: string | null;
+  obligatorio: boolean;
+  orden: number | null;
+}
+
+export interface ListaChequeoResponse {
+  id: number;
+  idEmpresa: number;
+  nombre: string | null;
+  cambiosRealizadosAnio: number;
+  anioVigente: number | null;
+  fechaUltimaModificacion: string | null;
+  items: ItemChequeoResponse[];
+}
+
+export interface ResultadoChequeoRequest {
+  idItem: number;
+  estado: EstadoCumplimiento;
+  observacion?: string;
+}
+
+export interface ResultadoChequeoResponse {
+  id: number;
+  idItem: number;
+  descripcion: string;
+  categoria: string | null;
+  normaLegal: string | null;
+  estado: EstadoCumplimiento;
+  observacion: string | null;
 }
 
 // ---- Pagos (RF08–RF12) ----
@@ -669,6 +724,8 @@ export interface ConsultaResponse {
   id: number;
   idEmpresa: number;
   razonSocialEmpresa: string;
+  idProfesional: number | null;
+  nombreProfesional: string | null;
   fechaHora: string;
   motivo: string;
   detalle: string | null;
@@ -678,6 +735,8 @@ export interface ConsultaResponse {
 
 export interface CrearConsultaRequest {
   idEmpresa: number;
+  /** Solo lo usa el admin para atribuir el llamado; el profesional queda como sí mismo. */
+  idProfesional?: number | null;
   motivo: string;
   detalle?: string;
 }

@@ -5,6 +5,7 @@ import com.example.NoMasAccidentes.dto.consulta.CrearConsultaRequest;
 import com.example.NoMasAccidentes.service.consulta.ConsultaService;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.security.Principal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,10 +33,18 @@ public class ConsultaController {
         return consultaService.listarPorEmpresa(idEmpresa);
     }
 
+    /** Llamados atendidos por el profesional autenticado (RF02/RF41). */
+    @GetMapping("/mias")
+    @PreAuthorize("hasRole('PROFESIONAL')")
+    public List<ConsultaResponse> misConsultas(Principal principal){
+        return consultaService.misConsultas(principal.getName());
+    }
+
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ConsultaResponse> crear(@Valid @RequestBody CrearConsultaRequest request){
-        ConsultaResponse creada = consultaService.crear(request);
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
+    public ResponseEntity<ConsultaResponse> crear(@Valid @RequestBody CrearConsultaRequest request,
+                                                  Principal principal){
+        ConsultaResponse creada = consultaService.crear(request, principal.getName());
 
         return ResponseEntity
                 .created(URI.create("/api/consultas/" + creada.id()))

@@ -8,9 +8,11 @@ import { useAuth } from '../context/AuthContext';
 import type {
   VisitaResponse, PlanificarVisitaRequest, RegistrarVisitaRequest,
   EstadoVisita, VarianteBadge, EmpresaResponse, ProfesionalResponse,
+  ItemChequeoResponse, EstadoCumplimiento, ResultadoChequeoRequest,
 } from '../types';
 import {
   listarVisitas, planificarVisita, iniciarVisita, registrarVisita, cancelarVisita, eliminarVisita,
+  obtenerListaChequeoEmpresa,
 } from '../api/visitas';
 import { listarClientes } from '../api/clientes';
 import { listarProfesionales } from '../api/profesionales';
@@ -53,6 +55,9 @@ export default function Visitas() {
   const [filtroEstado, setFiltroEstado] = useState('');
   const [modalNueva, setModalNueva]     = useState(false);
   const [modalRegistrar, setModalRegistrar] = useState<VisitaResponse | null>(null);
+  const [itemsChequeo, setItemsChequeo] = useState<ItemChequeoResponse[]>([]);
+  const [marcas, setMarcas] = useState<Record<number, { estado: EstadoCumplimiento; observacion: string }>>({});
+  const [cargandoChequeo, setCargandoChequeo] = useState(false);
   const [modalCancelar, setModalCancelar]   = useState<VisitaResponse | null>(null);
   const [modalEliminar, setModalEliminar]   = useState<VisitaResponse | null>(null);
   const [guardando, setGuardando]       = useState(false);
@@ -122,7 +127,21 @@ export default function Visitas() {
   function abrirRegistrar(v: VisitaResponse) {
     formRegistro.reset({ observaciones: v.observaciones ?? '', latitud: undefined, longitud: undefined });
     setError(null);
+    setItemsChequeo([]);
+    setMarcas({});
+    setCargandoChequeo(true);
     setModalRegistrar(v);
+    // Cargar la lista de chequeo del cliente para marcarla en terreno (RF19).
+    obtenerListaChequeoEmpresa(v.idEmpresa)
+      .then((lista) => {
+        setItemsChequeo(lista.items);
+        // Por defecto todo "Cumple"; el profesional marca las excepciones.
+        const inicial: Record<number, { estado: EstadoCumplimiento; observacion: string }> = {};
+        lista.items.forEach((it) => { inicial[it.id] = { estado: 'CUMPLE', observacion: '' }; });
+        setMarcas(inicial);
+      })
+      .catch(() => setItemsChequeo([]))
+      .finally(() => setCargandoChequeo(false));
     // Intentar capturar la geolocalización del dispositivo en terreno (RF05/RF14).
     navigator.geolocation?.getCurrentPosition(
       pos => {
@@ -133,12 +152,27 @@ export default function Visitas() {
     );
   }
 
+  function setMarca(idItem: number, campo: 'estado' | 'observacion', valor: string) {
+    setMarcas((prev) => ({
+      ...prev,
+      [idItem]: {
+        estado: campo === 'estado' ? (valor as EstadoCumplimiento) : (prev[idItem]?.estado ?? 'CUMPLE'),
+        observacion: campo === 'observacion' ? valor : (prev[idItem]?.observacion ?? ''),
+      },
+    }));
+  }
+
   async function onRegistrar(data: RegistrarVisitaRequest) {
     if (!modalRegistrar) return;
     setError(null);
     setGuardando(true);
+    const resultados: ResultadoChequeoRequest[] = itemsChequeo.map((it) => ({
+      idItem: it.id,
+      estado: marcas[it.id]?.estado ?? 'CUMPLE',
+      observacion: marcas[it.id]?.observacion?.trim() || undefined,
+    }));
     try {
-      await registrarVisita(modalRegistrar.id, data);
+      await registrarVisita(modalRegistrar.id, { ...data, resultados });
       setModalRegistrar(null);
       await cargar();
     } catch (e: unknown) {
@@ -350,6 +384,51 @@ export default function Visitas() {
           <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
             <strong>{modalRegistrar?.razonSocialEmpresa}</strong> · {fmtFecha(modalRegistrar?.fechaProgramada ?? null)}
           </div>
+
+          <label className="auth-label">Lista de chequeo</label>
+          {cargandoChequeo ? (
+            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>Cargando lista de chequeo…</div>
+          ) : itemsChequeo.length === 0 ? (
+            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>
+              Esta empresa no tiene ítems en su lista de chequeo. Puedes registrar la visita igual.
+            </div>
+          ) : (
+            <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 8, padding: 8, marginBottom: 12 }}>
+              {itemsChequeo.map((it) => {
+                const marca = marcas[it.id]?.estado ?? 'CUMPLE';
+                return (
+                  <div key={it.id} style={{ padding: '8px 4px', borderBottom: '1px solid #f1f1f1' }}>
+                    <div style={{ fontSize: 13, fontWeight: 500 }}>{it.descripcion}</div>
+                    {it.normaLegal && (
+                      <div style={{ fontSize: 11, color: '#9ca3af' }}>{it.normaLegal}</div>
+                    )}
+                    <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center' }}>
+                      <select
+                        className="auth-input"
+                        style={{ maxWidth: 150, padding: '4px 8px' }}
+                        value={marca}
+                        onChange={(e) => setMarca(it.id, 'estado', e.target.value)}
+                      >
+                        <option value="CUMPLE">Cumple</option>
+                        <option value="NO_CUMPLE">No cumple</option>
+                        <option value="NO_APLICA">No aplica</option>
+                      </select>
+                      {marca === 'NO_CUMPLE' && (
+                        <input
+                          className="auth-input"
+                          style={{ flex: 1, padding: '4px 8px' }}
+                          placeholder="Observación / propuesta de mejora"
+                          value={marcas[it.id]?.observacion ?? ''}
+                          onChange={(e) => setMarca(it.id, 'observacion', e.target.value)}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <div>
             <label className="auth-label">Observaciones</label>
             <textarea className="auth-input" rows={4}

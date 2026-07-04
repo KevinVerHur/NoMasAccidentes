@@ -4,6 +4,7 @@ import com.example.NoMasAccidentes.model.asesoria.Accidente;
 import com.example.NoMasAccidentes.model.asesoria.Asesoria;
 import com.example.NoMasAccidentes.model.asesoria.Fiscalizacion;
 import com.example.NoMasAccidentes.model.asesoria.PropuestaMejora;
+import com.example.NoMasAccidentes.service.pdf.PdfMarca;
 import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -28,8 +29,8 @@ public class InformeAsesoriaPdfService {
 
     private static final DateTimeFormatter F_FECHA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-    private static final Font TITULO    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
-    private static final Font SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11);
+    private static final Font TITULO    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, PdfMarca.NAVY);
+    private static final Font SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11, PdfMarca.NAVY);
     private static final Font NORMAL    = FontFactory.getFont(FontFactory.HELVETICA, 10);
     private static final Font CABECERA  = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
 
@@ -39,11 +40,13 @@ public class InformeAsesoriaPdfService {
                           List<PropuestaMejora> propuestas) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Document doc = new Document();
-        PdfWriter.getInstance(doc, out);
+        PdfWriter writer = PdfWriter.getInstance(doc, out);
+        PdfMarca.aplicar(doc, writer);
         doc.open();
 
-        doc.add(new Paragraph("Informe de Asesoría", TITULO));
-        doc.add(new Paragraph("No Más Accidentes — Prevención de riesgos laborales", NORMAL));
+        Paragraph titulo = new Paragraph("Informe de Asesoría", TITULO);
+        titulo.setSpacingAfter(2);
+        doc.add(titulo);
         doc.add(espacio());
 
         doc.add(seccion("Datos de la asesoría"));
@@ -72,6 +75,10 @@ public class InformeAsesoriaPdfService {
 
         doc.add(seccion("Propuestas de mejora"));
         doc.add(tablaPropuestas(propuestas));
+
+        doc.add(PdfMarca.firmaProfesional(
+                asesoria.getProfesional().getUsuario().getNombre() + " "
+                        + asesoria.getProfesional().getUsuario().getApellido()));
 
         doc.close();
         return out.toByteArray();

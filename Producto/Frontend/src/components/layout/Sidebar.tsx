@@ -19,9 +19,7 @@ interface SeccionNav {
 }
 
 const TODOS: Rol[] = ['ADMIN', 'PROFESIONAL', 'CLIENTE', 'CAPACITADOR'];
-// Pestañas comentadas temporalmente: Comunicaciones y Seguimiento preventivo
-// para ADMIN/PROFESIONAL, y Mis actividades para CLIENTE.
-const RUTAS_COMENTADAS = new Set(['/comunicaciones']);
+const RUTAS_COMENTADAS = new Set<string>();
 
 // Menú operativo: ADMIN y PROFESIONAL.
 const seccionesOperativas: SeccionNav[] = [
@@ -34,6 +32,7 @@ const seccionesOperativas: SeccionNav[] = [
             { icono: '📅', label: 'Visitas', path: '/visitas', roles: ['ADMIN', 'PROFESIONAL'] },
             { icono: '🎓', label: 'Capacitaciones', path: '/capacitaciones', roles: ['ADMIN', 'PROFESIONAL', 'CAPACITADOR'] },
             { icono: '📋', label: 'Asesorías', path: '/asesorias', roles: ['ADMIN', 'PROFESIONAL'] },
+            { icono: '📞', label: 'Comunicaciones', path: '/comunicaciones', roles: ['ADMIN', 'PROFESIONAL'] },
             { icono: '📨', label: 'Solicitudes', path: '/solicitudes', roles: ['ADMIN'] },
             { icono: '✅', label: 'Seguimiento preventivo', path: '/seguimiento-preventivo', roles: ['ADMIN', 'PROFESIONAL'] },
         ],
@@ -49,14 +48,13 @@ const seccionesOperativas: SeccionNav[] = [
         titulo: 'Sistema',
         items: [
             { icono: '📄', label: 'Reportes', path: '/reportes', roles: ['ADMIN', 'PROFESIONAL'] },
-            { icono: '🔔', label: 'Alertas', path: '/alertas', roles: ['ADMIN'] },
-            { icono: '⚙️', label: 'Configuración', path: '/configuracion', roles: ['ADMIN','PROFESIONAL'] },
         ],
     },
     {
         titulo: 'Cuenta',
         items: [
             { icono: '🔔', label: 'Notificaciones', path: '/notificaciones', roles: ['PROFESIONAL', 'ADMIN'] },
+            { icono: '⚙️', label: 'Configuración', path: '/configuracion', roles: ['ADMIN', 'PROFESIONAL'] },
         ],
     },
 ];
@@ -78,7 +76,7 @@ const seccionesCliente: SeccionNav[] = [
         titulo: 'Cuenta',
         items: [
             { icono: '🔔', label: 'Notificaciones', path: '/notificaciones', roles: ['CLIENTE'] },
-            { icono: '🏢', label: 'Mi empresa', path: '/mi-empresa', roles: ['CLIENTE'] },
+            { icono: '⚙️', label: 'Configuración', path: '/configuracion', roles: ['CLIENTE'] },
         ],
     },
 ];

@@ -20,6 +20,11 @@ export async function listarConsultasPorCliente(idCliente: number): Promise<Cons
   return res.data;
 }
 
+export async function misConsultas(): Promise<ConsultaResponse[]> {
+  const res = await api.get<ConsultaResponse[]>('/api/consultas/mias');
+  return res.data;
+}
+
 export async function crearConsulta(data: CrearConsultaRequest): Promise<ConsultaResponse> {
   const res = await api.post<ConsultaResponse>('/api/consultas', data);
   return res.data;

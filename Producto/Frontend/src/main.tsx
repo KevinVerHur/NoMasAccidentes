@@ -26,7 +26,7 @@ import Notificaciones from './pages/Notificaciones';
 import MisSolicitudes from './pages/MisSolicitudes';
 import SolicitudesAdmin from './pages/SolicitudesAdmin';
 // import SeguimientoPreventivo from './pages/SeguimientoPreventivo';
-// import Comunicaciones from './pages/Comunicaciones';
+import Comunicaciones from './pages/Comunicaciones';
 import './index.css';
 import Configuracion from './pages/Configuracion';
 
@@ -97,10 +97,10 @@ const router = createBrowserRouter([
         path: '/seguimiento-preventivo',
         element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><SeguimientoPreventivo /></ProtectedRoute>,
       },
-      // {
-      //   path: '/comunicaciones',
-      //   element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><Comunicaciones /></ProtectedRoute>,
-      // },
+      {
+        path: '/comunicaciones',
+        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><Comunicaciones /></ProtectedRoute>,
+      },
       {
         path: '/reportes',
         element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CLIENTE']}><Reportes /></ProtectedRoute>,
