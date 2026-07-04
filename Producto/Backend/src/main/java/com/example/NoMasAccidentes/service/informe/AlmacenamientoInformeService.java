@@ -22,8 +22,10 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
  * configurado ({@code aws.s3.bucket-name}) usa S3; en caso contrario (dev) usa
  * disco local bajo {@code informes.local.dir}. Cada documento se guarda dentro de
  * una carpeta por tipo (p. ej. {@code informes/}, {@code reportes/},
- * {@code actas-capacitacion/}, {@code certificados/}). La clave devuelta —y
- * guardada en {@code Informe.urlPdf}— es la ruta completa {@code carpeta/archivo},
+ * {@code actas-capacitacion/}, {@code certificados/}, {@code comprobantes/}) y,
+ * dentro de ella, una subcarpeta por empresa (p. ej. {@code informes/1/}) para
+ * agrupar los documentos de cada cliente. La clave devuelta —y guardada en
+ * {@code Informe.urlPdf}— es la ruta completa {@code carpeta/idEmpresa/archivo},
  * independiente del backend de almacenamiento.
  */
 @Service
@@ -81,6 +83,16 @@ public class AlmacenamientoInformeService {
     /** Atajo que guarda bajo la carpeta por defecto ({@code informes/}). */
     public String guardar(String nombreArchivo, byte[] pdf) {
         return guardar(CARPETA_POR_DEFECTO, nombreArchivo, pdf);
+    }
+
+    /**
+     * Guarda el PDF agrupándolo por empresa: {@code carpeta/idEmpresa/archivo}
+     * (p. ej. {@code comprobantes/1/comprobante-5.pdf}). Si {@code idEmpresa} es
+     * nulo, cae en {@code carpeta/archivo}.
+     */
+    public String guardar(String carpeta, Long idEmpresa, String nombreArchivo, byte[] pdf) {
+        String carpetaEmpresa = idEmpresa != null ? carpeta + "/" + idEmpresa : carpeta;
+        return guardar(carpetaEmpresa, nombreArchivo, pdf);
     }
 
     /** Recupera el PDF a partir de la clave completa guardada ({@code carpeta/archivo}). */

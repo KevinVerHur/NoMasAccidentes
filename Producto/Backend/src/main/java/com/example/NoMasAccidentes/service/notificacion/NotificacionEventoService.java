@@ -6,9 +6,11 @@ import com.example.NoMasAccidentes.model.capacitacion.Capacitacion;
 import com.example.NoMasAccidentes.model.cliente.Cliente;
 import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.notificacion.TipoNotificacion;
+import com.example.NoMasAccidentes.model.pago.Pago;
 import com.example.NoMasAccidentes.model.profesional.Profesional;
 import com.example.NoMasAccidentes.model.solicitud.EstadoSolicitud;
 import com.example.NoMasAccidentes.model.solicitud.Solicitud;
+import com.example.NoMasAccidentes.model.solicitud.TipoSolicitud;
 import com.example.NoMasAccidentes.model.usuario.Usuario;
 import com.example.NoMasAccidentes.model.visita.Visita;
 import com.example.NoMasAccidentes.repository.cliente.ClienteRepository;
@@ -93,13 +95,19 @@ public class NotificacionEventoService {
     public void notificarSolicitudRecibida(Solicitud solicitud) {
         Empresa empresa = solicitud.getEmpresa();
         String tipo = String.valueOf(solicitud.getTipo());
-        String titulo = "Nueva solicitud de " + tipo.toLowerCase();
-        String mensaje = "%s solicitó %s.".formatted(empresa.getRazonSocial(), tipo.toLowerCase());
+        boolean urgente = solicitud.getTipo() == TipoSolicitud.ACCIDENTE;
+
+        String titulo = urgente
+                ? "🚨 Accidente reportado — atención urgente"
+                : "Nueva solicitud de " + tipo.toLowerCase();
+        String mensaje = urgente
+                ? "%s reportó un ACCIDENTE y requiere atención inmediata.".formatted(empresa.getRazonSocial())
+                : "%s solicitó %s.".formatted(empresa.getRazonSocial(), tipo.toLowerCase());
 
         for (Usuario admin : usuarioRepository.findByRolNombre("ADMIN")) {
             notificacionService.crear(admin, TipoNotificacion.SOLICITUD_RECIBIDA, titulo, mensaje, "/solicitudes");
         }
-        correoService.enviarAvisoSolicitudRecibida(empresa.getRazonSocial(), tipo, solicitud.getDescripcion());
+        correoService.enviarAvisoSolicitudRecibida(empresa.getRazonSocial(), tipo, solicitud.getDescripcion(), urgente);
     }
 
     /** Solicitud respondida por el admin → avisa al cliente (bandeja + correo). */
@@ -153,6 +161,40 @@ public class NotificacionEventoService {
         }
         correoService.enviarAvisoCumplimientoReportado(
                 empresa.getRazonSocial(), actividad.getTitulo(), actividad.getComentarioCliente());
+    }
+
+    /** El cliente pagó una cuota → avisa a los representantes con acceso (bandeja + correo con comprobante) (RF09). */
+    public void notificarPagoRealizado(Pago pago, byte[] comprobantePdf) {
+        Empresa empresa = pago.getPlan().getEmpresa();
+        String monto = formatoClp(pago.getMonto());
+        String fecha = String.valueOf(pago.getFechaPago());
+        String titulo = "Pago realizado";
+        String mensaje = "Registramos el pago de tu cuota #%d por %s."
+                .formatted(pago.getNumeroCuota(), monto);
+
+        for (Cliente representante : representantesConAcceso(empresa)) {
+            notificacionService.crear(representante.getUsuario(),
+                    TipoNotificacion.PAGO_REALIZADO, titulo, mensaje, "/mis-pagos");
+            correoService.enviarComprobantePago(
+                    representante.getEmail(), empresa.getRazonSocial(),
+                    pago.getNumeroCuota(), monto, fecha, comprobantePdf);
+        }
+
+        // Aviso a la consultora: bandeja a cada admin + correo a la casilla admin.
+        String tituloAdmin = "Pago recibido";
+        String mensajeAdmin = "%s pagó la cuota #%d por %s."
+                .formatted(empresa.getRazonSocial(), pago.getNumeroCuota(), monto);
+        for (Usuario admin : usuarioRepository.findByRolNombre("ADMIN")) {
+            notificacionService.crear(admin, TipoNotificacion.PAGO_REALIZADO, tituloAdmin, mensajeAdmin, "/pagos");
+        }
+        correoService.enviarAvisoPagoRecibido(
+                empresa.getRazonSocial(), pago.getNumeroCuota(), monto, fecha);
+    }
+
+    private String formatoClp(java.math.BigDecimal monto) {
+        java.text.NumberFormat nf = java.text.NumberFormat.getCurrencyInstance(new java.util.Locale("es", "CL"));
+        nf.setMaximumFractionDigits(0);
+        return nf.format(monto);
     }
 
     /** Representantes de la empresa que tienen cuenta de acceso al portal (usuario != null). */

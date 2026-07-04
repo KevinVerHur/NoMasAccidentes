@@ -63,6 +63,14 @@ public class Pago extends BaseEntity {
     @Column(name = "medio_pago", length = 40)
     private String medioPago;
 
+    /** Token de la transacción Webpay (RF09); correlaciona el retorno con la cuota. */
+    @Column(name = "webpay_token", length = 100)
+    private String webpayToken;
+
+    /** Orden de compra enviada a Transbank (RF09). */
+    @Column(name = "webpay_orden_compra", length = 50)
+    private String webpayOrdenCompra;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_pago", nullable = false, length = 20)
     @Builder.Default

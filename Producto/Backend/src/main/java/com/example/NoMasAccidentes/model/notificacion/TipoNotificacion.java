@@ -18,5 +18,7 @@ public enum TipoNotificacion {
     /** Una actividad preventiva del cliente venció sin cumplirse (aviso al cliente). */
     ACTIVIDAD_VENCIDA,
     /** El cliente reportó que cumplió su parte de una actividad (aviso a la consultora). */
-    CUMPLIMIENTO_REPORTADO
+    CUMPLIMIENTO_REPORTADO,
+    /** El cliente pagó una cuota (aviso al representante, con comprobante adjunto en el correo) (RF09). */
+    PAGO_REALIZADO
 }

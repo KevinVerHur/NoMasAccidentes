@@ -74,7 +74,7 @@ public class InformeAsesoriaService {
 
         byte[] pdf = pdfService.generar(asesoria, accidentes, fiscalizaciones, propuestas);
         String nombreArchivo = "informe-asesoria-" + idAsesoria + "-" + UUID.randomUUID() + ".pdf";
-        String clave = almacenamiento.guardar("informes-asesoria", nombreArchivo, pdf);
+        String clave = almacenamiento.guardar("informes-asesoria", asesoria.getEmpresa().getId(), nombreArchivo, pdf);
 
         informe.setVisita(null);
         informe.setIdAsesoria(idAsesoria);

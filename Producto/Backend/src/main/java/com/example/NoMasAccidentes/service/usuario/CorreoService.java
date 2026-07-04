@@ -201,6 +201,83 @@ public class CorreoService {
         }
     }
 
+    /**
+     * RF09: envía al representante el comprobante de un pago realizado, con el
+     * PDF adjunto.
+     */
+    @Async
+    public void enviarComprobantePago(String destinatario, String empresa, int numeroCuota, String monto, String fecha, byte[] pdf){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Comprobante de pago cuota #" + numeroCuota);
+            helper.setText(construirHtmlComprobantePago(empresa, numeroCuota, monto, fecha), true);
+            helper.addAttachment(
+                    "comprobante-cuota-" + numeroCuota + ".pdf",
+                    new ByteArrayResource(pdf),
+                    "application/pdf");
+
+            mailSender.send(mensaje);
+            log.info("Comprobante de pago (cuota {}) enviado a {}", numeroCuota, destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar comprobante de pago a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    /** RF09: avisa al administrador que un cliente pagó una cuota. */
+    @Async
+    public void enviarAvisoPagoRecibido(String empresa, int numeroCuota, String monto, String fecha){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(adminEmail);
+            helper.setSubject("No Mas Accidentes - Pago recibido de " + empresa);
+            helper.setText(construirHtmlAvisoPagoRecibido(empresa, numeroCuota, monto, fecha), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de pago recibido enviado al administrador (empresa {}, cuota {})", empresa, numeroCuota);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de pago recibido al administrador: {}", e.getMessage());
+        }
+    }
+
+    private String construirHtmlAvisoPagoRecibido(String empresa, int numeroCuota, String monto, String fecha){
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Un cliente registró el pago de una cuota.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Empresa:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Cuota:</strong> #%d</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Monto:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha de pago:</strong> %s</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, numeroCuota, monto, fecha);
+    }
+
+    private String construirHtmlComprobantePago(String empresa, int numeroCuota, String monto, String fecha){
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Hola %s, registramos correctamente el pago de tu cuota. Adjuntamos el comprobante en PDF.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Cuota:</strong> #%d</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Monto:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha de pago:</strong> %s</p>
+              <div style="margin-top:24px;padding-top:14px;border-top:1px solid #e2e8f0;color:#3d4856;font-size:13px">
+                <p style="margin:0">Gracias por tu pago,</p>
+                <p style="margin:4px 0 0;font-weight:bold;color:#18395a">No Más Accidentes — Prevención de Riesgos Laborales</p>
+                <p style="margin:2px 0 0;color:#6b7280">contacto@nomasaccidentes.cl · +56 2 2345 6789</p>
+              </div>
+              <p style="color:#8b95a1;font-size:12px;margin-top:12px">Este comprobante es una constancia interna de pago y no constituye un documento tributario (boleta/factura electronica del SII).</p>
+            </div>
+        """.formatted(empresa, numeroCuota, monto, fecha);
+    }
+
     private String nombrePeriodo(int mes, int anio){
         if (mes < 1 || mes > 12) {
             return mes + "/" + anio;
@@ -430,18 +507,20 @@ public class CorreoService {
 
     /** Avisa al administrador que un cliente envió una solicitud de servicio. */
     @Async
-    public void enviarAvisoSolicitudRecibida(String empresa, String tipo, String descripcion){
+    public void enviarAvisoSolicitudRecibida(String empresa, String tipo, String descripcion, boolean urgente){
         try {
             var mensaje = mailSender.createMimeMessage();
             var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
 
             helper.setFrom(remitente);
             helper.setTo(adminEmail);
-            helper.setSubject("No Mas Accidentes - Nueva solicitud de " + tipo.toLowerCase());
-            helper.setText(construirHtmlSolicitudRecibida(empresa, tipo, descripcion), true);
+            helper.setSubject(urgente
+                    ? "🚨 URGENTE - Accidente reportado por " + empresa
+                    : "No Mas Accidentes - Nueva solicitud de " + tipo.toLowerCase());
+            helper.setText(construirHtmlSolicitudRecibida(empresa, tipo, descripcion, urgente), true);
 
             mailSender.send(mensaje);
-            log.info("Aviso de solicitud recibida enviado al administrador (empresa {})", empresa);
+            log.info("Aviso de solicitud recibida enviado al administrador (empresa {}, urgente={})", empresa, urgente);
         } catch (Exception e) {
             log.error("Error al enviar aviso de solicitud recibida al administrador: {}", e.getMessage());
         }
@@ -534,19 +613,31 @@ public class CorreoService {
         """.formatted(empresa, actividad, comentarioTexto);
     }
 
-    private String construirHtmlSolicitudRecibida(String empresa, String tipo, String descripcion){
+    private String construirHtmlSolicitudRecibida(String empresa, String tipo, String descripcion, boolean urgente){
         String descripcionTexto = descripcion == null || descripcion.isBlank() ? "Sin detalle" : descripcion;
+        String fondo = urgente ? "#fdecec" : "#fff7ed";
+        String banner = urgente
+                ? "<div style=\"background:#c0392b;color:#fff;font-size:14px;font-weight:bold;"
+                    + "padding:10px 14px;border-radius:8px;margin-bottom:14px\">🚨 ACCIDENTE REPORTADO — ATENCIÓN URGENTE</div>"
+                : "";
+        String intro = urgente
+                ? "Un cliente reportó un <strong>accidente</strong> y requiere atención inmediata."
+                : "Un cliente envió una nueva solicitud de servicio.";
+        String cierre = urgente
+                ? "Ingresa al panel de solicitudes cuanto antes para asignar un profesional y coordinar la visita en terreno."
+                : "Revisa la solicitud en el panel para aprobarla o rechazarla.";
         return """
-            <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;background:#fff7ed;border-radius:12px">
+            <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:28px;background:%s;border-radius:12px">
               <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
-              <p style="color:#3d4856;font-size:14px">Un cliente envió una nueva solicitud de servicio.</p>
+              %s
+              <p style="color:#3d4856;font-size:14px">%s</p>
               <p style="color:#3d4856;font-size:14px"><strong>Empresa:</strong> %s</p>
               <p style="color:#3d4856;font-size:14px"><strong>Tipo:</strong> %s</p>
               <p style="color:#3d4856;font-size:14px"><strong>Detalle:</strong> %s</p>
-              <p style="color:#3d4856;font-size:14px">Revisa la solicitud en el panel para aprobarla o rechazarla.</p>
+              <p style="color:#3d4856;font-size:14px">%s</p>
               <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
             </div>
-        """.formatted(empresa, tipo, descripcionTexto);
+        """.formatted(fondo, banner, intro, empresa, tipo, descripcionTexto, cierre);
     }
 
     private String construirHtmlSolicitudRespondida(String tipo, boolean aprobada, boolean esExtra, String comentario){

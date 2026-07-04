@@ -52,7 +52,7 @@ public class InformeService {
 
         byte[] pdf = pdfService.generar(visita);
         String nombreArchivo = "informe-visita-" + idVisita + "-" + UUID.randomUUID() + ".pdf";
-        String clave = almacenamiento.guardar(nombreArchivo, pdf);
+        String clave = almacenamiento.guardar("informes", visita.getEmpresa().getId(), nombreArchivo, pdf);
 
         Informe informe = informeRepository.findByVisitaId(idVisita).orElseGet(Informe::new);
         informe.setVisita(visita);

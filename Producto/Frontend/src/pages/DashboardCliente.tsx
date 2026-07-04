@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
@@ -192,6 +193,7 @@ function eventosActividadesCliente(actividades: ActividadPreventivaResponse[]): 
 
 export default function DashboardCliente() {
   const { email } = useAuth();
+  const navigate = useNavigate();
   const [datos, setDatos] = useState<DashboardClienteResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -376,10 +378,27 @@ export default function DashboardCliente() {
 
         <Panel titulo="Accesos rapidos">
           <div className="grid-2" style={{ padding: 14, gap: 10 }}>
-            <button className="btn btn-primary">Solicitar asesoria</button>
-            <button className="btn btn-primary">Reportar accidente</button>
-            <button className="btn btn-outline">Subir documento</button>
-            <button className="btn btn-outline">Actualizar contacto</button>
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate('/mis-solicitudes', { state: { tipoInicial: 'ASESORIA' } })}
+            >
+              Solicitar asesoria
+            </button>
+            <button
+              className="btn btn-danger"
+              onClick={() => navigate('/mis-solicitudes', { state: { tipoInicial: 'ACCIDENTE' } })}
+            >
+              🚨 Reportar accidente
+            </button>
+            <button
+              className="btn btn-outline"
+              onClick={() => navigate('/mis-solicitudes', { state: { tipoInicial: 'CAPACITACION' } })}
+            >
+              Solicitar capacitacion
+            </button>
+            <button className="btn btn-outline" onClick={() => navigate('/configuracion')}>
+              Actualizar contacto
+            </button>
           </div>
         </Panel>
       </div>
