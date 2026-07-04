@@ -215,7 +215,7 @@ export default function Profesionales() {
                 }
             >
                 <form id="form-profesional-nuevo" onSubmit={formNuevo.handleSubmit(onCrear)} noValidate>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    <div className="responsive-form-grid">
                         <div>
                             <label className="auth-label">Nombre *</label>
                             <input className={`auth-input ${formNuevo.formState.errors.nombre ? 'auth-input--error' : ''}`}
@@ -232,7 +232,7 @@ export default function Profesionales() {
                             />
                             {formNuevo.formState.errors.apellido && <span className="auth-field-error">{formNuevo.formState.errors.apellido.message}</span>}
                         </div>
-                        <div style={{ gridColumn: 'span 2' }}>
+                        <div className="responsive-span-2">
                             <label className="auth-label">Email *</label>
                             <input type="email" className={`auth-input ${formNuevo.formState.errors.email ? 'auth-input--error' : ''}`}
                                    placeholder="juan.perez@empresa.cl"
@@ -240,7 +240,7 @@ export default function Profesionales() {
                             />
                             {formNuevo.formState.errors.email && <span className="auth-field-error">{formNuevo.formState.errors.email.message}</span>}
                         </div>
-                        <div style={{ gridColumn: 'span 2' }}>
+                        <div className="responsive-span-2">
                             <label className="auth-label">Contraseña temporal *</label>
                             <input type="password" className={`auth-input ${formNuevo.formState.errors.password ? 'auth-input--error' : ''}`}
                                    placeholder="Mínimo 8 caracteres, mayúscula, número y símbolo"
@@ -261,7 +261,7 @@ export default function Profesionales() {
                             <label className="auth-label">Teléfono</label>
                             <input className="auth-input" placeholder="+56 9 1234 5678" {...formNuevo.register('telefono')} />
                         </div>
-                        <div style={{ gridColumn: 'span 2' }}>
+                        <div className="responsive-span-2">
                             <label className="auth-label">Especialidad</label>
                             <input className="auth-input" placeholder="Prevención de riesgos, Higiene ocupacional..." {...formNuevo.register('especialidad')} />
                         </div>

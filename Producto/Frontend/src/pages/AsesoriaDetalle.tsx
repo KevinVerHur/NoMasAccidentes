@@ -415,7 +415,7 @@ export default function AsesoriaDetalle() {
             <div style={{ marginBottom: 12 }}>
               Emitido el <strong>{fmtFecha(informe.fechaEmision)}</strong>{informe.hallazgos ? ` · ${informe.hallazgos}` : ''}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div className="responsive-inline-fields" style={{ justifyContent: 'space-between', marginBottom: 8 }}>
               <span style={{ fontWeight: 700, color: '#18395a' }}>Propuestas de mejora (RF25)</span>
               <button className="btn btn-sm btn-primary" onClick={() => { formPropuesta.reset(); setError(null); setModalPropuesta(true); }}>+ Agregar propuesta</button>
             </div>
@@ -458,7 +458,7 @@ export default function AsesoriaDetalle() {
           <button className="btn btn-primary" form="form-accidente" type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Registrar'}</button>
         </>}>
         <form id="form-accidente" onSubmit={formAccidente.handleSubmit(onCrearAccidente)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="responsive-form-grid">
             <div>
               <label className="auth-label">Fecha de ocurrencia *</label>
               <input type="date" className={`auth-input ${formAccidente.formState.errors.fechaOcurrencia ? 'auth-input--error' : ''}`}
@@ -484,11 +484,11 @@ export default function AsesoriaDetalle() {
               <label className="auth-label">Días perdidos</label>
               <input type="number" min={0} className="auth-input" {...formAccidente.register('diasPerdidos', { valueAsNumber: true, min: { value: 0, message: 'No negativo' } })} />
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Descripción</label>
               <textarea rows={3} className="auth-input" {...formAccidente.register('descripcion', { maxLength: { value: 2000, message: 'Máx. 2000' } })} />
             </div>
-            <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="responsive-span-2 responsive-check-row">
               <input type="checkbox" id="reportadoSusseso" {...formAccidente.register('fueReportadoSusseso')} />
               <label htmlFor="reportadoSusseso" style={{ fontSize: 13 }}>Reportado a SUSESO</label>
             </div>
@@ -504,7 +504,7 @@ export default function AsesoriaDetalle() {
           <button className="btn btn-primary" form="form-fisc" type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Registrar'}</button>
         </>}>
         <form id="form-fisc" onSubmit={formFisc.handleSubmit(onCrearFisc)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="responsive-form-grid">
             <div>
               <label className="auth-label">Fecha *</label>
               <input type="date" className={`auth-input ${formFisc.formState.errors.fecha ? 'auth-input--error' : ''}`}
@@ -524,7 +524,7 @@ export default function AsesoriaDetalle() {
               </select>
               {formFisc.formState.errors.entidadFiscalizadora && <span className="auth-field-error">{formFisc.formState.errors.entidadFiscalizadora.message}</span>}
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Resultado</label>
               <select className="auth-input" {...formFisc.register('resultado')}>
                 <option value="">Sin resultado (en curso)</option>
@@ -533,11 +533,11 @@ export default function AsesoriaDetalle() {
                 <option value="NO_CONFORME">No conforme</option>
               </select>
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Motivo</label>
               <textarea rows={2} className="auth-input" {...formFisc.register('motivo', { maxLength: { value: 500, message: 'Máx. 500' } })} />
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Observaciones</label>
               <textarea rows={3} className="auth-input" {...formFisc.register('observaciones', { maxLength: { value: 2000, message: 'Máx. 2000' } })} />
             </div>
@@ -553,7 +553,7 @@ export default function AsesoriaDetalle() {
           <button className="btn btn-primary" form="form-multa" type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Registrar'}</button>
         </>}>
         <form id="form-multa" onSubmit={formMulta.handleSubmit(onCrearMulta)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="responsive-form-grid">
             <div>
               <label className="auth-label">Fecha de emisión *</label>
               <input type="date" className={`auth-input ${formMulta.formState.errors.fechaEmision ? 'auth-input--error' : ''}`}
@@ -566,11 +566,11 @@ export default function AsesoriaDetalle() {
                 {...formMulta.register('monto', { required: 'Obligatorio', valueAsNumber: true, min: { value: 1, message: 'Mayor a cero' } })} />
               {formMulta.formState.errors.monto && <span className="auth-field-error">{formMulta.formState.errors.monto.message}</span>}
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Normativa infringida</label>
               <input className="auth-input" {...formMulta.register('normativaInfringida', { maxLength: { value: 150, message: 'Máx. 150' } })} />
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Motivo</label>
               <textarea rows={3} className="auth-input" {...formMulta.register('motivo', { maxLength: { value: 1000, message: 'Máx. 1000' } })} />
             </div>
@@ -586,8 +586,8 @@ export default function AsesoriaDetalle() {
           <button className="btn btn-primary" form="form-propuesta" type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Registrar'}</button>
         </>}>
         <form id="form-propuesta" onSubmit={formPropuesta.handleSubmit(onCrearPropuesta)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: 'span 2' }}>
+          <div className="responsive-form-grid">
+            <div className="responsive-span-2">
               <label className="auth-label">Descripción *</label>
               <textarea rows={3} className={`auth-input ${formPropuesta.formState.errors.descripcion ? 'auth-input--error' : ''}`}
                 {...formPropuesta.register('descripcion', { required: 'Obligatorio', maxLength: { value: 1000, message: 'Máx. 1000' } })} />

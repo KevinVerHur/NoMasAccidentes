@@ -61,7 +61,7 @@ export default function MisReportes() {
         {dataGrafico.every(d => d.accidentes === 0 && d.diasPerdidos === 0) ? (
           <div className="placeholder">Sin accidentes registrados este año.</div>
         ) : (
-          <div style={{ width: '100%', height: 280, padding: 12 }}>
+          <div className="responsive-chart">
             <ResponsiveContainer>
               <LineChart data={dataGrafico}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />

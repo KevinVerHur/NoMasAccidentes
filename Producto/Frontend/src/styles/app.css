@@ -325,6 +325,81 @@
     grid-column: span 2;
 }
 
+.responsive-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.responsive-form-grid--spaced {
+    margin-top: 12px;
+}
+
+.responsive-span-2,
+.responsive-form-grid .span2 {
+    grid-column: span 2;
+}
+
+.responsive-check-row,
+.responsive-inline-fields {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.responsive-inline-fields > * {
+    min-width: 0;
+}
+
+.responsive-detail-grid {
+    display: grid;
+    row-gap: 4px;
+    column-gap: 16px;
+    font-size: 16px;
+    line-height: 1.35;
+}
+
+.responsive-detail-grid--profile {
+    grid-template-columns: 160px 1fr;
+}
+
+.responsive-detail-grid--client {
+    grid-template-columns: 150px 1fr;
+}
+
+.responsive-detail-grid--compact {
+    grid-template-columns: 120px 1fr;
+}
+
+.responsive-detail-grid strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.responsive-panel-section {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.responsive-chart {
+    width: 100%;
+    min-width: 0;
+    height: 280px;
+    padding: 12px;
+}
+
+.responsive-chart--tall {
+    height: 300px;
+}
+
+.responsive-modal-shell {
+    width: min(460px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+}
+
 .check-list {
     display: grid;
     gap: 8px;
@@ -373,6 +448,9 @@
 @media (max-width: 900px) {
     .form-grid { grid-template-columns: 1fr; }
     .form-grid .span2 { grid-column: auto; }
+    .responsive-form-grid { grid-template-columns: 1fr; }
+    .responsive-span-2,
+    .responsive-form-grid .span2 { grid-column: auto; }
 }
 
 .agenda-semanal {
@@ -399,4 +477,548 @@
     border-radius: 5px;
     padding: 2px 4px;
     cursor: pointer;
+}
+
+/* ---- Layout responsive global ---- */
+html,
+body,
+#root {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.app-shell {
+    width: 100%;
+    min-width: 0;
+}
+
+.app-layout {
+    min-width: 0;
+}
+
+.app-main {
+    min-width: 0;
+    width: 100%;
+    margin-left: 190px;
+    margin-top: 54px;
+    padding: 20px;
+    min-height: calc(100vh - 54px);
+}
+
+.app-sidebar {
+    position: fixed;
+    top: 54px;
+    left: 0;
+    bottom: 0;
+    width: 190px;
+    background: white;
+    border-right: 1px solid #e5e7eb;
+    overflow-y: auto;
+    z-index: 40;
+}
+
+.mobile-menu-btn,
+.sidebar-overlay {
+    display: none;
+}
+
+.topbar-brand-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.topbar-brand {
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.topbar-user {
+    min-width: 0;
+}
+
+.topbar-email {
+    min-width: 0;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.panel {
+    max-width: 100%;
+}
+
+.panel-header {
+    gap: 10px;
+    min-width: 0;
+}
+
+.panel-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.kpi-card {
+    min-width: 190px;
+}
+
+.kpi-card > div {
+    overflow-wrap: anywhere;
+}
+
+.table-scroll,
+.panel:has(.app-table),
+section:has(.app-table),
+.responsive-panel-section:has(.app-table) {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.app-table {
+    min-width: 560px;
+}
+
+.app-table th,
+.app-table td {
+    vertical-align: top;
+}
+
+.agenda-semanal {
+    max-width: 100%;
+    overflow-x: auto;
+}
+
+.agenda-semanal .fc {
+    min-width: 620px;
+}
+
+.leaflet-container {
+    width: 100%;
+}
+
+.responsive-map {
+    width: 100%;
+    height: clamp(260px, 42vh, 420px);
+    position: relative;
+    z-index: 0;
+}
+
+.responsive-map--compact {
+    height: clamp(260px, 36vh, 360px);
+}
+
+.map-modal-body {
+    height: min(520px, 68vh);
+    position: relative;
+    z-index: 1;
+}
+
+.prof-location-status,
+.map-status-row {
+    display: flex;
+    gap: 14px;
+    padding: 10px 16px;
+    border-top: 1px solid #f3f4f6;
+    font-size: 11px;
+    color: #4b5563;
+    flex-wrap: wrap;
+}
+
+.prof-map-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-top: 1px solid #e8edf3;
+    background: #fafbfc;
+    font-size: 12px;
+    color: #4b5563;
+}
+
+@media (max-width: 1024px) {
+    .app-main {
+        padding: 16px;
+    }
+
+    .kpi-card {
+        min-width: calc(50% - 8px);
+    }
+
+    .mapa-profesionales {
+        height: 360px;
+    }
+}
+
+@media (max-width: 768px) {
+    .app-topbar {
+        padding: 0 12px;
+        gap: 10px;
+    }
+
+    .mobile-menu-btn {
+        display: inline-flex;
+        width: 38px;
+        height: 38px;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 6px;
+        background: transparent;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        line-height: 1;
+    }
+
+    .topbar-brand {
+        max-width: 210px;
+        gap: 6px;
+        font-size: 15px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .topbar-user {
+        flex: 1;
+        justify-content: flex-end;
+        gap: 7px;
+        font-size: 11px;
+    }
+
+    .topbar-email {
+        max-width: clamp(80px, 28vw, 150px);
+    }
+
+    .topbar-separator {
+        display: none;
+    }
+
+    .topbar-role {
+        flex: 0 0 auto;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .topbar-logout {
+        min-height: 34px;
+        max-width: 94px;
+        padding: 6px 8px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .app-sidebar {
+        width: min(82vw, 280px);
+        transform: translateX(-100%);
+        transition: transform 0.18s ease;
+        z-index: 90;
+        box-shadow: 12px 0 30px rgba(15, 23, 42, 0.18);
+    }
+
+    .app-sidebar--open {
+        transform: translateX(0);
+    }
+
+    .sidebar-overlay {
+        position: fixed;
+        inset: 54px 0 0;
+        width: 100%;
+        background: rgba(15, 23, 42, 0.35);
+        border: 0;
+        padding: 0;
+        z-index: 80;
+    }
+
+    .sidebar-overlay--visible {
+        display: block;
+    }
+
+    .app-main {
+        width: 100%;
+        margin-left: 0;
+        padding: 14px;
+    }
+
+    .page-title {
+        font-size: 20px;
+        line-height: 1.25;
+    }
+
+    .page-subtitle {
+        margin-bottom: 14px;
+        font-size: 12px;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+    }
+
+    .kpi-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .kpi-card {
+        width: 100%;
+        min-width: 0;
+        padding: 14px 16px;
+    }
+
+    .grid-2,
+    .grid-3 {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .panel-header {
+        align-items: flex-start;
+        flex-direction: column;
+        padding: 12px;
+    }
+
+    .panel-header .btn-group {
+        width: 100%;
+    }
+
+    .panel-header .btn,
+    .panel-header select {
+        min-height: 40px;
+    }
+
+    .btn {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .btn-group {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .btn-group .btn,
+    .btn-group select {
+        flex: 1 1 100%;
+        width: 100%;
+        text-align: center;
+    }
+
+    .agenda-semanal {
+        padding: 12px;
+    }
+
+    .agenda-semanal .fc {
+        min-width: 560px;
+    }
+
+    .agenda-semanal .fc-header-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .agenda-semanal .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .agenda-semanal .fc-toolbar-title {
+        font-size: 15px;
+        line-height: 1.3;
+        text-align: center;
+    }
+
+    .agenda-semanal .fc-button {
+        min-height: 38px;
+        padding: 6px 10px;
+    }
+
+    .app-table {
+        min-width: 620px;
+    }
+
+    .searchbar {
+        padding: 12px;
+        align-items: stretch;
+    }
+
+    .searchbar input,
+    .searchbar select,
+    .searchbar .btn {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .tabs {
+        overflow-x: auto;
+        padding: 0 12px;
+    }
+
+    .tab {
+        white-space: nowrap;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-grid .span2 {
+        grid-column: auto;
+    }
+
+    .responsive-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .responsive-span-2,
+    .responsive-form-grid .span2 {
+        grid-column: auto;
+    }
+
+    .responsive-check-row,
+    .responsive-inline-fields {
+        align-items: stretch;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .responsive-inline-fields .auth-input,
+    .responsive-inline-fields .btn,
+    .responsive-inline-fields label {
+        width: 100%;
+        max-width: none !important;
+    }
+
+    .responsive-detail-grid,
+    .responsive-detail-grid--profile,
+    .responsive-detail-grid--client,
+    .responsive-detail-grid--compact {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        font-size: 13px;
+    }
+
+    .responsive-detail-grid strong {
+        text-align: left !important;
+    }
+
+    .responsive-panel-section > .flex,
+    .responsive-panel-section > div:first-child {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .responsive-chart,
+    .responsive-chart--tall {
+        height: 260px;
+        padding: 8px;
+    }
+
+    .check-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .app-modal {
+        max-width: calc(100vw - 24px) !important;
+        max-height: calc(100dvh - 24px) !important;
+        border-radius: 10px !important;
+    }
+
+    .app-modal-header,
+    .app-modal-content,
+    .app-modal-footer {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+
+    .app-modal-header {
+        gap: 10px;
+    }
+
+    .app-modal-header span {
+        min-width: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .app-modal-footer {
+        align-items: stretch;
+        flex-direction: column-reverse;
+    }
+
+    .app-modal-footer .btn {
+        width: 100%;
+    }
+
+    .mapa-profesionales {
+        height: 340px;
+    }
+
+    .responsive-map,
+    .responsive-map--compact {
+        height: 340px;
+    }
+
+    .map-modal-body {
+        height: min(460px, 62vh);
+    }
+
+    .prof-location-status,
+    .map-status-row,
+    .prof-map-modal-footer {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        line-height: 1.45;
+    }
+}
+
+@media (max-width: 480px) {
+    .app-main {
+        padding: 12px 10px;
+    }
+
+    .topbar-brand {
+        max-width: 148px;
+        font-size: 14px;
+    }
+
+    .topbar-email {
+        display: none;
+    }
+
+    .topbar-logout {
+        max-width: 78px;
+        font-size: 11px;
+    }
+
+    .panel-header {
+        padding: 12px;
+    }
+
+    .agenda-semanal .fc {
+        min-width: 520px;
+    }
+
+    .alert-item {
+        font-size: 12px;
+        line-height: 1.45;
+    }
 }

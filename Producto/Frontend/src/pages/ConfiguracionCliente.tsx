@@ -145,7 +145,7 @@ export default function ConfiguracionCliente() {
       ) : (
         <div className="grid-2">
           {/* ---- Datos de la empresa (solo lectura) ---- */}
-          <section className="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
+          <section className="responsive-panel-section">
             <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
               <strong className="text-azul text-[14px]">🏢 Datos de la empresa</strong>
               {empresa && (
@@ -154,16 +154,7 @@ export default function ConfiguracionCliente() {
             </div>
 
             <div style={{ padding: '18px 20px 20px' }}>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '150px 1fr',
-                  rowGap: 6,
-                  columnGap: 16,
-                  fontSize: 15,
-                  lineHeight: 1.35,
-                }}
-              >
+              <div className="responsive-detail-grid responsive-detail-grid--client">
                 <span>Razón social</span>
                 <strong style={{ textAlign: 'right', fontWeight: 500 }}>{empresa?.razonSocial ?? '—'}</strong>
 
@@ -196,7 +187,7 @@ export default function ConfiguracionCliente() {
           </section>
 
           {/* ---- Mis datos de contacto (editable) ---- */}
-          <section className="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
+          <section className="responsive-panel-section">
             <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
               <strong className="text-azul text-[14px]">👤 Mis datos de contacto</strong>
               <button className="btn btn-sm btn-outline" onClick={abrirEditarContacto}>
@@ -205,16 +196,7 @@ export default function ConfiguracionCliente() {
             </div>
 
             <div style={{ padding: '18px 20px 20px' }}>
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '120px 1fr',
-                  rowGap: 6,
-                  columnGap: 16,
-                  fontSize: 15,
-                  lineHeight: 1.35,
-                }}
-              >
+              <div className="responsive-detail-grid responsive-detail-grid--compact">
                 <span>Nombre</span>
                 <strong style={{ textAlign: 'right', fontWeight: 500 }}>{contacto?.nombre ?? '—'}</strong>
 

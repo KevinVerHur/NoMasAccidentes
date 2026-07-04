@@ -254,8 +254,8 @@ export default function Asesorias() {
         }
       >
         <form id="form-asesoria-nueva" onSubmit={formNueva.handleSubmit(onCrear)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: 'span 2' }}>
+          <div className="responsive-form-grid">
+            <div className="responsive-span-2">
               <label className="auth-label">Cliente *</label>
               <select className={`auth-input ${formNueva.formState.errors.idEmpresa ? 'auth-input--error' : ''}`}
                 {...formNueva.register('idEmpresa', { required: 'Obligatorio', valueAsNumber: true })}>
@@ -264,7 +264,7 @@ export default function Asesorias() {
               </select>
               {formNueva.formState.errors.idEmpresa && <span className="auth-field-error">{formNueva.formState.errors.idEmpresa.message}</span>}
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Profesional *</label>
               <select className={`auth-input ${formNueva.formState.errors.idProfesional ? 'auth-input--error' : ''}`}
                 {...formNueva.register('idProfesional', { required: 'Obligatorio', valueAsNumber: true })}>
@@ -273,7 +273,7 @@ export default function Asesorias() {
               </select>
               {formNueva.formState.errors.idProfesional && <span className="auth-field-error">{formNueva.formState.errors.idProfesional.message}</span>}
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Tipo *</label>
               <select className={`auth-input ${formNueva.formState.errors.tipo ? 'auth-input--error' : ''}`}
                 {...formNueva.register('tipo', { required: 'Obligatorio' })}>
@@ -283,7 +283,7 @@ export default function Asesorias() {
               </select>
               {formNueva.formState.errors.tipo && <span className="auth-field-error">{formNueva.formState.errors.tipo.message}</span>}
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Motivo *</label>
               <textarea className={`auth-input ${formNueva.formState.errors.motivo ? 'auth-input--error' : ''}`} rows={4}
                 placeholder="Descripción del accidente o fiscalización que origina la asesoría..."

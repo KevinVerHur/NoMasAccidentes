@@ -1,14 +1,22 @@
-import { Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Topbar from './TopBar';
 import Sidebar from './Sidebar';
 
 export default function AppLayout() {
+    const [menuAbierto, setMenuAbierto] = useState(false);
+    const location = useLocation();
+
+    useEffect(() => {
+        setMenuAbierto(false);
+    }, [location.pathname]);
+
     return (
-        <div className="min-h-screen bg-fondo">
-            <Topbar />
-            <div className="flex">
-                <Sidebar />
-                <main className="ml-[190px] mt-[54px] flex-1 p-5 min-h-[calc(100vh-54px)]">
+        <div className="app-shell min-h-screen bg-fondo">
+            <Topbar onAbrirMenu={() => setMenuAbierto(true)} />
+            <div className="app-layout flex">
+                <Sidebar abierto={menuAbierto} onCerrar={() => setMenuAbierto(false)} />
+                <main className="app-main flex-1">
                     <Outlet />
                 </main>
             </div>

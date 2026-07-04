@@ -276,8 +276,8 @@ export default function SeguimientoPreventivo() {
         }
       >
         <form id="form-actividad-nueva" onSubmit={formNueva.handleSubmit(onCrear)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: 'span 2' }}>
+          <div className="responsive-form-grid">
+            <div className="responsive-span-2">
               <label className="auth-label">Cliente *</label>
               <select
                 className="auth-input"
@@ -295,7 +295,7 @@ export default function SeguimientoPreventivo() {
               </select>
             </div>
 
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Actividad preventiva *</label>
               <input
                 className="auth-input"
@@ -304,7 +304,7 @@ export default function SeguimientoPreventivo() {
               />
             </div>
 
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Descripcion</label>
               <textarea
                 className="auth-input"
@@ -350,7 +350,7 @@ export default function SeguimientoPreventivo() {
               />
             </div>
 
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Observaciones</label>
               <textarea
                 className="auth-input"

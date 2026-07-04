@@ -324,8 +324,8 @@ export default function Visitas() {
         }
       >
         <form id="form-visita-nueva" onSubmit={formNueva.handleSubmit(onPlanificar)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: 'span 2' }}>
+          <div className="responsive-form-grid">
+            <div className="responsive-span-2">
               <label className="auth-label">Cliente *</label>
               <select className={`auth-input ${formNueva.formState.errors.idEmpresa ? 'auth-input--error' : ''}`}
                 {...formNueva.register('idEmpresa', { required: 'Obligatorio', valueAsNumber: true })}>
@@ -334,7 +334,7 @@ export default function Visitas() {
               </select>
               {formNueva.formState.errors.idEmpresa && <span className="auth-field-error">{formNueva.formState.errors.idEmpresa.message}</span>}
             </div>
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Profesional *</label>
               <select className={`auth-input ${formNueva.formState.errors.idProfesional ? 'auth-input--error' : ''}`}
                 {...formNueva.register('idProfesional', { required: 'Obligatorio', valueAsNumber: true })}>
@@ -357,7 +357,7 @@ export default function Visitas() {
                 {TIPOS_REVISION.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
-            <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="responsive-span-2 responsive-check-row">
               <input type="checkbox" id="esVisitaExtra" {...formNueva.register('esVisitaExtra')} />
               <label htmlFor="esVisitaExtra" style={{ fontSize: 13 }}>Visita adicional (costo extra)</label>
             </div>
@@ -402,7 +402,7 @@ export default function Visitas() {
                     {it.normaLegal && (
                       <div style={{ fontSize: 11, color: '#9ca3af' }}>{it.normaLegal}</div>
                     )}
-                    <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center' }}>
+                    <div className="responsive-inline-fields" style={{ marginTop: 6 }}>
                       <select
                         className="auth-input"
                         style={{ maxWidth: 150, padding: '4px 8px' }}
@@ -437,7 +437,7 @@ export default function Visitas() {
             />
             {formRegistro.formState.errors.observaciones && <span className="auth-field-error">{formRegistro.formState.errors.observaciones.message}</span>}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
+          <div className="responsive-form-grid responsive-form-grid--spaced">
             <div>
               <label className="auth-label">Latitud</label>
               <input className="auth-input" step="any" type="number" {...formRegistro.register('latitud', { valueAsNumber: true })} />

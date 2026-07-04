@@ -9,10 +9,10 @@ interface PanelProps {
 
 export default function Panel({ titulo, accion, children, className = '' }: PanelProps) {
     return (
-        <div className={`bg-white rounded-lg shadow-sm overflow-hidden mb-4 ${className}`}>
+        <div className={`panel bg-white rounded-lg shadow-sm overflow-hidden mb-4 ${className}`}>
             {titulo && (
-                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                    <span className="font-bold text-azul text-[13px]">{titulo}</span>
+                <div className="panel-header flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <span className="panel-title font-bold text-azul text-[13px]">{titulo}</span>
                     {accion}
                 </div>
             )}

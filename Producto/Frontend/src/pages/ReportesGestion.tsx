@@ -174,7 +174,7 @@ export default function ReportesGestion() {
           {idEmpresa == null ? (
             <div className="placeholder">Selecciona un cliente para ver su accidentabilidad.</div>
           ) : (
-            <div style={{ width: '100%', height: 280, padding: 12 }}>
+            <div className="responsive-chart">
               <ResponsiveContainer>
                 <LineChart data={dataAcc}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />
@@ -194,7 +194,7 @@ export default function ReportesGestion() {
           {composicion.length === 0 ? (
             <div className="placeholder">Genera un reporte para ver su composición.</div>
           ) : (
-            <div style={{ width: '100%', height: 280, padding: 12 }}>
+            <div className="responsive-chart">
               <ResponsiveContainer>
                 <PieChart>
                   <Pie data={composicion} dataKey="value" nameKey="name" outerRadius={90} label>
@@ -213,7 +213,7 @@ export default function ReportesGestion() {
         {rendData.length === 0 ? (
           <div className="placeholder">Sin profesionales o sin datos para el periodo.</div>
         ) : (
-          <div style={{ width: '100%', height: 300, padding: 12 }}>
+          <div className="responsive-chart responsive-chart--tall">
             <ResponsiveContainer>
               <BarChart data={rendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eef2f7" />

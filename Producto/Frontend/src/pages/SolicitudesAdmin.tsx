@@ -112,7 +112,7 @@ export default function SolicitudesAdmin() {
   // Restricciones de fecha: la visita no puede ser en el pasado; la capacitación
   // exige al menos 15 días de anticipación (RF-CAP1).
   const hoyISO = new Date().toISOString().slice(0, 10);
-  const minCapacitacionISO = new Date(Date.now() + 15 * 86_400_000).toISOString().slice(0, 10);
+  const minCapacitacionISO = new Date(new Date().getTime() + 15 * 86_400_000).toISOString().slice(0, 10);
 
   return (
     <>
@@ -121,7 +121,7 @@ export default function SolicitudesAdmin() {
         Aprueba (creando el servicio) o rechaza las solicitudes del portal
       </div>
 
-      <div className="flex items-center gap-3 mb-3">
+      <div className="responsive-inline-fields mb-3">
         <label className="text-[13px] text-gray-600 flex items-center gap-2">
           <input
             type="checkbox"
@@ -186,8 +186,8 @@ export default function SolicitudesAdmin() {
       </Panel>
 
       {sel && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-5 w-[460px] max-w-[92vw] max-h-[88vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-3">
+          <div className="responsive-modal-shell bg-white rounded-lg p-5 overflow-y-auto">
             <div className="font-bold text-azul mb-1">
               {modo === 'aprobar' ? 'Aprobar' : 'Rechazar'} solicitud — {etiquetaTipo[sel.tipo]}
             </div>
@@ -251,7 +251,7 @@ export default function SolicitudesAdmin() {
                         value={form.curso ?? ''}
                         onChange={(e) => set({ curso: e.target.value || null })} />
                     </label>
-                    <div className="flex gap-2">
+                    <div className="responsive-inline-fields">
                       <label className="text-[13px] text-gray-600 flex-1">
                         Fecha
                         <input type="date" className="auth-input mt-1" min={minCapacitacionISO}
@@ -268,14 +268,14 @@ export default function SolicitudesAdmin() {
                     <div className="text-[11px] text-gray-400 -mt-1">
                       La capacitación requiere al menos 15 días de anticipación (RF-CAP1).
                     </div>
-                    <div className="flex gap-2">
+                    <div className="responsive-inline-fields">
                       <label className="text-[13px] text-gray-600 flex-1">
                         Lugar
                         <input className="auth-input mt-1" maxLength={150}
                           value={form.lugar ?? ''}
                           onChange={(e) => set({ lugar: e.target.value || null })} />
                       </label>
-                      <label className="text-[13px] text-gray-600 w-[90px]">
+                      <label className="text-[13px] text-gray-600">
                         Cupos
                         <input type="number" min={1} className="auth-input mt-1"
                           value={form.cupos ?? ''}
