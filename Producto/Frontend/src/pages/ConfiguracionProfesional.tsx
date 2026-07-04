@@ -1,8 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
@@ -17,7 +14,6 @@ import {
   obtenerMiPerfilProfesional,
 } from '../api/profesionales';
 import { rendimientoProfesional } from '../api/reportes';
-import { obtenerMiUltimaUbicacion } from '../api/ubicaciones';
 import type {
   ActualizarEstadoProfesionalRequest,
   ActualizarPerfilRequest,
@@ -26,7 +22,6 @@ import type {
   EstadoProfesional,
   ProfesionalResponse,
   RendimientoProfesionalResponse,
-  UbicacionProfesionalResponse,
   UsuarioResponse,
   VarianteBadge,
 } from '../types';
@@ -35,110 +30,11 @@ type DatosForm = ActualizarPerfilRequest & ActualizarProfesionalRequest;
 type PasswordForm = CambiarPasswordRequest & { confirmarPassword: string };
 type EstadoForm = ActualizarEstadoProfesionalRequest & { observacion?: string };
 
-const CENTRO_FALLBACK: [number, number] = [-33.4489, -70.6693];
-
 const labelEstado: Record<EstadoProfesional, string> = {
   DISPONIBLE: 'Disponible',
   EN_VISITA: 'En visita',
   EN_CAPACITACION: 'En capacitacion',
 };
-
-const colorPorEstado: Record<EstadoProfesional, string> = {
-  DISPONIBLE: '#27ae60',
-  EN_VISITA: '#2563eb',
-  EN_CAPACITACION: '#e07b00',
-};
-
-function crearIcono(estado: EstadoProfesional) {
-  return L.divIcon({
-    className: 'estado-marker',
-    html: `<span style="background:${colorPorEstado[estado]}"></span>`,
-    iconSize: [18, 18],
-    iconAnchor: [9, 9],
-  });
-}
-
-function AjustarMapaMiUbicacion({ centro }: { centro: [number, number] }) {
-  const map = useMap();
-
-  useEffect(() => {
-    const id = window.setTimeout(() => {
-      map.invalidateSize();
-      map.setView(centro, 14, { animate: true });
-    }, 150);
-
-    return () => window.clearTimeout(id);
-  }, [map, centro]);
-
-  return null;
-}
-
-function MapaMiUbicacion({
-  ubicacion,
-  profesional,
-}: {
-  ubicacion: UbicacionProfesionalResponse | null;
-  profesional: ProfesionalResponse | null;
-}) {
-  const tieneUbicacion = ubicacion != null;
-
-  const centro: [number, number] = tieneUbicacion
-    ? [Number(ubicacion.latitud), Number(ubicacion.longitud)]
-    : CENTRO_FALLBACK;
-
-  const estado = ubicacion?.estado ?? profesional?.estado ?? 'DISPONIBLE';
-
-  return (
-    <div className="responsive-map responsive-map--compact">
-      <MapContainer
-        center={centro}
-        zoom={tieneUbicacion ? 14 : 11}
-        style={{ height: '100%', width: '100%', zIndex: 0 }}
-        scrollWheelZoom
-      >
-        <AjustarMapaMiUbicacion centro={centro} />
-
-        <TileLayer
-          attribution="&copy; OpenStreetMap"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        {tieneUbicacion && (
-          <Marker position={centro} icon={crearIcono(estado)}>
-            <Popup>
-              <strong>{ubicacion.nombreProfesional}</strong>
-              <br />
-              {ubicacion.email}
-              <br />
-              Estado: {labelEstado[ubicacion.estado]}
-              <br />
-              Ultima actualizacion: {new Date(ubicacion.fechaRegistro).toLocaleString('es-CL')}
-            </Popup>
-          </Marker>
-        )}
-      </MapContainer>
-
-      {!tieneUbicacion && (
-        <div
-          style={{
-            position: 'absolute',
-            left: 12,
-            bottom: 12,
-            zIndex: 500,
-            background: 'rgba(255,255,255,.94)',
-            border: '1px solid #d1d5db',
-            borderRadius: 6,
-            padding: '6px 8px',
-            fontSize: 12,
-            color: '#4b5563',
-          }}
-        >
-          Ubicacion sin registrar
-        </div>
-      )}
-    </div>
-  );
-}
 
 function mensajeError(e: unknown, fallback: string): string {
   const data = (e as { response?: { data?: { mensaje?: string; message?: string } } })?.response?.data;
@@ -178,14 +74,12 @@ function acumulado(datos: RendimientoProfesionalResponse[]) {
 export default function ConfiguracionProfesional() {
   const [usuario, setUsuario] = useState<UsuarioResponse | null>(null);
   const [profesional, setProfesional] = useState<ProfesionalResponse | null>(null);
-  const [ubicacion, setUbicacion] = useState<UbicacionProfesionalResponse | null>(null);
   const [rendimientoMes, setRendimientoMes] = useState<RendimientoProfesionalResponse | null>(null);
   const [rendimientoAnual, setRendimientoAnual] = useState<RendimientoProfesionalResponse[]>([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [errorUbicacion, setErrorUbicacion] = useState<string | null>(null);
 
   const [modalDatos, setModalDatos] = useState(false);
   const [modalEstado, setModalEstado] = useState(false);
@@ -202,7 +96,6 @@ export default function ConfiguracionProfesional() {
   const cargar = useCallback(async () => {
     setCargando(true);
     setError(null);
-    setErrorUbicacion(null);
 
     try {
       const [datosUsuario, datosProfesional, rendimientoActual, rendimientoMeses] =
@@ -242,14 +135,6 @@ export default function ConfiguracionProfesional() {
         estado: datosProfesional.estado,
         observacion: '',
       });
-
-      try {
-        const ultimaUbicacion = await obtenerMiUltimaUbicacion();
-        setUbicacion(ultimaUbicacion);
-      } catch {
-        setUbicacion(null);
-        setErrorUbicacion('Ubicacion sin registrar');
-      }
     } catch (e: unknown) {
       setError(mensajeError(e, 'No se pudo cargar el perfil.'));
     } finally {
@@ -471,19 +356,22 @@ export default function ConfiguracionProfesional() {
 
             <section className="responsive-panel-section">
               <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
-                <strong className="text-azul text-[14px]">Mi ubicacion en terreno</strong>
+                <strong className="text-azul text-[14px]">Estado operativo</strong>
                 <button className="btn btn-sm btn-outline" onClick={abrirActualizarEstado}>
                   Actualizar estado
                 </button>
               </div>
 
               <div style={{ padding: 16 }}>
-                <MapaMiUbicacion ubicacion={ubicacion} profesional={profesional} />
-                {errorUbicacion && (
-                  <div style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
-                    {errorUbicacion}
+                <div className="alert-item alert-item--info">
+                  <div>
+                    <strong>Estado actual:</strong>{' '}
+                    {profesional ? labelEstado[profesional.estado] : 'Sin estado'}
+                    <br />
+                    El mapa de ubicacion fue retirado de esta pestaña para evitar lecturas fuera de jornada y problemas de visualizacion movil.
+                    La ubicacion en terreno se gestiona desde el panel operativo.
                   </div>
-                )}
+                </div>
               </div>
             </section>
           </div>

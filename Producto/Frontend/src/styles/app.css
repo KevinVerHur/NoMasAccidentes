@@ -519,7 +519,11 @@ body,
     background: white;
     border-right: 1px solid #e5e7eb;
     overflow-y: auto;
-    z-index: 40;
+    z-index: 3200;
+}
+
+.app-topbar {
+    z-index: 3300;
 }
 
 .mobile-menu-btn,
@@ -602,6 +606,18 @@ section:has(.app-table),
 
 .leaflet-container {
     width: 100%;
+    position: relative;
+    z-index: 0 !important;
+    isolation: isolate;
+}
+
+.leaflet-pane {
+    z-index: 1;
+}
+
+.leaflet-top,
+.leaflet-bottom {
+    z-index: 2;
 }
 
 .responsive-map {
@@ -722,7 +738,7 @@ section:has(.app-table),
         width: min(82vw, 280px);
         transform: translateX(-100%);
         transition: transform 0.18s ease;
-        z-index: 90;
+        z-index: 3200;
         box-shadow: 12px 0 30px rgba(15, 23, 42, 0.18);
     }
 
@@ -737,7 +753,7 @@ section:has(.app-table),
         background: rgba(15, 23, 42, 0.35);
         border: 0;
         padding: 0;
-        z-index: 80;
+        z-index: 3100;
     }
 
     .sidebar-overlay--visible {
