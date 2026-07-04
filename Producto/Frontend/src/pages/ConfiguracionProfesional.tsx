@@ -9,17 +9,14 @@ import {
   obtenerMiPerfil,
 } from '../api/auth';
 import {
-  actualizarMiEstadoProfesional,
   actualizarMiPerfilProfesional,
   obtenerMiPerfilProfesional,
 } from '../api/profesionales';
 import { rendimientoProfesional } from '../api/reportes';
 import type {
-  ActualizarEstadoProfesionalRequest,
   ActualizarPerfilRequest,
   ActualizarProfesionalRequest,
   CambiarPasswordRequest,
-  EstadoProfesional,
   ProfesionalResponse,
   RendimientoProfesionalResponse,
   UsuarioResponse,
@@ -28,13 +25,6 @@ import type {
 
 type DatosForm = ActualizarPerfilRequest & ActualizarProfesionalRequest;
 type PasswordForm = CambiarPasswordRequest & { confirmarPassword: string };
-type EstadoForm = ActualizarEstadoProfesionalRequest & { observacion?: string };
-
-const labelEstado: Record<EstadoProfesional, string> = {
-  DISPONIBLE: 'Disponible',
-  EN_VISITA: 'En visita',
-  EN_CAPACITACION: 'En capacitacion',
-};
 
 function mensajeError(e: unknown, fallback: string): string {
   const data = (e as { response?: { data?: { mensaje?: string; message?: string } } })?.response?.data;
@@ -82,11 +72,9 @@ export default function ConfiguracionProfesional() {
   const [error, setError] = useState<string | null>(null);
 
   const [modalDatos, setModalDatos] = useState(false);
-  const [modalEstado, setModalEstado] = useState(false);
   const [modalPassword, setModalPassword] = useState(false);
 
   const formDatos = useForm<DatosForm>();
-  const formEstado = useForm<EstadoForm>();
   const formPassword = useForm<PasswordForm>();
 
   const fechaBase = useMemo(() => new Date(), []);
@@ -131,16 +119,12 @@ export default function ConfiguracionProfesional() {
         especialidad: datosProfesional.especialidad ?? '',
       });
 
-      formEstado.reset({
-        estado: datosProfesional.estado,
-        observacion: '',
-      });
     } catch (e: unknown) {
       setError(mensajeError(e, 'No se pudo cargar el perfil.'));
     } finally {
       setCargando(false);
     }
-  }, [anioActual, formDatos, formEstado, mesActual]);
+  }, [anioActual, formDatos, mesActual]);
 
   useEffect(() => {
     cargar();
@@ -201,15 +185,6 @@ export default function ConfiguracionProfesional() {
     setModalDatos(true);
   }
 
-  function abrirActualizarEstado() {
-    formEstado.reset({
-      estado: profesional?.estado ?? 'DISPONIBLE',
-      observacion: '',
-    });
-
-    setModalEstado(true);
-  }
-
   async function onGuardarDatos(data: DatosForm) {
     setGuardando(true);
     setMensaje(null);
@@ -235,23 +210,6 @@ export default function ConfiguracionProfesional() {
       setMensaje('Datos actualizados correctamente.');
     } catch (e: unknown) {
       setError(mensajeError(e, 'No se pudieron actualizar los datos.'));
-    } finally {
-      setGuardando(false);
-    }
-  }
-
-  async function onGuardarEstado(data: EstadoForm) {
-    setGuardando(true);
-    setMensaje(null);
-    setError(null);
-
-    try {
-      const actualizado = await actualizarMiEstadoProfesional({ estado: data.estado });
-      setProfesional(actualizado);
-      setModalEstado(false);
-      setMensaje('Estado actualizado correctamente.');
-    } catch (e: unknown) {
-      setError(mensajeError(e, 'No se pudo actualizar el estado.'));
     } finally {
       setGuardando(false);
     }
@@ -302,7 +260,7 @@ export default function ConfiguracionProfesional() {
         <div className="placeholder">Cargando perfil...</div>
       ) : (
         <>
-          <div className="grid-2">
+          <div>
             <section className="responsive-panel-section">
               <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
                 <strong className="text-azul text-[14px]">Informacion personal</strong>
@@ -351,27 +309,6 @@ export default function ConfiguracionProfesional() {
                 >
                   Cambiar contrasena
                 </button>
-              </div>
-            </section>
-
-            <section className="responsive-panel-section">
-              <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
-                <strong className="text-azul text-[14px]">Estado operativo</strong>
-                <button className="btn btn-sm btn-outline" onClick={abrirActualizarEstado}>
-                  Actualizar estado
-                </button>
-              </div>
-
-              <div style={{ padding: 16 }}>
-                <div className="alert-item alert-item--info">
-                  <div>
-                    <strong>Estado actual:</strong>{' '}
-                    {profesional ? labelEstado[profesional.estado] : 'Sin estado'}
-                    <br />
-                    El mapa de ubicacion fue retirado de esta pestaña para evitar lecturas fuera de jornada y problemas de visualizacion movil.
-                    La ubicacion en terreno se gestiona desde el panel operativo.
-                  </div>
-                </div>
               </div>
             </section>
           </div>
@@ -467,46 +404,6 @@ export default function ConfiguracionProfesional() {
             <div>
               <label className="auth-label">Especialidad</label>
               <input className="auth-input" {...formDatos.register('especialidad')} />
-            </div>
-          </div>
-        </form>
-      </Modal>
-
-      <Modal
-        abierto={modalEstado}
-        titulo="Cambiar mi estado"
-        ancho="sm"
-        onCerrar={() => setModalEstado(false)}
-        footer={
-          <>
-            <button className="btn btn-outline" onClick={() => setModalEstado(false)}>
-              Cancelar
-            </button>
-            <button className="btn btn-primary" form="form-estado" type="submit" disabled={guardando}>
-              {guardando ? 'Guardando...' : 'Guardar estado'}
-            </button>
-          </>
-        }
-      >
-        <form id="form-estado" onSubmit={formEstado.handleSubmit(onGuardarEstado)} noValidate>
-          <div style={{ display: 'grid', gap: 12 }}>
-            <div>
-              <label className="auth-label">Nuevo estado</label>
-              <select className="auth-input" {...formEstado.register('estado', { required: true })}>
-                <option value="DISPONIBLE">Disponible</option>
-                <option value="EN_VISITA">En visita</option>
-                <option value="EN_CAPACITACION">En capacitacion</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="auth-label">Observacion opcional</label>
-              <textarea
-                className="auth-input"
-                rows={3}
-                placeholder="Ej: en ruta hacia Minera Andes."
-                {...formEstado.register('observacion')}
-              />
             </div>
           </div>
         </form>
