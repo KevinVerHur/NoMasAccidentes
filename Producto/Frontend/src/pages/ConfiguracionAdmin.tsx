@@ -247,7 +247,7 @@ export default function ConfiguracionAdmin() {
                   <span>Sin cambios pendientes</span>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                <div className="responsive-inline-fields" style={{ justifyContent: 'flex-end', marginTop: 6 }}>
                   <button className="btn btn-outline btn-sm" onClick={() => setModalPassword(true)}>
                     Cambiar contraseña
                   </button>
@@ -274,7 +274,7 @@ export default function ConfiguracionAdmin() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div className="responsive-inline-fields" style={{ justifyContent: 'flex-end' }}>
                   <button className="btn btn-primary btn-sm" onClick={abrirPerfil}>
                     Guardar cambios
                   </button>

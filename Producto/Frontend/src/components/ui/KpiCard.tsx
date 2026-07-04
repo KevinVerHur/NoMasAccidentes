@@ -19,7 +19,7 @@ const estilos: Record<VarianteKpi, { borde: string; texto: string; barra: string
 export default function KpiCard({ label, value, sub, variante = 'default', progreso }: KpiCardProps) {
     const { borde, texto, barra } = estilos[variante];
     return (
-        <div className={`flex-1 min-w-[130px] bg-white rounded-lg px-4 py-3 border-l-4 ${borde} shadow-sm`}>
+        <div className={`kpi-card flex-1 min-w-[130px] bg-white rounded-lg px-4 py-3 border-l-4 ${borde} shadow-sm`}>
             <div className="text-[11px] text-gray-400 mb-1">{label}</div>
             <div className={`text-[22px] font-bold ${texto}`}>{value}</div>
             {sub && <div className="text-[10px] text-gray-300 mt-0.5">{sub}</div>}

@@ -79,7 +79,7 @@ export default function MisSolicitudes() {
       </div>
 
       <Panel titulo="➕ Nueva solicitud">
-        <form onSubmit={enviar} className="flex flex-col gap-3 max-w-[520px]">
+        <form onSubmit={enviar} className="flex flex-col gap-3 max-w-[520px] w-full">
           <label className="text-[13px] text-gray-600">
             Tipo de servicio
             <select

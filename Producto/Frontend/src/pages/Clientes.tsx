@@ -314,7 +314,7 @@ export default function Clientes() {
           }
         >
           <form id="form-representante" onSubmit={formRep.handleSubmit(onCrearRepresentante)} noValidate>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="responsive-form-grid">
               <div>
                 <label className="auth-label">Nombre *</label>
                 <input
@@ -343,7 +343,7 @@ export default function Clientes() {
                 <label className="auth-label">Teléfono</label>
                 <input className="auth-input" {...formRep.register('telefono')} />
               </div>
-              <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div className="responsive-span-2 responsive-check-row">
                 <input type="checkbox" id="conAcceso" {...formRep.register('conAcceso')} />
                 <label htmlFor="conAcceso" style={{ fontSize: 13 }}>Dar acceso al portal (envía invitación por correo)</label>
               </div>
@@ -474,8 +474,8 @@ export default function Clientes() {
       >
         <form id="form-cliente-nuevo" onSubmit={formNuevo.handleSubmit(onCrear)} noValidate>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#18395a', marginBottom: 8 }}>Empresa</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: 'span 2' }}>
+          <div className="responsive-form-grid">
+            <div className="responsive-span-2">
               <label className="auth-label">Razón social *</label>
               <input
                 className={`auth-input ${formNuevo.formState.errors.razonSocial ? 'auth-input--error' : ''}`}
@@ -535,7 +535,7 @@ export default function Clientes() {
           </div>
 
           <div style={{ fontSize: 12, fontWeight: 700, color: '#18395a', margin: '16px 0 8px' }}>Representante (contacto)</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="responsive-form-grid">
             <div>
               <label className="auth-label">Nombre *</label>
               <input
@@ -589,8 +589,8 @@ export default function Clientes() {
         }
       >
         <form id="form-cliente-editar" onSubmit={formEditar.handleSubmit(onEditar)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: 'span 2' }}>
+          <div className="responsive-form-grid">
+            <div className="responsive-span-2">
               <label className="auth-label">Razón social *</label>
               <input
                 className={`auth-input ${formEditar.formState.errors.razonSocial ? 'auth-input--error' : ''}`}

@@ -813,7 +813,7 @@ export default function DashboardProfesional() {
             </div>
           }
         >
-          <div style={{ width: 837, maxWidth: '100%', height: 181, position: 'relative', zIndex: 0 }}>
+          <div className="responsive-map responsive-map--compact">
             <MapaProfesional
               posicion={posicionProfesional}
               precision={ubicacion?.precision}
@@ -821,17 +821,7 @@ export default function DashboardProfesional() {
             />
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              gap: 14,
-              padding: '10px 16px',
-              borderTop: '1px solid #f3f4f6',
-              fontSize: 11,
-              color: '#4b5563',
-              flexWrap: 'wrap',
-            }}
-          >
+          <div className="prof-location-status">
             <span>{siguiendo ? 'Seguimiento activo' : 'Seguimiento detenido'}</span>
             <span>Estado backend: {estadoActual}</span>
 
@@ -940,7 +930,7 @@ export default function DashboardProfesional() {
               </button>
             </div>
 
-            <div style={{ height: 520, position: 'relative', zIndex: 1 }}>
+            <div className="map-modal-body">
               <MapaProfesional
                 posicion={posicionProfesional}
                 precision={ubicacion?.precision}
@@ -949,19 +939,7 @@ export default function DashboardProfesional() {
               />
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                gap: 12,
-                padding: '12px 18px',
-                borderTop: '1px solid #e8edf3',
-                background: '#fafbfc',
-                fontSize: 12,
-                color: '#4b5563',
-              }}
-            >
+            <div className="prof-map-modal-footer">
               <span>
                 {ubicacion
                   ? `${ubicacionConfiable ? 'Lectura confiable' : 'Lectura aproximada'} - ${ubicacion.fecha.toLocaleString('es-CL')} - Precision: ${Math.round(ubicacion.precision)} m`

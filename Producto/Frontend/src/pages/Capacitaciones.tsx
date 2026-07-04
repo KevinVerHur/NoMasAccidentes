@@ -200,7 +200,7 @@ function VistaAdmin() {
     capacitaciones
       .filter(c => {
         const f = c.fechaRealizacion ?? c.fechaProgramada;
-        return f != null && Date.now() - new Date(f).getTime() <= 90 * 24 * 60 * 60 * 1000;
+        return f != null && new Date().getTime() - new Date(f).getTime() <= 90 * 24 * 60 * 60 * 1000;
       })
       .map(c => c.idEmpresa)
   );
@@ -338,7 +338,7 @@ function VistaAdmin() {
                   borderBottom: i < filtradas.length - 1 ? '1px solid #f3f4f6' : 'none',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+                <div className="responsive-inline-fields" style={{ justifyContent: 'space-between', gap: 16 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <span style={{ fontSize: 14, fontWeight: 700, color: '#1a3a5c' }}>
@@ -452,7 +452,7 @@ function VistaAdmin() {
         }
       >
         <form id="form-cap-nueva" onSubmit={formNueva.handleSubmit(onCrear)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="responsive-form-grid">
             <div>
               <label className="auth-label">Cliente *</label>
               <select
@@ -576,7 +576,7 @@ function VistaAdmin() {
               />
             </div>
 
-            <div style={{ gridColumn: 'span 2' }}>
+            <div className="responsive-span-2">
               <label className="auth-label">Objetivo</label>
               <textarea
                 className="auth-input"
@@ -586,7 +586,7 @@ function VistaAdmin() {
               />
             </div>
 
-            <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="responsive-span-2 responsive-check-row">
               <input
                 type="checkbox"
                 id="esCapacitacionExtra"
@@ -1806,7 +1806,7 @@ function VistaCliente() {
             <div className="form-group span2" style={{ marginBottom: 14 }}>
               <label className="auth-label">Agregar trabajador</label>
 
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div className="responsive-inline-fields">
                 <input
                   className="auth-input"
                   placeholder="Ej: Maria Soto Rojas"

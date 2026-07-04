@@ -89,7 +89,7 @@ function MapaMiUbicacion({
   const estado = ubicacion?.estado ?? profesional?.estado ?? 'DISPONIBLE';
 
   return (
-    <div style={{ height: 195, width: '100%', position: 'relative', zIndex: 0 }}>
+    <div className="responsive-map responsive-map--compact">
       <MapContainer
         center={centro}
         zoom={tieneUbicacion ? 14 : 11}
@@ -418,7 +418,7 @@ export default function ConfiguracionProfesional() {
       ) : (
         <>
           <div className="grid-2">
-            <section className="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
+            <section className="responsive-panel-section">
               <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
                 <strong className="text-azul text-[14px]">Informacion personal</strong>
                 <button className="btn btn-sm btn-outline" onClick={abrirEditarDatos}>
@@ -427,16 +427,7 @@ export default function ConfiguracionProfesional() {
               </div>
 
               <div style={{ padding: '18px 20px 20px' }}>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '160px 1fr',
-                    rowGap: 4,
-                    columnGap: 16,
-                    fontSize: 16,
-                    lineHeight: 1.35,
-                  }}
-                >
+                <div className="responsive-detail-grid responsive-detail-grid--profile">
                   <span>Nombre</span>
                   <strong style={{ textAlign: 'right', fontWeight: 500 }}>
                     {nombreCompleto(usuario, profesional)}
@@ -478,7 +469,7 @@ export default function ConfiguracionProfesional() {
               </div>
             </section>
 
-            <section className="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
+            <section className="responsive-panel-section">
               <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
                 <strong className="text-azul text-[14px]">Mi ubicacion en terreno</strong>
                 <button className="btn btn-sm btn-outline" onClick={abrirActualizarEstado}>
@@ -497,7 +488,7 @@ export default function ConfiguracionProfesional() {
             </section>
           </div>
 
-          <section className="bg-white rounded-lg shadow-sm overflow-hidden mb-4">
+          <section className="responsive-panel-section">
             <div className="px-4 py-3 border-b border-gray-200">
               <strong className="text-azul text-[14px]">Mis indicadores de rendimiento</strong>
             </div>

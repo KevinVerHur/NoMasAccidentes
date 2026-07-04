@@ -573,21 +573,11 @@ export default function DashboardAdmin() {
             </div>
           )}
 
-          <div style={{ height: 181, width: '100%', position: 'relative', zIndex: 0 }}>
+          <div className="responsive-map responsive-map--compact">
             <MapaAdmin ubicaciones={ubicaciones} />
           </div>
 
-          <div
-            style={{
-              display: 'flex',
-              gap: 14,
-              padding: '10px 16px',
-              borderTop: '1px solid #f3f4f6',
-              fontSize: 11,
-              color: '#4b5563',
-              flexWrap: 'wrap',
-            }}
-          >
+          <div className="map-status-row">
             <span>Actualizados: {profesionalesActualizados}</span>
             <span>Desactualizados: {profesionalesDesactualizados}</span>
             <span>Total visibles: {ubicaciones.length}</span>
@@ -712,7 +702,7 @@ export default function DashboardAdmin() {
           </div>
         }
       >
-        <div style={{ height: 520, position: 'relative', zIndex: 0 }}>
+        <div className="map-modal-body">
           <MapaAdmin ubicaciones={ubicaciones} grande />
         </div>
 

@@ -18,6 +18,11 @@ interface SeccionNav {
     items: ItemNav[];
 }
 
+interface SidebarProps {
+    abierto: boolean;
+    onCerrar: () => void;
+}
+
 const TODOS: Rol[] = ['ADMIN', 'PROFESIONAL', 'CLIENTE', 'CAPACITADOR'];
 const RUTAS_COMENTADAS = new Set<string>();
 
@@ -82,7 +87,7 @@ const seccionesCliente: SeccionNav[] = [
     },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ abierto, onCerrar }: SidebarProps) {
     const navigate = useNavigate();
     const location = useLocation();
     const { rol } = useAuth();
@@ -111,7 +116,14 @@ export default function Sidebar() {
         .filter((seccion) => seccion.items.length > 0);
 
     return (
-        <aside className="fixed top-[54px] left-0 bottom-0 w-[190px] bg-white border-r border-gray-200 overflow-y-auto z-40">
+        <>
+            <button
+                type="button"
+                className={`sidebar-overlay ${abierto ? 'sidebar-overlay--visible' : ''}`}
+                onClick={onCerrar}
+                aria-label="Cerrar menu"
+            />
+            <aside className={`app-sidebar ${abierto ? 'app-sidebar--open' : ''}`}>
             {seccionesVisibles.map((seccion) => (
                 <div key={seccion.titulo}>
                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-4 pt-3 pb-1">
@@ -126,7 +138,10 @@ export default function Sidebar() {
                         return (
                             <a
                                 key={item.path}
-                                onClick={() => navigate(item.path)}
+                                onClick={() => {
+                                    navigate(item.path);
+                                    onCerrar();
+                                }}
                                 className={`flex items-center gap-2 px-4 py-[9px] text-[13px] cursor-pointer no-underline ${
                                     activo
                                         ? 'bg-blue-50 text-azul font-bold border-l-[3px] border-azul'
@@ -145,6 +160,7 @@ export default function Sidebar() {
                     })}
                 </div>
             ))}
-        </aside>
+            </aside>
+        </>
     );
 }
