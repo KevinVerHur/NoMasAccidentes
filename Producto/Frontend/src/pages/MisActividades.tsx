@@ -4,15 +4,19 @@ import Badge from '../components/ui/Badge';
 import type {
   VisitaResponse,
   AsesoriaResponse,
-  CapacitacionResponse,
+  InformeResponse,
+  InformeAsesoriaResponse,
   EstadoVisita,
   EstadoAsesoria,
-  EstadoCapacitacion,
   VarianteBadge,
 } from '../types';
 import { misVisitas } from '../api/visitas';
 import { misAsesoriasCliente } from '../api/asesorias';
-import { misCapacitaciones } from '../api/capacitaciones';
+import {
+  listarMisInformes,
+  listarMisInformesAsesoria,
+  descargarMiInformePdf,
+} from '../api/informes';
 
 const badgeVisita: Record<EstadoVisita, VarianteBadge> = {
   PROGRAMADA: 'blue',
@@ -26,38 +30,59 @@ const badgeAsesoria: Record<EstadoAsesoria, VarianteBadge> = {
   CERRADA: 'green',
   CANCELADA: 'gray',
 };
-const badgeCapacitacion: Record<EstadoCapacitacion, VarianteBadge> = {
-  PROGRAMADA: 'blue',
-  EN_CURSO: 'yellow',
-  REALIZADA: 'green',
-  CANCELADA: 'gray',
-};
 
 const fmtFecha = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('es-CL') : '—';
-const hora = (h: string | null) => (h ? h.slice(0, 5) : '—');
+
+async function descargarInforme(idInforme: number) {
+  try {
+    await descargarMiInformePdf(idInforme);
+  } catch {
+    alert('No se pudo descargar el informe.');
+  }
+}
 
 export default function MisActividades() {
   const [visitas, setVisitas] = useState<VisitaResponse[]>([]);
   const [asesorias, setAsesorias] = useState<AsesoriaResponse[]>([]);
-  const [capacitaciones, setCapacitaciones] = useState<CapacitacionResponse[]>([]);
+  const [informePorVisita, setInformePorVisita] = useState<Record<number, InformeResponse>>({});
+  const [informePorAsesoria, setInformePorAsesoria] = useState<Record<number, InformeAsesoriaResponse>>({});
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    Promise.allSettled([misVisitas(), misAsesoriasCliente(), misCapacitaciones()])
-      .then(([v, a, c]) => {
+    Promise.allSettled([
+      misVisitas(),
+      misAsesoriasCliente(),
+      listarMisInformes(),
+      listarMisInformesAsesoria(),
+    ])
+      .then(([v, a, iv, ia]) => {
         if (v.status === 'fulfilled') setVisitas(v.value);
         if (a.status === 'fulfilled') setAsesorias(a.value);
-        if (c.status === 'fulfilled') setCapacitaciones(c.value);
+        if (iv.status === 'fulfilled') {
+          setInformePorVisita(Object.fromEntries(iv.value.map((i) => [i.idVisita, i])));
+        }
+        if (ia.status === 'fulfilled') {
+          setInformePorAsesoria(Object.fromEntries(ia.value.map((i) => [i.idAsesoria, i])));
+        }
       })
       .finally(() => setCargando(false));
   }, []);
+
+  const botonInforme = (informe: InformeResponse | InformeAsesoriaResponse | undefined) =>
+    informe && informe.tieneArchivo ? (
+      <button className="btn btn-sm btn-outline" onClick={() => descargarInforme(informe.id)}>
+        📄 Descargar
+      </button>
+    ) : (
+      <span className="text-gray-400">—</span>
+    );
 
   return (
     <>
       <div className="page-title">Mis actividades</div>
       <div className="page-subtitle">
-        Historial de tus visitas, asesorías y capacitaciones (solo lectura)
+        Historial de tus visitas y asesorías (solo lectura)
       </div>
 
       <Panel titulo="📅 Visitas">
@@ -69,7 +94,7 @@ export default function MisActividades() {
           <table className="app-table">
             <thead>
               <tr>
-                <th>Fecha</th><th>Profesional</th><th>Tipo de revisión</th><th>Estado</th>
+                <th>Fecha</th><th>Profesional</th><th>Tipo de revisión</th><th>Estado</th><th>Informe</th>
               </tr>
             </thead>
             <tbody>
@@ -79,6 +104,7 @@ export default function MisActividades() {
                   <td>{v.nombreProfesional}</td>
                   <td>{v.tipoRevision ?? '—'}</td>
                   <td><Badge variante={badgeVisita[v.estado]}>{v.estado}</Badge></td>
+                  <td>{botonInforme(informePorVisita[v.id])}</td>
                 </tr>
               ))}
             </tbody>
@@ -95,7 +121,7 @@ export default function MisActividades() {
           <table className="app-table">
             <thead>
               <tr>
-                <th>Fecha</th><th>Tipo</th><th>Motivo</th><th>Profesional</th><th>Estado</th>
+                <th>Fecha</th><th>Tipo</th><th>Motivo</th><th>Profesional</th><th>Estado</th><th>Informe</th>
               </tr>
             </thead>
             <tbody>
@@ -111,38 +137,7 @@ export default function MisActividades() {
                       <span className="ml-1 text-[11px] text-warn font-bold">EXTRA</span>
                     )}
                   </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </Panel>
-
-      <Panel titulo="🎓 Capacitaciones">
-        {cargando ? (
-          <div className="placeholder">Cargando...</div>
-        ) : capacitaciones.length === 0 ? (
-          <div className="placeholder">No tienes capacitaciones registradas.</div>
-        ) : (
-          <table className="app-table">
-            <thead>
-              <tr>
-                <th>Curso</th><th>Fecha</th><th>Hora</th><th>Lugar</th><th>Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {capacitaciones.map((c) => (
-                <tr key={c.id}>
-                  <td>{c.curso}</td>
-                  <td>{fmtFecha(c.fechaProgramada)}</td>
-                  <td>{hora(c.horaProgramada)}</td>
-                  <td>{c.lugar}</td>
-                  <td>
-                    <Badge variante={badgeCapacitacion[c.estado]}>{c.estado}</Badge>
-                    {c.esCapacitacionExtra && (
-                      <span className="ml-1 text-[11px] text-warn font-bold">EXTRA</span>
-                    )}
-                  </td>
+                  <td>{botonInforme(informePorAsesoria[a.id])}</td>
                 </tr>
               ))}
             </tbody>

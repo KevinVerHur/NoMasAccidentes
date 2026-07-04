@@ -65,6 +65,7 @@ const seccionesCliente: SeccionNav[] = [
         titulo: 'Portal Cliente',
         items: [
             { icono: '🏠', label: 'Inicio', path: '/dashboard', roles: ['CLIENTE'] },
+            { icono: '🎓', label: 'Capacitaciones', path: '/capacitaciones', roles: ['CLIENTE'] },
             { icono: '📅', label: 'Mis actividades', path: '/mis-actividades', roles: ['CLIENTE'] },
             { icono: '🛡️', label: 'Cumplimiento', path: '/mi-cumplimiento', roles: ['CLIENTE'] },
             { icono: '📄', label: 'Reportes', path: '/reportes', roles: ['CLIENTE'] },

@@ -5,6 +5,8 @@ import com.example.NoMasAccidentes.service.asesoria.InformeAsesoriaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
+import java.security.Principal;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -39,5 +41,12 @@ public class InformeAsesoriaController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public InformeAsesoriaResponse obtenerPorAsesoria(@PathVariable Long idAsesoria) {
         return informeAsesoriaService.obtenerPorAsesoria(idAsesoria);
+    }
+
+    @Operation(summary = "Listar los informes de asesoría del cliente autenticado (RF15, RF07)")
+    @GetMapping("/api/mis-informes-asesoria")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public List<InformeAsesoriaResponse> misInformesAsesoria(Principal principal) {
+        return informeAsesoriaService.misInformesAsesoria(principal.getName());
     }
 }

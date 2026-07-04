@@ -6,9 +6,9 @@ import com.example.NoMasAccidentes.dto.informe.InformeMapper;
 import com.example.NoMasAccidentes.dto.informe.InformeResponse;
 import com.example.NoMasAccidentes.model.informe.EstadoInforme;
 import com.example.NoMasAccidentes.model.informe.Informe;
-import com.example.NoMasAccidentes.model.empresa.Empresa;
 import com.example.NoMasAccidentes.model.visita.EstadoVisita;
 import com.example.NoMasAccidentes.model.visita.Visita;
+import com.example.NoMasAccidentes.repository.asesoria.AsesoriaRepository;
 import com.example.NoMasAccidentes.repository.informe.InformeRepository;
 import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
 import com.example.NoMasAccidentes.service.empresa.EmpresaService;
@@ -31,6 +31,7 @@ public class InformeService {
 
     private final InformeRepository informeRepository;
     private final VisitaRepository visitaRepository;
+    private final AsesoriaRepository asesoriaRepository;
     private final InformePdfService pdfService;
     private final AlmacenamientoInformeService almacenamiento;
     private final InformeMapper informeMapper;
@@ -87,16 +88,33 @@ public class InformeService {
                 .stream().map(informeMapper::toResponse).toList();
     }
 
-    /** Descarga un informe verificando que pertenezca a la empresa del usuario autenticado. */
+    /**
+     * Descarga un informe verificando que pertenezca a la empresa del usuario
+     * autenticado. Vale tanto para informes post-visita como de asesoría (que
+     * reutilizan esta tabla con {@code visita} nula e {@code idAsesoria} seteado).
+     */
     public byte[] descargarMiPdf(Long idInforme, String emailUsuario) {
         Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
         Informe informe = buscarConArchivo(idInforme);
-        Empresa empresaInforme = informe.getVisita() != null ? informe.getVisita().getEmpresa() : null;
-        if (empresaInforme == null || !empresaInforme.getId().equals(idEmpresa)) {
+        Long idEmpresaInforme = empresaDelInforme(informe);
+        if (idEmpresaInforme == null || !idEmpresaInforme.equals(idEmpresa)) {
             // No revelar existencia de informes ajenos.
             throw new RecursoNoEncontradoException("Informe", idInforme);
         }
         return descargarPdf(informe);
+    }
+
+    /** Empresa dueña del informe: por la visita, o por la asesoría si es de asesoría. */
+    private Long empresaDelInforme(Informe informe) {
+        if (informe.getVisita() != null && informe.getVisita().getEmpresa() != null) {
+            return informe.getVisita().getEmpresa().getId();
+        }
+        if (informe.getIdAsesoria() != null) {
+            return asesoriaRepository.findById(informe.getIdAsesoria())
+                    .map(a -> a.getEmpresa() != null ? a.getEmpresa().getId() : null)
+                    .orElse(null);
+        }
+        return null;
     }
 
     private Informe buscarConArchivo(Long idInforme) {

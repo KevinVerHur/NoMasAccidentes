@@ -16,6 +16,7 @@ import com.example.NoMasAccidentes.repository.asesoria.AsesoriaRepository;
 import com.example.NoMasAccidentes.repository.asesoria.FiscalizacionRepository;
 import com.example.NoMasAccidentes.repository.asesoria.PropuestaMejoraRepository;
 import com.example.NoMasAccidentes.repository.informe.InformeRepository;
+import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import com.example.NoMasAccidentes.service.informe.AlmacenamientoInformeService;
 import java.time.LocalDate;
 import java.util.List;
@@ -45,6 +46,7 @@ public class InformeAsesoriaService {
     private final InformeAsesoriaPdfService pdfService;
     private final AlmacenamientoInformeService almacenamiento;
     private final InformeAsesoriaMapper informeAsesoriaMapper;
+    private final EmpresaService empresaService;
 
     /**
      * Genera (o regenera) el informe PDF de una asesoría atendida (RF15, RF25).
@@ -72,7 +74,7 @@ public class InformeAsesoriaService {
 
         byte[] pdf = pdfService.generar(asesoria, accidentes, fiscalizaciones, propuestas);
         String nombreArchivo = "informe-asesoria-" + idAsesoria + "-" + UUID.randomUUID() + ".pdf";
-        String clave = almacenamiento.guardar(nombreArchivo, pdf);
+        String clave = almacenamiento.guardar("informes-asesoria", nombreArchivo, pdf);
 
         informe.setVisita(null);
         informe.setIdAsesoria(idAsesoria);
@@ -94,5 +96,21 @@ public class InformeAsesoriaService {
         return informeAsesoriaMapper.toResponse(informeRepository.findByIdAsesoria(idAsesoria)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Informe no encontrado para la asesoría id=" + idAsesoria)));
+    }
+
+    /**
+     * Informes de asesoría de la empresa del cliente autenticado (RF15, RF07).
+     * Solo lectura; la descarga se sirve por {@code /api/mis-informes/{id}/descarga}.
+     */
+    public List<InformeAsesoriaResponse> misInformesAsesoria(String emailUsuario) {
+        Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
+        List<Long> idsAsesoria = asesoriaRepository
+                .findByEmpresaIdOrderByFechaSolicitudDesc(idEmpresa)
+                .stream().map(Asesoria::getId).toList();
+        if (idsAsesoria.isEmpty()) {
+            return List.of();
+        }
+        return informeRepository.findByIdAsesoriaInOrderByFechaEmisionDesc(idsAsesoria)
+                .stream().map(informeAsesoriaMapper::toResponse).toList();
     }
 }

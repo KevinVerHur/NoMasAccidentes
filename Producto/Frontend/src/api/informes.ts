@@ -45,6 +45,12 @@ export async function listarMisInformes(): Promise<InformeResponse[]> {
   return res.data;
 }
 
+/** Informes de asesoría de la empresa del cliente (RF15, RF07). */
+export async function listarMisInformesAsesoria(): Promise<InformeAsesoriaResponse[]> {
+  const res = await api.get<InformeAsesoriaResponse[]>('/api/mis-informes-asesoria');
+  return res.data;
+}
+
 export async function descargarMiInformePdf(idInforme: number): Promise<void> {
   const res = await api.get(`/api/mis-informes/${idInforme}/descarga`, { responseType: 'blob' });
   dispararDescarga(res.data as Blob, idInforme);

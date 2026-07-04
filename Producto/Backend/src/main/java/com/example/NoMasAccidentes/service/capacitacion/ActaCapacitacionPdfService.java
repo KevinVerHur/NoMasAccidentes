@@ -16,6 +16,7 @@ import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
 import com.example.NoMasAccidentes.service.pdf.PdfMarca;
+import com.example.NoMasAccidentes.service.informe.AlmacenamientoInformeService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ActaCapacitacionPdfService {
 
     private final CapacitacionRepository capacitacionRepository;
+    private final AlmacenamientoInformeService almacenamiento;
 
     private static final DateTimeFormatter F_FECHA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     private static final DateTimeFormatter F_HORA = DateTimeFormatter.ofPattern("HH:mm");
@@ -32,8 +34,10 @@ public class ActaCapacitacionPdfService {
     private static final Font NORMAL = FontFactory.getFont(FontFactory.HELVETICA, 10);
     private static final Font CABECERA = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
 
-    public ActaCapacitacionPdfService(CapacitacionRepository capacitacionRepository) {
+    public ActaCapacitacionPdfService(CapacitacionRepository capacitacionRepository,
+                                      AlmacenamientoInformeService almacenamiento) {
         this.capacitacionRepository = capacitacionRepository;
+        this.almacenamiento = almacenamiento;
     }
 
     @Transactional(readOnly = true)
@@ -103,7 +107,10 @@ public class ActaCapacitacionPdfService {
 
             document.close();
 
-            return baos.toByteArray();
+            byte[] pdf = baos.toByteArray();
+            almacenamiento.guardar("actas-capacitacion",
+                    "acta-capacitacion-" + idCapacitacion + ".pdf", pdf);
+            return pdf;
 
         } catch (Exception e) {
             throw new RuntimeException("Error al generar el acta de capacitación en PDF", e);

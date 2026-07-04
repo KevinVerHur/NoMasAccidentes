@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Panel from '../components/ui/Panel';
 import Badge from '../components/ui/Badge';
 import type {
@@ -25,9 +26,12 @@ const fmtFecha = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('es-CL') : '—';
 
 export default function MisSolicitudes() {
+  const location = useLocation();
+  const tipoInicial =
+    (location.state as { tipoInicial?: TipoSolicitud } | null)?.tipoInicial ?? 'ASESORIA';
   const [items, setItems] = useState<SolicitudResponse[]>([]);
   const [cargando, setCargando] = useState(true);
-  const [tipo, setTipo] = useState<TipoSolicitud>('ASESORIA');
+  const [tipo, setTipo] = useState<TipoSolicitud>(tipoInicial);
   const [descripcion, setDescripcion] = useState('');
   const [fechaPreferida, setFechaPreferida] = useState('');
   const [enviando, setEnviando] = useState(false);
