@@ -4,5 +4,7 @@ package com.example.NoMasAccidentes.model.solicitud;
 public enum TipoSolicitud {
     ASESORIA,
     CAPACITACION,
-    VISITA
+    VISITA,
+    /** Reporte de accidente del cliente; al aprobar crea una asesoría tipo ACCIDENTE (urgente). */
+    ACCIDENTE
 }

@@ -20,6 +20,7 @@ const etiquetaTipo: Record<TipoSolicitud, string> = {
   ASESORIA: 'Asesoría',
   CAPACITACION: 'Capacitación',
   VISITA: 'Visita',
+  ACCIDENTE: 'Accidente',
 };
 
 const fmtFecha = (iso: string | null) =>
@@ -90,36 +91,58 @@ export default function MisSolicitudes() {
               <option value="ASESORIA">Asesoría</option>
               <option value="CAPACITACION">Capacitación</option>
               <option value="VISITA">Visita</option>
+              <option value="ACCIDENTE">🚨 Reportar accidente (urgente)</option>
             </select>
           </label>
 
+          {tipo === 'ACCIDENTE' && (
+            <div className="text-[13px] rounded p-2 bg-[#fdecec] text-peligro border border-[#f0b7b7]">
+              🚨 Estás reportando un <strong>accidente</strong>. Se avisará de inmediato a tu
+              consultora para que asigne un profesional y coordine la visita en terreno.
+            </div>
+          )}
+
           <label className="text-[13px] text-gray-600">
-            ¿Qué necesitas?
+            {tipo === 'ACCIDENTE' ? '¿Qué ocurrió?' : '¿Qué necesitas?'}
             <textarea
               className="auth-input mt-1"
               rows={3}
               maxLength={500}
-              placeholder="Describe el motivo o detalle de tu solicitud"
+              placeholder={
+                tipo === 'ACCIDENTE'
+                  ? 'Describe qué pasó, cuándo, personas afectadas y estado actual'
+                  : 'Describe el motivo o detalle de tu solicitud'
+              }
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
             />
           </label>
 
-          <label className="text-[13px] text-gray-600">
-            Fecha preferida (opcional)
-            <input
-              type="date"
-              className="auth-input mt-1"
-              value={fechaPreferida}
-              onChange={(e) => setFechaPreferida(e.target.value)}
-            />
-          </label>
+          {tipo !== 'ACCIDENTE' && (
+            <label className="text-[13px] text-gray-600">
+              Fecha preferida (opcional)
+              <input
+                type="date"
+                className="auth-input mt-1"
+                value={fechaPreferida}
+                onChange={(e) => setFechaPreferida(e.target.value)}
+              />
+            </label>
+          )}
 
           {error && <div className="text-[13px] text-peligro">{error}</div>}
 
           <div>
-            <button type="submit" className="btn btn-primary" disabled={enviando}>
-              {enviando ? 'Enviando…' : 'Enviar solicitud'}
+            <button
+              type="submit"
+              className={`btn ${tipo === 'ACCIDENTE' ? 'btn-danger' : 'btn-primary'}`}
+              disabled={enviando}
+            >
+              {enviando
+                ? 'Enviando…'
+                : tipo === 'ACCIDENTE'
+                  ? '🚨 Reportar accidente'
+                  : 'Enviar solicitud'}
             </button>
           </div>
         </form>

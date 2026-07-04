@@ -108,7 +108,7 @@ public class ActaCapacitacionPdfService {
             document.close();
 
             byte[] pdf = baos.toByteArray();
-            almacenamiento.guardar("actas-capacitacion",
+            almacenamiento.guardar("actas-capacitacion", c.getEmpresa().getId(),
                     "acta-capacitacion-" + idCapacitacion + ".pdf", pdf);
             return pdf;
 

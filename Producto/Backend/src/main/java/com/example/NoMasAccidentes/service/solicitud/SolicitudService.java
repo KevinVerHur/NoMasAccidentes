@@ -3,6 +3,7 @@ package com.example.NoMasAccidentes.service.solicitud;
 import com.example.NoMasAccidentes.common.ConflictoNegocioException;
 import com.example.NoMasAccidentes.common.RecursoNoEncontradoException;
 import com.example.NoMasAccidentes.dto.asesoria.CrearAsesoriaRequest;
+import com.example.NoMasAccidentes.model.asesoria.TipoAsesoria;
 import com.example.NoMasAccidentes.dto.capacitacion.CrearCapacitacionRequest;
 import com.example.NoMasAccidentes.dto.solicitud.AprobarSolicitudRequest;
 import com.example.NoMasAccidentes.dto.solicitud.CrearSolicitudRequest;
@@ -103,6 +104,12 @@ public class SolicitudService {
                 asesoriaService.crear(new CrearAsesoriaRequest(
                         idEmpresa, request.idProfesional(), request.tipoAsesoria(), solicitud.getDescripcion()));
             }
+            case ACCIDENTE -> {
+                // Reporte de accidente del cliente: se atiende como asesoría tipo ACCIDENTE (RF22, CASO 07).
+                requerir(request.idProfesional() != null, "Debes asignar un profesional para atender el accidente");
+                asesoriaService.crear(new CrearAsesoriaRequest(
+                        idEmpresa, request.idProfesional(), TipoAsesoria.ACCIDENTE, solicitud.getDescripcion()));
+            }
             case VISITA -> {
                 requerir(request.idProfesional() != null, "Debes asignar un profesional para la visita");
                 requerir(request.fechaProgramada() != null, "Debes indicar la fecha de la visita");
@@ -149,7 +156,8 @@ public class SolicitudService {
 
     private SolicitudResponse toResponseConSugerencia(Solicitud s) {
         Boolean sugerencia = null;
-        if (s.getTipo() == TipoSolicitud.ASESORIA && s.getEstado() == EstadoSolicitud.PENDIENTE) {
+        boolean consumeAsesoria = s.getTipo() == TipoSolicitud.ASESORIA || s.getTipo() == TipoSolicitud.ACCIDENTE;
+        if (consumeAsesoria && s.getEstado() == EstadoSolicitud.PENDIENTE) {
             sugerencia = asesoriaService.seriaExtra(s.getEmpresa().getId());
         }
         return mapper.toResponse(s, sugerencia);

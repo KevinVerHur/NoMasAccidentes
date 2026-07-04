@@ -20,6 +20,9 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
 
     List<Pago> findByEstadoPago(EstadoPago estadoPago);
 
+    /** Cuota asociada a una transacción Webpay, para correlacionar el retorno (RF09). */
+    Optional<Pago> findByWebpayToken(String webpayToken);
+
     /** Cuotas pendientes/atrasadas sin alerta enviada hasta hoy (RF31). */
     List<Pago> findByEstadoPagoInAndAlertaEnviadaFalseAndFechaVencimientoLessThanEqual(
             List<EstadoPago> estados, LocalDate fecha);

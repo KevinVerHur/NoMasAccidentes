@@ -96,7 +96,7 @@ public class ReporteMensualService {
 
         byte[] pdf = pdfService.generar(reporte);
         String nombreArchivo = "reporte-" + idEmpresa + "-" + anio + "-" + mes + "-" + UUID.randomUUID() + ".pdf";
-        reporte.setUrlPdf(almacenamiento.guardar("reportes", nombreArchivo, pdf));
+        reporte.setUrlPdf(almacenamiento.guardar("reportes", idEmpresa, nombreArchivo, pdf));
 
         ReporteMensual guardado = reporteRepository.save(reporte);
         log.info("Reporte mensual generado id={} empresa={} periodo={}-{} (RF38)",

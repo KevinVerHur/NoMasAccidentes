@@ -98,7 +98,7 @@ public class CertificadoCapacitacionPdfService {
 
             document.close();
             byte[] pdf = baos.toByteArray();
-            almacenamiento.guardar("certificados",
+            almacenamiento.guardar("certificados", c.getEmpresa().getId(),
                     "certificados-capacitacion-" + idCapacitacion + ".pdf", pdf);
             return pdf;
 
@@ -172,7 +172,7 @@ public class CertificadoCapacitacionPdfService {
         document.close();
 
         byte[] pdf = baos.toByteArray();
-        almacenamiento.guardar("certificados",
+        almacenamiento.guardar("certificados", c.getEmpresa().getId(),
                 "certificado-capacitacion-" + idCapacitacion + "-asistente-" + idAsistente + ".pdf", pdf);
         return pdf;
 

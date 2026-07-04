@@ -910,7 +910,7 @@ export interface NotificacionResponse {
 }
 
 // ---- Solicitudes del cliente (mejora web) ----
-export type TipoSolicitud = 'ASESORIA' | 'CAPACITACION' | 'VISITA';
+export type TipoSolicitud = 'ASESORIA' | 'CAPACITACION' | 'VISITA' | 'ACCIDENTE';
 export type EstadoSolicitud = 'PENDIENTE' | 'APROBADA' | 'RECHAZADA';
 
 export interface SolicitudResponse {

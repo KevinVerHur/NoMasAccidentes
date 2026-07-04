@@ -26,6 +26,7 @@ const etiquetaTipo: Record<TipoSolicitud, string> = {
   ASESORIA: 'Asesoría',
   CAPACITACION: 'Capacitación',
   VISITA: 'Visita',
+  ACCIDENTE: 'Accidente',
 };
 
 const fmtFecha = (iso: string | null) =>
@@ -68,7 +69,8 @@ export default function SolicitudesAdmin() {
     setModo(m);
     setError(null);
     setComentario('');
-    setForm({ esExtra: s.tipo === 'ASESORIA' ? s.sugerenciaExtra ?? false : false });
+    const consumeAsesoria = s.tipo === 'ASESORIA' || s.tipo === 'ACCIDENTE';
+    setForm({ esExtra: consumeAsesoria ? s.sugerenciaExtra ?? false : false });
   }
 
   function cerrar() {
@@ -154,7 +156,13 @@ export default function SolicitudesAdmin() {
               {items.map((s) => (
                 <tr key={s.id}>
                   <td>{s.razonSocialEmpresa}</td>
-                  <td>{etiquetaTipo[s.tipo]}</td>
+                  <td>
+                    {s.tipo === 'ACCIDENTE' ? (
+                      <span className="text-peligro font-bold">🚨 Accidente</span>
+                    ) : (
+                      etiquetaTipo[s.tipo]
+                    )}
+                  </td>
                   <td>{s.descripcion}</td>
                   <td>{fmtFecha(s.fechaPreferida)}</td>
                   <td>{fmtFecha(s.fechaCreacion)}</td>
@@ -194,6 +202,13 @@ export default function SolicitudesAdmin() {
             <div className="text-[12px] text-gray-500 mb-3">
               {sel.razonSocialEmpresa} · {sel.descripcion}
             </div>
+
+            {modo === 'aprobar' && sel.tipo === 'ACCIDENTE' && (
+              <div className="text-[13px] rounded p-2 mb-3 bg-[#fdecec] text-peligro border border-[#f0b7b7]">
+                🚨 Reporte de accidente. Al aprobar se creará una <strong>asesoría tipo ACCIDENTE</strong>;
+                asigna el profesional que la atenderá y coordinará la visita en terreno.
+              </div>
+            )}
 
             {modo === 'aprobar' ? (
               <div className="flex flex-col gap-3">
@@ -296,7 +311,7 @@ export default function SolicitudesAdmin() {
                     checked={!!form.esExtra}
                     onChange={(e) => set({ esExtra: e.target.checked })} />
                   Cobrar como servicio adicional (fuera del plan)
-                  {sel.tipo === 'ASESORIA' && sel.sugerenciaExtra && (
+                  {(sel.tipo === 'ASESORIA' || sel.tipo === 'ACCIDENTE') && sel.sugerenciaExtra && (
                     <span className="text-[11px] text-warn font-bold">sugerido: EXTRA</span>
                   )}
                 </label>
