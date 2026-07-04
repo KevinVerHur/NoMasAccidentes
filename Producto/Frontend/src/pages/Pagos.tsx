@@ -5,47 +5,66 @@ import Panel from '../components/ui/Panel';
 import Badge from '../components/ui/Badge';
 import Modal from '../components/ui/Modal';
 import type {
-  EmpresaResponse, MensualidadResponse, CrearMensualidadRequest,
-  PlanPagoResponse, CrearPlanPagoRequest, PagoResponse, RegistrarPagoRequest,
-  EstadoPago, VarianteBadge,
+  EmpresaResponse,
+  MensualidadResponse,
+  PlanPagoResponse,
+  PagoResponse,
+  RegistrarPagoRequest,
+  CobroExtraResponse,
+  EstadoPago,
+  VarianteBadge,
 } from '../types';
 import { listarClientes } from '../api/clientes';
 import {
-  listarMensualidades, crearMensualidad, listarPlanesPorCliente, crearPlanPago,
-  historialPagos, registrarPago, evaluarMorosidad, suspenderMorosos,
+  listarMensualidades,
+  listarPlanesPorCliente,
+  historialPagos,
+  registrarPago,
+  evaluarMorosidad,
+  suspenderMorosos,
+  listarCobrosExtra,
 } from '../api/pagos';
 
 const badgePorEstadoPago: Record<EstadoPago, VarianteBadge> = {
   PENDIENTE: 'yellow',
-  PAGADO:    'green',
-  ATRASADO:  'red',
+  PAGADO: 'green',
+  ATRASADO: 'red',
 };
 
 const MEDIOS_PAGO = ['Transferencia', 'Efectivo', 'Tarjeta', 'Webpay'];
-const PERIODICIDADES = ['MENSUAL', 'TRIMESTRAL', 'ANUAL'] as const;
 
-const clp = (n: number) => n.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
-const fmtFecha = (iso: string | null) => iso ? new Date(iso).toLocaleDateString('es-CL') : '—';
+const clp = (n: number) =>
+  n.toLocaleString('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    maximumFractionDigits: 0,
+  });
+
+const fmtFecha = (iso: string | null) =>
+  iso ? new Date(iso).toLocaleDateString('es-CL') : '—';
+
 const mensajeError = (e: unknown, fallback: string) =>
-  (e as { response?: { data?: { mensaje?: string } } })?.response?.data?.mensaje ?? fallback;
+  (e as { response?: { data?: { mensaje?: string; message?: string } } })?.response?.data?.mensaje ??
+  (e as { response?: { data?: { mensaje?: string; message?: string } } })?.response?.data?.message ??
+  fallback;
 
 export default function Pagos() {
-  const [clientes, setClientes]       = useState<EmpresaResponse[]>([]);
+  const [clientes, setClientes] = useState<EmpresaResponse[]>([]);
   const [mensualidades, setMensualidades] = useState<MensualidadResponse[]>([]);
-  const [idEmpresa, setIdEmpresa]     = useState<number | null>(null);
-  const [planes, setPlanes]           = useState<PlanPagoResponse[]>([]);
-  const [pagos, setPagos]             = useState<PagoResponse[]>([]);
+  const [idEmpresa, setIdEmpresa] = useState<number | null>(null);
+  const [planes, setPlanes] = useState<PlanPagoResponse[]>([]);
+  const [pagos, setPagos] = useState<PagoResponse[]>([]);
+  const [cobrosPorPago, setCobrosPorPago] = useState<Record<number, CobroExtraResponse[]>>({});
   const [cargandoCliente, setCargandoCliente] = useState(false);
-  const [modalPlan, setModalPlan]     = useState(false);
-  const [modalMensualidad, setModalMensualidad] = useState(false);
-  const [modalPago, setModalPago]     = useState<PagoResponse | null>(null);
-  const [guardando, setGuardando]     = useState(false);
-  const [error, setError]             = useState<string | null>(null);
-  const [aviso, setAviso]             = useState<string | null>(null);
+  const [modalPago, setModalPago] = useState<PagoResponse | null>(null);
+  const [guardando, setGuardando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [aviso, setAviso] = useState<string | null>(null);
 
-  const formPlan        = useForm<CrearPlanPagoRequest>();
-  const formMensualidad = useForm<CrearMensualidadRequest>();
-  const formPago        = useForm<RegistrarPagoRequest>();
+  const formPago = useForm<RegistrarPagoRequest>();
+
+  const planBasico =
+    mensualidades.find(m => m.nombrePlan === 'PLAN_BASICO') ?? mensualidades[0];
 
   useEffect(() => {
     listarClientes(0, 200).then(d => setClientes(d.content)).catch(() => {});
@@ -55,56 +74,70 @@ export default function Pagos() {
   const cargarCliente = useCallback(async (id: number) => {
     setCargandoCliente(true);
     try {
-      const [pls, pgs] = await Promise.all([listarPlanesPorCliente(id), historialPagos(id)]);
+      const [pls, pgs] = await Promise.all([
+        listarPlanesPorCliente(id),
+        historialPagos(id),
+      ]);
+
       setPlanes(pls);
       setPagos(pgs);
+
+      const entradas = await Promise.all(
+        pgs.map(async pago => {
+          const cobros = await listarCobrosExtra(pago.id).catch(() => []);
+          return [pago.id, cobros] as const;
+        })
+      );
+
+      const mapa: Record<number, CobroExtraResponse[]> = {};
+      entradas.forEach(([idPago, cobros]) => {
+        mapa[idPago] = cobros;
+      });
+      setCobrosPorPago(mapa);
     } finally {
       setCargandoCliente(false);
     }
   }, []);
 
-  useEffect(() => { if (idEmpresa != null) cargarCliente(idEmpresa); }, [idEmpresa, cargarCliente]);
+  useEffect(() => {
+    if (idEmpresa != null) cargarCliente(idEmpresa);
+  }, [idEmpresa, cargarCliente]);
 
-  const pagadas   = pagos.filter(p => p.estadoPago === 'PAGADO').length;
+  const extrasPago = (idPago: number) => cobrosPorPago[idPago] ?? [];
+
+  const totalExtras = (idPago: number) =>
+    extrasPago(idPago).reduce((total, cobro) => total + cobro.monto, 0);
+
+  const totalPago = (pago: PagoResponse) =>
+    pago.monto + totalExtras(pago.id);
+
+  const esCuotaExigible = (pago: PagoResponse) => {
+    if (pago.estadoPago === 'ATRASADO') return true;
+    if (pago.estadoPago !== 'PENDIENTE') return false;
+
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    const vencimiento = new Date(pago.fechaVencimiento);
+    vencimiento.setHours(0, 0, 0, 0);
+
+    return vencimiento <= hoy;
+  };
+
+  const pagadas = pagos.filter(p => p.estadoPago === 'PAGADO').length;
   const pendientes = pagos.filter(p => p.estadoPago === 'PENDIENTE').length;
   const atrasadas = pagos.filter(p => p.estadoPago === 'ATRASADO').length;
-  const totalAdeudado = pagos.filter(p => p.estadoPago !== 'PAGADO').reduce((s, p) => s + p.monto, 0);
 
-  async function onCrearPlan(data: CrearPlanPagoRequest) {
-    if (idEmpresa == null) return;
-    setError(null);
-    setGuardando(true);
-    try {
-      await crearPlanPago({ ...data, idEmpresa });
-      setModalPlan(false);
-      formPlan.reset();
-      await cargarCliente(idEmpresa);
-    } catch (e: unknown) {
-      setError(mensajeError(e, 'Error al asignar el plan.'));
-    } finally {
-      setGuardando(false);
-    }
-  }
-
-  async function onCrearMensualidad(data: CrearMensualidadRequest) {
-    setError(null);
-    setGuardando(true);
-    try {
-      await crearMensualidad(data);
-      setModalMensualidad(false);
-      formMensualidad.reset();
-      setMensualidades(await listarMensualidades());
-    } catch (e: unknown) {
-      setError(mensajeError(e, 'Error al crear el plan.'));
-    } finally {
-      setGuardando(false);
-    }
-  }
+  const totalAdeudado = pagos
+    .filter(esCuotaExigible)
+    .reduce((total, pago) => total + totalPago(pago), 0);
 
   async function onRegistrarPago(data: RegistrarPagoRequest) {
     if (!modalPago || idEmpresa == null) return;
+
     setError(null);
     setGuardando(true);
+
     try {
       await registrarPago(modalPago.id, data);
       setModalPago(null);
@@ -133,81 +166,134 @@ export default function Pagos() {
   return (
     <>
       <div className="page-title">Pagos</div>
-      <div className="page-subtitle">Planes, cuotas y control de morosidad</div>
+      <div className="page-subtitle">Plan básico, suscripción mensual y control de morosidad</div>
 
       <div className="kpi-row">
-        <KpiCard label="Pagadas"     value={pagadas} variante="ok" />
-        <KpiCard label="Pendientes"  value={pendientes} variante="warn" />
-        <KpiCard label="Atrasadas"   value={atrasadas} variante="peligro" />
-        <KpiCard label="Adeudado"    value={clp(totalAdeudado)} />
+        <KpiCard label="Pagadas" value={pagadas} variante="ok" />
+        <KpiCard label="Pendientes" value={pendientes} variante="warn" />
+        <KpiCard label="Atrasadas" value={atrasadas} variante="peligro" />
+        <KpiCard label="Adeudado" value={clp(totalAdeudado)} />
       </div>
 
-      {aviso && <div className="alert-item alert-item--info" style={{ marginBottom: 12 }}>{aviso}</div>}
+      {aviso && (
+        <div className="alert-item alert-item--info" style={{ marginBottom: 12 }}>
+          {aviso}
+        </div>
+      )}
 
       <Panel
-        titulo="⚙️ Acciones de cobranza"
+        titulo="Acciones de cobranza"
         accion={
           <div className="btn-group">
-            <button className="btn btn-sm btn-warn" onClick={onEvaluarMorosidad}>Evaluar morosidad</button>
-            <button className="btn btn-sm btn-danger" onClick={onSuspenderMorosos}>Suspender morosos</button>
+            <button className="btn btn-sm btn-warn" onClick={onEvaluarMorosidad}>
+              Evaluar morosidad
+            </button>
+            <button className="btn btn-sm btn-danger" onClick={onSuspenderMorosos}>
+              Suspender morosos
+            </button>
           </div>
         }
       >
         <div style={{ fontSize: 13, color: '#6b7280' }}>
-          "Evaluar morosidad" marca como atrasadas las cuotas vencidas e impagas y deja morosos a los clientes afectados (RF11).
-          "Suspender morosos" suspende a quienes acumulan 2 o más cuotas atrasadas (RF12).
+          “Evaluar morosidad” marca como atrasadas las cuotas vencidas e impagas.
+          “Suspender morosos” suspende a quienes acumulan 2 o más cuotas atrasadas.
         </div>
       </Panel>
 
       <div className="grid-2">
-        {/* Catálogo de planes */}
-        <Panel
-          titulo="📦 Catálogo de planes"
-          accion={<button className="btn btn-sm btn-primary" onClick={() => { formMensualidad.reset(); setError(null); setModalMensualidad(true); }}>+ Nuevo plan</button>}
-        >
-          {mensualidades.length === 0 ? (
-            <div className="placeholder">No hay planes en el catálogo.</div>
+        <Panel titulo="Tarifas del plan básico">
+          {!planBasico ? (
+            <div className="placeholder">Cargando tarifas...</div>
           ) : (
             <table className="app-table">
-              <thead><tr><th>Plan</th><th>Monto base</th><th>Visitas</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Concepto</th>
+                  <th>Incluido</th>
+                  <th>Precio adicional</th>
+                </tr>
+              </thead>
               <tbody>
-                {mensualidades.map(m => (
-                  <tr key={m.id}>
-                    <td style={{ fontWeight: 600, color: '#1a3a5c' }}>{m.nombrePlan}</td>
-                    <td>{clp(m.montoBase)}</td>
-                    <td>{m.visitasIncluidas ?? '—'}</td>
-                  </tr>
-                ))}
+                <tr>
+                  <td>Mensualidad plan básico</td>
+                  <td>Servicio mensual</td>
+                  <td>{clp(planBasico.montoBase)}</td>
+                </tr>
+                <tr>
+                  <td>Visitas preventivas</td>
+                  <td>{planBasico.visitasIncluidas ?? 0} al mes</td>
+                  <td>{clp(planBasico.costoVisitaExtra ?? 0)} por visita extra</td>
+                </tr>
+                <tr>
+                  <td>Asesorías</td>
+                  <td>{planBasico.asesoriasIncluidas ?? 0} al mes</td>
+                  <td>{clp(planBasico.costoAsesoriaExtra ?? 0)} por asesoría extra</td>
+                </tr>
+                <tr>
+                  <td>Capacitaciones</td>
+                  <td>
+                    {planBasico.capacitacionesIncluidas == null
+                      ? 'Sin límite'
+                      : `${planBasico.capacitacionesIncluidas} al mes`}
+                  </td>
+                  <td>
+                    {planBasico.costoCapacitacionExtra
+                      ? `${clp(planBasico.costoCapacitacionExtra)} por capacitación extra`
+                      : 'No aplica'}
+                  </td>
+                </tr>
+                <tr>
+                  <td>Llamados</td>
+                  <td>Incluidos entre 09:00 y 18:00</td>
+                  <td>
+                    {clp(planBasico.costoLlamadoFueraHorario ?? 0)} antes de 09:00 o después de 18:00
+                  </td>
+                </tr>
               </tbody>
             </table>
           )}
         </Panel>
 
-        {/* Selector de cliente + planes asignados */}
-        <Panel
-          titulo="🏢 Cliente"
-          accion={idEmpresa != null
-            ? <button className="btn btn-sm btn-primary" onClick={() => { formPlan.reset(); setError(null); setModalPlan(true); }}>+ Asignar plan</button>
-            : undefined}
-        >
-          <select className="auth-input" value={idEmpresa ?? ''} onChange={e => setIdEmpresa(e.target.value ? Number(e.target.value) : null)} style={{ marginBottom: 12 }}>
+        <Panel titulo="Cliente">
+          <select
+            className="auth-input"
+            value={idEmpresa ?? ''}
+            onChange={e => setIdEmpresa(e.target.value ? Number(e.target.value) : null)}
+            style={{ marginBottom: 12 }}
+          >
             <option value="">Seleccionar cliente...</option>
-            {clientes.map(c => <option key={c.id} value={c.id}>{c.razonSocial}</option>)}
+            {clientes.map(cliente => (
+              <option key={cliente.id} value={cliente.id}>
+                {cliente.razonSocial}
+              </option>
+            ))}
           </select>
+
           {idEmpresa == null ? (
-            <div className="placeholder">Selecciona un cliente para ver sus planes y pagos.</div>
+            <div className="placeholder">Selecciona un cliente para ver su suscripción y pagos.</div>
           ) : planes.length === 0 ? (
-            <div className="placeholder">El cliente no tiene planes asignados.</div>
+            <div className="placeholder">El cliente no tiene suscripción activa registrada.</div>
           ) : (
             <table className="app-table">
-              <thead><tr><th>Plan</th><th>Inicio</th><th>Cuotas</th><th>Periodicidad</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Plan</th>
+                  <th>Inicio</th>
+                  <th>Estado</th>
+                  <th>Periodicidad</th>
+                </tr>
+              </thead>
               <tbody>
-                {planes.map(p => (
-                  <tr key={p.id}>
-                    <td style={{ fontWeight: 600, color: '#1a3a5c' }}>{p.nombrePlan}</td>
-                    <td>{fmtFecha(p.fechaInicio)}</td>
-                    <td>{p.cuotasTotales ?? '—'}</td>
-                    <td>{p.periodicidad}</td>
+                {planes.map(plan => (
+                  <tr key={plan.id}>
+                    <td style={{ fontWeight: 600, color: '#1a3a5c' }}>{plan.nombrePlan}</td>
+                    <td>{fmtFecha(plan.fechaInicio)}</td>
+                    <td>
+                      <Badge variante={plan.activo ? 'green' : 'gray'}>
+                        {plan.activo ? 'Activo' : 'Terminado'}
+                      </Badge>
+                    </td>
+                    <td>{plan.periodicidad}</td>
                   </tr>
                 ))}
               </tbody>
@@ -216,9 +302,8 @@ export default function Pagos() {
         </Panel>
       </div>
 
-      {/* Historial de cuotas */}
       {idEmpresa != null && (
-        <Panel titulo="💳 Historial de cuotas">
+        <Panel titulo="Historial de cuotas">
           {cargandoCliente ? (
             <div className="placeholder">Cargando...</div>
           ) : pagos.length === 0 ? (
@@ -227,21 +312,55 @@ export default function Pagos() {
             <table className="app-table">
               <thead>
                 <tr>
-                  <th>Cuota</th><th>Monto</th><th>Vencimiento</th><th>Fecha pago</th><th>Medio</th><th>Estado</th><th>Acciones</th>
+                  <th>Cuota</th>
+                  <th>Base</th>
+                  <th>Extras</th>
+                  <th>Total</th>
+                  <th>Vencimiento</th>
+                  <th>Fecha pago</th>
+                  <th>Medio</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {pagos.map(p => (
-                  <tr key={p.id}>
-                    <td>#{p.numeroCuota}</td>
-                    <td>{clp(p.monto)}</td>
-                    <td>{fmtFecha(p.fechaVencimiento)}</td>
-                    <td>{fmtFecha(p.fechaPago)}</td>
-                    <td>{p.medioPago ?? '—'}</td>
-                    <td><Badge variante={badgePorEstadoPago[p.estadoPago]}>{p.estadoPago}</Badge></td>
+                {pagos.map(pago => (
+                  <tr key={pago.id}>
+                    <td>#{pago.numeroCuota}</td>
+                    <td>{clp(pago.monto)}</td>
                     <td>
-                      {p.estadoPago !== 'PAGADO' && (
-                        <button className="btn btn-sm btn-success" onClick={() => { formPago.reset(); setError(null); setModalPago(p); }}>Registrar pago</button>
+                      {totalExtras(pago.id) > 0 ? (
+                        <div>
+                          <strong>{clp(totalExtras(pago.id))}</strong>
+                          <div style={{ fontSize: 12, color: '#6b7280' }}>
+                            {extrasPago(pago.id).map(c => c.descripcion ?? c.tipoCobro).join(', ')}
+                          </div>
+                        </div>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
+                    <td>{clp(totalPago(pago))}</td>
+                    <td>{fmtFecha(pago.fechaVencimiento)}</td>
+                    <td>{fmtFecha(pago.fechaPago)}</td>
+                    <td>{pago.medioPago ?? '—'}</td>
+                    <td>
+                      <Badge variante={badgePorEstadoPago[pago.estadoPago]}>
+                        {pago.estadoPago}
+                      </Badge>
+                    </td>
+                    <td>
+                      {pago.estadoPago !== 'PAGADO' && (
+                        <button
+                          className="btn btn-sm btn-success"
+                          onClick={() => {
+                            formPago.reset();
+                            setError(null);
+                            setModalPago(pago);
+                          }}
+                        >
+                          Registrar pago
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -252,97 +371,6 @@ export default function Pagos() {
         </Panel>
       )}
 
-      {/* Modal nuevo plan (catálogo) */}
-      <Modal
-        abierto={modalMensualidad}
-        titulo="Nuevo plan (catálogo)"
-        onCerrar={() => setModalMensualidad(false)}
-        footer={
-          <>
-            <button className="btn btn-outline" onClick={() => setModalMensualidad(false)}>Cancelar</button>
-            <button className="btn btn-primary" form="form-mensualidad" type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Guardar plan'}</button>
-          </>
-        }
-      >
-        <form id="form-mensualidad" onSubmit={formMensualidad.handleSubmit(onCrearMensualidad)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: 'span 2' }}>
-              <label className="auth-label">Nombre del plan *</label>
-              <input className={`auth-input ${formMensualidad.formState.errors.nombrePlan ? 'auth-input--error' : ''}`}
-                placeholder="BASICO, PRO, PREMIUM..."
-                {...formMensualidad.register('nombrePlan', { required: 'Obligatorio' })} />
-              {formMensualidad.formState.errors.nombrePlan && <span className="auth-field-error">{formMensualidad.formState.errors.nombrePlan.message}</span>}
-            </div>
-            <div>
-              <label className="auth-label">Monto base *</label>
-              <input type="number" step="1" className={`auth-input ${formMensualidad.formState.errors.montoBase ? 'auth-input--error' : ''}`}
-                {...formMensualidad.register('montoBase', { required: 'Obligatorio', valueAsNumber: true, min: { value: 1, message: 'Debe ser mayor a 0' } })} />
-              {formMensualidad.formState.errors.montoBase && <span className="auth-field-error">{formMensualidad.formState.errors.montoBase.message}</span>}
-            </div>
-            <div>
-              <label className="auth-label">Visitas incluidas</label>
-              <input type="number" className="auth-input" {...formMensualidad.register('visitasIncluidas', { valueAsNumber: true })} />
-            </div>
-            <div>
-              <label className="auth-label">Costo visita extra</label>
-              <input type="number" className="auth-input" {...formMensualidad.register('costoVisitaExtra', { valueAsNumber: true })} />
-            </div>
-            <div>
-              <label className="auth-label">Costo asesoría extra</label>
-              <input type="number" className="auth-input" {...formMensualidad.register('costoAsesoriaExtra', { valueAsNumber: true })} />
-            </div>
-          </div>
-          {error && <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>{error}</div>}
-        </form>
-      </Modal>
-
-      {/* Modal asignar plan al cliente */}
-      <Modal
-        abierto={modalPlan}
-        titulo="Asignar plan al cliente"
-        onCerrar={() => setModalPlan(false)}
-        footer={
-          <>
-            <button className="btn btn-outline" onClick={() => setModalPlan(false)}>Cancelar</button>
-            <button className="btn btn-primary" form="form-plan" type="submit" disabled={guardando}>{guardando ? 'Guardando...' : 'Asignar y generar cuotas'}</button>
-          </>
-        }
-      >
-        <form id="form-plan" onSubmit={formPlan.handleSubmit(onCrearPlan)} noValidate>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div style={{ gridColumn: 'span 2' }}>
-              <label className="auth-label">Plan *</label>
-              <select className={`auth-input ${formPlan.formState.errors.idMensualidad ? 'auth-input--error' : ''}`}
-                {...formPlan.register('idMensualidad', { required: 'Obligatorio', valueAsNumber: true })}>
-                <option value="">Seleccionar...</option>
-                {mensualidades.map(m => <option key={m.id} value={m.id}>{m.nombrePlan} — {clp(m.montoBase)}</option>)}
-              </select>
-              {formPlan.formState.errors.idMensualidad && <span className="auth-field-error">{formPlan.formState.errors.idMensualidad.message}</span>}
-            </div>
-            <div>
-              <label className="auth-label">Fecha de inicio *</label>
-              <input type="date" className={`auth-input ${formPlan.formState.errors.fechaInicio ? 'auth-input--error' : ''}`}
-                {...formPlan.register('fechaInicio', { required: 'Obligatorio' })} />
-              {formPlan.formState.errors.fechaInicio && <span className="auth-field-error">{formPlan.formState.errors.fechaInicio.message}</span>}
-            </div>
-            <div>
-              <label className="auth-label">N° de cuotas *</label>
-              <input type="number" className={`auth-input ${formPlan.formState.errors.cuotasTotales ? 'auth-input--error' : ''}`}
-                {...formPlan.register('cuotasTotales', { required: 'Obligatorio', valueAsNumber: true, min: { value: 1, message: 'Mínimo 1' } })} />
-              {formPlan.formState.errors.cuotasTotales && <span className="auth-field-error">{formPlan.formState.errors.cuotasTotales.message}</span>}
-            </div>
-            <div style={{ gridColumn: 'span 2' }}>
-              <label className="auth-label">Periodicidad</label>
-              <select className="auth-input" {...formPlan.register('periodicidad')}>
-                {PERIODICIDADES.map(p => <option key={p} value={p}>{p}</option>)}
-              </select>
-            </div>
-          </div>
-          {error && <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>{error}</div>}
-        </form>
-      </Modal>
-
-      {/* Modal registrar pago */}
       <Modal
         abierto={!!modalPago}
         titulo="Registrar pago de cuota"
@@ -350,21 +378,41 @@ export default function Pagos() {
         onCerrar={() => setModalPago(null)}
         footer={
           <>
-            <button className="btn btn-outline" onClick={() => setModalPago(null)}>Cancelar</button>
-            <button className="btn btn-success" form="form-pago" type="submit" disabled={guardando}>{guardando ? 'Registrando...' : 'Confirmar pago'}</button>
+            <button className="btn btn-outline" onClick={() => setModalPago(null)}>
+              Cancelar
+            </button>
+            <button
+              className="btn btn-success"
+              form="form-pago"
+              type="submit"
+              disabled={guardando}
+            >
+              {guardando ? 'Registrando...' : 'Confirmar pago'}
+            </button>
           </>
         }
       >
         <form id="form-pago" onSubmit={formPago.handleSubmit(onRegistrarPago)} noValidate>
           <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
-            Cuota #{modalPago?.numeroCuota} · {modalPago && clp(modalPago.monto)} · vence {fmtFecha(modalPago?.fechaVencimiento ?? null)}
+            Cuota #{modalPago?.numeroCuota} · {modalPago && clp(totalPago(modalPago))} · vence{' '}
+            {fmtFecha(modalPago?.fechaVencimiento ?? null)}
           </div>
+
           <label className="auth-label">Medio de pago</label>
           <select className="auth-input" {...formPago.register('medioPago')}>
             <option value="">Seleccionar...</option>
-            {MEDIOS_PAGO.map(m => <option key={m} value={m}>{m}</option>)}
+            {MEDIOS_PAGO.map(medio => (
+              <option key={medio} value={medio}>
+                {medio}
+              </option>
+            ))}
           </select>
-          {error && <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>{error}</div>}
+
+          {error && (
+            <div className="auth-alert auth-alert--error" style={{ marginTop: 12 }}>
+              {error}
+            </div>
+          )}
         </form>
       </Modal>
     </>

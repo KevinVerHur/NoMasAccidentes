@@ -90,4 +90,53 @@ public class PlanPagoService {
         return planPagoMapper.toResponse(planPagoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Plan de pago", id)));
     }
+
+    @Transactional
+    public PlanPagoResponse asignarPlanBasico(Empresa empresa) {
+        Mensualidad mensualidad = mensualidadService.buscarPlanBasico();
+
+        PlanPago plan = PlanPago.builder()
+            .empresa(empresa)
+            .mensualidad(mensualidad)
+            .fechaInicio(LocalDate.now())
+            .fechaTermino(null)
+            .cuotasTotales(null)
+            .periodicidad(Periodicidad.MENSUAL)
+            .activo(true)
+            .build();
+
+        PlanPago guardado = planPagoRepository.save(plan);
+
+        generarCuotaMensualSiNoExiste(guardado, LocalDate.now());
+
+        log.info("Plan básico activo asignado automáticamente empresa={} plan={}",
+            empresa.getId(), guardado.getId());
+
+        return planPagoMapper.toResponse(guardado);
+    }
+
+    @Transactional
+    public void generarCuotaMensualSiNoExiste(PlanPago plan, LocalDate fechaReferencia) {
+        LocalDate inicioMes = fechaReferencia.withDayOfMonth(1);
+
+        boolean yaExiste = pagoRepository.existsByPlanIdAndFechaEmision(plan.getId(), inicioMes);
+
+        if (yaExiste) {
+            return;
+        }
+
+        int numeroCuota = pagoRepository.countByPlanId(plan.getId()) + 1;
+
+        pagoRepository.save(Pago.builder()
+            .plan(plan)
+            .numeroCuota(numeroCuota)
+            .monto(plan.getMensualidad().getMontoBase())
+            .fechaEmision(inicioMes)
+            .fechaVencimiento(inicioMes)
+            .estadoPago(EstadoPago.PENDIENTE)
+            .build());
+
+        log.info("Cuota mensual generada plan={} cuota={} periodo={}",
+            plan.getId(), numeroCuota, inicioMes);
+    }
 }

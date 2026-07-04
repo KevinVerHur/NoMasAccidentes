@@ -12,7 +12,6 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -86,5 +85,12 @@ public class PagoController {
     @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public List<CobroExtraResponse> listarCobrosExtra(@PathVariable Long id) {
         return pagoService.listarCobrosExtra(id);
+
     }
+
+    @GetMapping("/{id}/mis-cobros-extra")
+@PreAuthorize("hasRole('CLIENTE')")
+public List<CobroExtraResponse> listarMisCobrosExtra(@PathVariable Long id, Principal principal) {
+    return pagoService.listarMisCobrosExtra(id, principal.getName());
+}
 }

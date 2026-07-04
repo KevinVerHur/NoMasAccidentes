@@ -911,3 +911,18 @@ export interface ActualizarConfiguracionEmpresaRequest {
   direccion?: string;
   region?: string;
 }
+export type TipoCobro =
+  | 'VISITA_EXTRA'
+  | 'ASESORIA_EXTRA'
+  | 'CAPACITACION_EXTRA'
+  | 'LLAMADO_FUERA_HORARIO';
+
+export interface CobroExtraResponse {
+  id: number;
+  idPago: number;
+  tipoCobro: TipoCobro;
+  idOrigen: number | null;
+  descripcion: string | null;
+  monto: number;
+  fechaGeneracion: string;
+}

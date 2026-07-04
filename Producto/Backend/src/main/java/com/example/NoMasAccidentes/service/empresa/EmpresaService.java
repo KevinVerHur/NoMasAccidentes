@@ -32,7 +32,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.example.NoMasAccidentes.service.pago.PlanPagoService;
 /**
  * Gestión de empresas cliente (RF06–RF12). El alta crea la empresa (persona
  * jurídica) junto con su primer representante (persona de contacto), sobre
@@ -58,7 +58,7 @@ public class EmpresaService {
     private final CorreoService correoService;
     private final PasswordEncoder passwordEncoder;
     private final ListaChequeoService listaChequeoService;
-
+    private final PlanPagoService planPagoService;
     @Transactional
     public EmpresaResponse crear(CrearEmpresaRequest request) {
         if (empresaRepository.findByRut(request.rut()).isPresent()) {
@@ -85,7 +85,9 @@ public class EmpresaService {
 
         listaChequeoService.crearPorDefecto(empresa);
         crearPrimerRepresentante(empresa, request);
+        planPagoService.asignarPlanBasico(empresa);
 
+        
         log.info("Empresa creada id={} rut={} (RF06)", empresa.getId(), empresa.getRut());
         return empresaMapper.toResponse(empresa);
     }
