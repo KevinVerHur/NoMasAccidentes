@@ -13,10 +13,14 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -86,6 +90,12 @@ public class Visita extends BaseEntity {
 
     @Column(name = "observaciones", length = 2000)
     private String observaciones;
+
+    /** Resultado del chequeo por ítem registrado en terreno (RF19). */
+    @OneToMany(mappedBy = "visita", fetch = FetchType.LAZY)
+    @OrderBy("id ASC")
+    @Builder.Default
+    private List<ResultadoChequeo> resultados = new ArrayList<>();
 
     /** Visita adicional fuera del plan, facturable como costo extra. */
     @Column(name = "es_visita_extra", nullable = false)

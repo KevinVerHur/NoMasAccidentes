@@ -11,6 +11,9 @@ public record ItemChequeoRequest(
     @Size(max = 80)
     String categoria,
 
+    @Size(max = 250)
+    String normaLegal,
+
     Boolean obligatorio,
 
     Integer orden

@@ -1,7 +1,25 @@
-import type { VisitaResponse, PlanificarVisitaRequest, RegistrarVisitaRequest } from '../types';
+import type {
+  VisitaResponse,
+  PlanificarVisitaRequest,
+  RegistrarVisitaRequest,
+  ListaChequeoResponse,
+  ResultadoChequeoResponse,
+} from '../types';
 import api from './axiosConfig';
 
 interface Pagina<T> { content: T[]; totalElements: number; totalPages: number; }
+
+/** Lista de chequeo de una empresa, para marcarla al registrar la visita (RF19). */
+export async function obtenerListaChequeoEmpresa(idEmpresa: number): Promise<ListaChequeoResponse> {
+  const res = await api.get<ListaChequeoResponse>(`/api/listas-chequeo/empresa/${idEmpresa}`);
+  return res.data;
+}
+
+/** Resultado del chequeo registrado en una visita (RF19). */
+export async function obtenerResultadosVisita(id: number): Promise<ResultadoChequeoResponse[]> {
+  const res = await api.get<ResultadoChequeoResponse[]>(`/api/visitas/${id}/resultados`);
+  return res.data;
+}
 
 export async function listarVisitas(page = 0, size = 100, idCliente?: number): Promise<Pagina<VisitaResponse>> {
   const res = await api.get<Pagina<VisitaResponse>>('/api/visitas', {

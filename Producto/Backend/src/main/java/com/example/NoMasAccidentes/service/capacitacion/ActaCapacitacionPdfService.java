@@ -15,6 +15,7 @@ import org.openpdf.text.Phrase;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfWriter;
+import com.example.NoMasAccidentes.service.pdf.PdfMarca;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,8 +27,8 @@ public class ActaCapacitacionPdfService {
     private static final DateTimeFormatter F_FECHA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     private static final DateTimeFormatter F_HORA = DateTimeFormatter.ofPattern("HH:mm");
 
-    private static final Font TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
-    private static final Font SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+    private static final Font TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, PdfMarca.NAVY);
+    private static final Font SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, PdfMarca.NAVY);
     private static final Font NORMAL = FontFactory.getFont(FontFactory.HELVETICA, 10);
     private static final Font CABECERA = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10);
 
@@ -44,7 +45,8 @@ public class ActaCapacitacionPdfService {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
             Document document = new Document(PageSize.A4, 40, 40, 40, 40);
-            PdfWriter.getInstance(document, baos);
+            PdfWriter writer = PdfWriter.getInstance(document, baos);
+            PdfMarca.aplicar(document, writer);
 
             document.open();
 

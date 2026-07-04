@@ -47,6 +47,10 @@ public class ItemChequeo extends BaseEntity {
     @Column(name = "categoria", length = 80)
     private String categoria;
 
+    /** Referencia normativa que sustenta el ítem (ej. "Art. 21 D.S. 594/1999 MINSAL"). */
+    @Column(name = "norma_legal", length = 250)
+    private String normaLegal;
+
     @Column(name = "obligatorio", nullable = false)
     @Builder.Default
     private boolean obligatorio = true;

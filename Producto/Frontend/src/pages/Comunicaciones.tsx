@@ -6,11 +6,13 @@ import Modal from '../components/ui/Modal';
 import Panel from '../components/ui/Panel';
 import { useAuth } from '../context/AuthContext';
 import { listarClientes } from '../api/clientes';
-import { crearConsulta, listarConsultas, listarConsultasPorCliente } from '../api/consultas';
+import { crearConsulta, listarConsultas, listarConsultasPorCliente, misConsultas } from '../api/consultas';
+import { listarProfesionales } from '../api/profesionales';
 import type {
   EmpresaResponse,
   ConsultaResponse,
   CrearConsultaRequest,
+  ProfesionalResponse,
   VarianteBadge,
 } from '../types';
 
@@ -33,6 +35,7 @@ export default function Comunicaciones() {
   const { rol } = useAuth();
   const [consultas, setConsultas] = useState<ConsultaResponse[]>([]);
   const [clientes, setClientes] = useState<EmpresaResponse[]>([]);
+  const [profesionales, setProfesionales] = useState<ProfesionalResponse[]>([]);
   const [cargando, setCargando] = useState(true);
   const [filtroCliente, setFiltroCliente] = useState('');
   const [busqueda, setBusqueda] = useState('');
@@ -50,7 +53,8 @@ export default function Comunicaciones() {
         const data = await listarConsultasPorCliente(Number(filtroCliente));
         setConsultas(data);
       } else if (rol === 'PROFESIONAL') {
-        setConsultas([]);
+        const data = await misConsultas();
+        setConsultas(data);
       } else {
         const data = await listarConsultas(0, 200);
         setConsultas(data.content);
@@ -70,6 +74,14 @@ export default function Comunicaciones() {
       .catch(() => setClientes([]));
   }, []);
 
+  // El admin puede atribuir el llamado a un profesional; se carga el listado para el selector.
+  useEffect(() => {
+    if (rol !== 'ADMIN') return;
+    listarProfesionales(0, 200)
+      .then((data) => setProfesionales(data.content))
+      .catch(() => setProfesionales([]));
+  }, [rol]);
+
   const filtradas = consultas.filter((consulta) => {
     const texto = busqueda.toLowerCase();
     return !texto
@@ -85,6 +97,7 @@ export default function Comunicaciones() {
   function abrirNueva() {
     formNueva.reset({
       idEmpresa: filtroCliente ? Number(filtroCliente) : undefined as unknown as number,
+      idProfesional: undefined,
       motivo: '',
       detalle: '',
     });
@@ -131,7 +144,7 @@ export default function Comunicaciones() {
       <Panel
         titulo="Registro de consultas"
         accion={
-          rol === 'ADMIN' ? (
+          rol === 'ADMIN' || rol === 'PROFESIONAL' ? (
             <button className="btn btn-sm btn-primary" onClick={abrirNueva}>
               + Nueva consulta
             </button>
@@ -160,7 +173,7 @@ export default function Comunicaciones() {
         ) : filtradas.length === 0 ? (
           <div className="placeholder">
             {rol === 'PROFESIONAL' && !filtroCliente
-              ? 'Selecciona un cliente para ver su historial de consultas.'
+              ? 'Aún no has atendido llamados. Registra uno con "+ Nueva consulta".'
               : 'No hay consultas registradas.'}
           </div>
         ) : (
@@ -168,6 +181,7 @@ export default function Comunicaciones() {
             <thead>
               <tr>
                 <th>Cliente</th>
+                <th>Atendió</th>
                 <th>Fecha</th>
                 <th>Motivo</th>
                 <th>Detalle</th>
@@ -181,6 +195,7 @@ export default function Comunicaciones() {
                 return (
                   <tr key={consulta.id}>
                     <td>{consulta.razonSocialEmpresa}</td>
+                    <td>{consulta.nombreProfesional ?? '—'}</td>
                     <td>{fmtFecha(consulta.fechaHora)}</td>
                     <td>{consulta.motivo}</td>
                     <td>{consulta.detalle ?? '-'}</td>
@@ -235,6 +250,25 @@ export default function Comunicaciones() {
               </select>
             </div>
 
+            {rol === 'ADMIN' && (
+              <div>
+                <label className="auth-label">Profesional que atiende</label>
+                <select
+                  className="auth-input"
+                  {...formNueva.register('idProfesional', {
+                    setValueAs: (v) => (v === '' || v == null ? undefined : Number(v)),
+                  })}
+                >
+                  <option value="">Profesional asignado al cliente</option>
+                  {profesionales.map((profesional) => (
+                    <option key={profesional.id} value={profesional.id}>
+                      {profesional.nombreCompleto}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div>
               <label className="auth-label">Motivo *</label>
               <input
@@ -256,7 +290,8 @@ export default function Comunicaciones() {
           </div>
 
           <div className="alert-item alert-item--info" style={{ marginTop: 12 }}>
-            El backend marca automaticamente si la consulta fue registrada fuera de horario y si genera costo adicional.
+            El sistema marca automáticamente si el llamado fue fuera de horario (L-V 9:00–18:00) y si genera costo adicional.
+            {rol === 'PROFESIONAL' && ' El llamado se registrará a tu nombre.'}
           </div>
 
           {error && (

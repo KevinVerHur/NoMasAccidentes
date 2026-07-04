@@ -1,8 +1,10 @@
 package com.example.NoMasAccidentes.controller.empresa;
 
 import com.example.NoMasAccidentes.dto.empresa.ActualizarEmpresaRequest;
+import com.example.NoMasAccidentes.dto.empresa.ActualizarMiContactoRequest;
 import com.example.NoMasAccidentes.dto.empresa.CrearEmpresaRequest;
 import com.example.NoMasAccidentes.dto.empresa.EmpresaResponse;
+import com.example.NoMasAccidentes.dto.empresa.MiContactoResponse;
 import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -57,6 +59,23 @@ public class EmpresaController {
     @PreAuthorize("hasRole('CLIENTE')")
     public EmpresaResponse me(Principal principal) {
         return empresaService.empresaPorEmail(principal.getName());
+    }
+
+    @Operation(summary = "Obtener los datos de contacto del representante autenticado (portal cliente)")
+    @GetMapping("/me/contacto")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public MiContactoResponse miContacto(Principal principal) {
+        return empresaService.miContacto(principal.getName());
+    }
+
+    @Operation(summary = "Actualizar mis datos de contacto (portal cliente)",
+            description = "El representante edita solo su nombre, cargo y teléfono. El email y los datos de la empresa no se modifican aquí.")
+    @PutMapping("/me/contacto")
+    @PreAuthorize("hasRole('CLIENTE')")
+    public MiContactoResponse actualizarMiContacto(
+            Principal principal,
+            @Valid @RequestBody ActualizarMiContactoRequest request) {
+        return empresaService.actualizarMiContacto(principal.getName(), request);
     }
 
     @Operation(summary = "Obtener empresa por ID")

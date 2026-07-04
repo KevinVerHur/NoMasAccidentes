@@ -6,9 +6,11 @@ public record ConsultaResponse (
     Long id,
     Long idEmpresa,
     String razonSocialEmpresa,
+    Long idProfesional,
+    String nombreProfesional,
     LocalDateTime fechaHora,
-    String motivo, 
+    String motivo,
     String detalle,
-    boolean fueraHorario, 
+    boolean fueraHorario,
     boolean costoAdicional
 ) {}

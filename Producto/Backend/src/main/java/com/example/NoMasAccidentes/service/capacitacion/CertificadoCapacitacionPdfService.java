@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
 import org.openpdf.text.*;
 import org.openpdf.text.pdf.PdfWriter;
+import com.example.NoMasAccidentes.service.pdf.PdfMarca;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,8 +17,8 @@ public class CertificadoCapacitacionPdfService {
     private final CapacitacionRepository capacitacionRepository;
 
     private static final DateTimeFormatter F_FECHA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-    private static final Font TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22);
-    private static final Font SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14);
+    private static final Font TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22, PdfMarca.NAVY);
+    private static final Font SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PdfMarca.NAVY);
     private static final Font NORMAL = FontFactory.getFont(FontFactory.HELVETICA, 12);
 
     public CertificadoCapacitacionPdfService(CapacitacionRepository capacitacionRepository) {
@@ -32,7 +33,8 @@ public class CertificadoCapacitacionPdfService {
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             Document document = new Document(PageSize.A4.rotate(), 50, 50, 50, 50);
-            PdfWriter.getInstance(document, baos);
+            PdfWriter writer = PdfWriter.getInstance(document, baos);
+            PdfMarca.aplicar(document, writer);
 
             document.open();
 
@@ -117,7 +119,8 @@ public class CertificadoCapacitacionPdfService {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
         Document document = new Document(PageSize.A4.rotate(), 50, 50, 50, 50);
-        PdfWriter.getInstance(document, baos);
+        PdfWriter writer = PdfWriter.getInstance(document, baos);
+        PdfMarca.aplicar(document, writer);
 
         document.open();
 

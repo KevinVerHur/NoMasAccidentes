@@ -1,4 +1,10 @@
-import type { EmpresaResponse, CrearEmpresaRequest, ActualizarEmpresaRequest } from '../types';
+import type {
+  EmpresaResponse,
+  CrearEmpresaRequest,
+  ActualizarEmpresaRequest,
+  MiContactoResponse,
+  ActualizarMiContactoRequest,
+} from '../types';
 import api from './axiosConfig';
 
 interface Pagina<T> { content: T[]; totalElements: number; totalPages: number; }
@@ -39,5 +45,15 @@ export async function eliminarCliente(id: number): Promise<void> {
 
 export async function miCliente(): Promise<EmpresaResponse> {
   const res = await api.get<EmpresaResponse>('/api/empresas/me');
+  return res.data;
+}
+
+export async function miContacto(): Promise<MiContactoResponse> {
+  const res = await api.get<MiContactoResponse>('/api/empresas/me/contacto');
+  return res.data;
+}
+
+export async function actualizarMiContacto(data: ActualizarMiContactoRequest): Promise<MiContactoResponse> {
+  const res = await api.put<MiContactoResponse>('/api/empresas/me/contacto', data);
   return res.data;
 }

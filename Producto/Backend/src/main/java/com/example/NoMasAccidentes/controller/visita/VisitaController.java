@@ -2,6 +2,7 @@ package com.example.NoMasAccidentes.controller.visita;
 
 import com.example.NoMasAccidentes.dto.visita.PlanificarVisitaRequest;
 import com.example.NoMasAccidentes.dto.visita.RegistrarVisitaRequest;
+import com.example.NoMasAccidentes.dto.visita.ResultadoChequeoResponse;
 import com.example.NoMasAccidentes.dto.visita.VisitaResponse;
 import com.example.NoMasAccidentes.service.visita.VisitaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -52,6 +53,13 @@ public class VisitaController {
         return idEmpresa != null
                 ? visitaService.listarPorEmpresa(idEmpresa, pageable)
                 : visitaService.listar(pageable);
+    }
+
+    @Operation(summary = "Resultado del chequeo registrado en la visita (RF19)")
+    @GetMapping("/{id}/resultados")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
+    public List<ResultadoChequeoResponse> resultados(@PathVariable Long id) {
+        return visitaService.resultadosDeVisita(id);
     }
 
     @GetMapping("/{id}")
