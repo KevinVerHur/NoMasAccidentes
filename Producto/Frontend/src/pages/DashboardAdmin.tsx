@@ -18,6 +18,7 @@ import { obtenerDashboardAdmin } from '../api/dashboard';
 import { listarVisitas } from '../api/visitas';
 import { listarCapacitaciones } from '../api/capacitaciones';
 import { listarAsesorias } from '../api/asesorias';
+import { listarActividadesPreventivas } from '../api/ActividadesPreventivas';
 import type {
   DashboardAdminResponse,
   EstadoVisita,
@@ -29,6 +30,8 @@ import type {
   VisitaResponse,
   CapacitacionResponse,
   AsesoriaResponse,
+  ActividadPreventivaResponse,
+  EstadoActividadPreventiva,
 } from '../types';
 
 const CENTRO_FALLBACK: [number, number] = [-33.4489, -70.6693];
@@ -100,10 +103,10 @@ const fmtCLP = (v: number | null) => (v === null ? '-' : `$${v.toLocaleString('e
 const fmtFecha = (iso: string | null) =>
   iso
     ? new Date(`${iso}T00:00:00`).toLocaleDateString('es-CL', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      })
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    })
     : '-';
 
 const mesActual = new Date().toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
@@ -307,7 +310,30 @@ function eventosDesdeAsesorias(asesorias: AsesoriaResponse[]): EventInput[] {
       },
     }));
 }
+const colorActividadPreventiva: Record<EstadoActividadPreventiva, string> = {
+  PENDIENTE: '#6b7280',
+  EN_CURSO: '#8b5cf6',
+  CUMPLIDA: '#22c55e',
+  VENCIDA: '#dc2626',
+};
 
+function eventosDesdeActividadesPreventivas(actividades: ActividadPreventivaResponse[]): EventInput[] {
+  return actividades
+    .filter((a) => a.estado !== 'CUMPLIDA')
+    .map((a) => ({
+      id: `actividad-preventiva-${a.id}`,
+      title: `Preventivo - ${a.razonSocialEmpresa}`,
+      start: a.fechaCompromiso || a.fechaPlanificada,
+      allDay: true,
+      backgroundColor: colorActividadPreventiva[a.estado],
+      borderColor: colorActividadPreventiva[a.estado],
+      extendedProps: {
+        tipo: 'Seguimiento preventivo',
+        estado: a.estado,
+        profesional: a.responsable ?? 'Sin responsable',
+      },
+    }));
+}
 export default function DashboardAdmin() {
   const [modalMapa, setModalMapa] = useState(false);
   const [ubicaciones, setUbicaciones] = useState<UbicacionProfesionalResponse[]>([]);
@@ -330,16 +356,18 @@ export default function DashboardAdmin() {
       setErrorAgenda(null);
 
       try {
-        const [visitasData, capacitacionesData, asesoriasData] = await Promise.all([
+        const [visitasData, capacitacionesData, asesoriasData, actividadesData] = await Promise.all([
           listarVisitas(0, 200),
           listarCapacitaciones(0, 200),
           listarAsesorias(0, 200),
+          listarActividadesPreventivas(0, 200),
         ]);
 
         setEventosAgenda([
           ...eventosDesdeVisitas(visitasData.content),
           ...eventosDesdeCapacitaciones(capacitacionesData.content),
           ...eventosDesdeAsesorias(asesoriasData.content),
+          ...eventosDesdeActividadesPreventivas(actividadesData.content),
         ]);
       } catch {
         setErrorAgenda('No se pudo cargar la agenda semanal.');

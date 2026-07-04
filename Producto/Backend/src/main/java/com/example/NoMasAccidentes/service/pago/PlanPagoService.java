@@ -114,29 +114,30 @@ public class PlanPagoService {
 
         return planPagoMapper.toResponse(guardado);
     }
+@Transactional
+public void generarCuotaMensualSiNoExiste(PlanPago plan, LocalDate fechaReferencia) {
+    int cuotasExistentes = pagoRepository.countByPlanId(plan.getId());
 
-    @Transactional
-    public void generarCuotaMensualSiNoExiste(PlanPago plan, LocalDate fechaReferencia) {
-        LocalDate inicioMes = fechaReferencia.withDayOfMonth(1);
+    LocalDate fechaEmision = plan.getFechaInicio().plusMonths(cuotasExistentes);
+    LocalDate fechaVencimiento = fechaEmision.plusMonths(1);
 
-        boolean yaExiste = pagoRepository.existsByPlanIdAndFechaEmision(plan.getId(), inicioMes);
+    boolean yaExiste = pagoRepository.existsByPlanIdAndFechaEmision(plan.getId(), fechaEmision);
 
-        if (yaExiste) {
-            return;
-        }
+    if (yaExiste) {
+        return;
+    }
 
-        int numeroCuota = pagoRepository.countByPlanId(plan.getId()) + 1;
-
-        pagoRepository.save(Pago.builder()
+    pagoRepository.save(Pago.builder()
             .plan(plan)
-            .numeroCuota(numeroCuota)
+            .numeroCuota(cuotasExistentes + 1)
             .monto(plan.getMensualidad().getMontoBase())
-            .fechaEmision(inicioMes)
-            .fechaVencimiento(inicioMes)
+            .fechaEmision(fechaEmision)
+            .fechaVencimiento(fechaVencimiento)
             .estadoPago(EstadoPago.PENDIENTE)
             .build());
 
-        log.info("Cuota mensual generada plan={} cuota={} periodo={}",
-            plan.getId(), numeroCuota, inicioMes);
-    }
+    log.info("Cuota mensual generada plan={} cuota={} emision={} vencimiento={}",
+            plan.getId(), cuotasExistentes + 1, fechaEmision, fechaVencimiento);
+}
+   
 }
