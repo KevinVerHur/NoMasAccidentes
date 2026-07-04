@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import org.openpdf.text.*;
 import org.openpdf.text.pdf.PdfWriter;
 import com.example.NoMasAccidentes.service.pdf.PdfMarca;
+import com.example.NoMasAccidentes.service.informe.AlmacenamientoInformeService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,14 +16,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class CertificadoCapacitacionPdfService {
 
     private final CapacitacionRepository capacitacionRepository;
+    private final AlmacenamientoInformeService almacenamiento;
 
     private static final DateTimeFormatter F_FECHA = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     private static final Font TITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 22, PdfMarca.NAVY);
     private static final Font SUBTITULO = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, PdfMarca.NAVY);
     private static final Font NORMAL = FontFactory.getFont(FontFactory.HELVETICA, 12);
 
-    public CertificadoCapacitacionPdfService(CapacitacionRepository capacitacionRepository) {
+    public CertificadoCapacitacionPdfService(CapacitacionRepository capacitacionRepository,
+                                             AlmacenamientoInformeService almacenamiento) {
         this.capacitacionRepository = capacitacionRepository;
+        this.almacenamiento = almacenamiento;
     }
 
     @Transactional(readOnly = true)
@@ -93,7 +97,10 @@ public class CertificadoCapacitacionPdfService {
             }
 
             document.close();
-            return baos.toByteArray();
+            byte[] pdf = baos.toByteArray();
+            almacenamiento.guardar("certificados",
+                    "certificados-capacitacion-" + idCapacitacion + ".pdf", pdf);
+            return pdf;
 
         } catch (Exception e) {
             throw new RuntimeException("Error al generar certificados de capacitación", e);
@@ -164,7 +171,10 @@ public class CertificadoCapacitacionPdfService {
 
         document.close();
 
-        return baos.toByteArray();
+        byte[] pdf = baos.toByteArray();
+        almacenamiento.guardar("certificados",
+                "certificado-capacitacion-" + idCapacitacion + "-asistente-" + idAsistente + ".pdf", pdf);
+        return pdf;
 
     } catch (Exception e) {
         throw new RuntimeException("Error al generar certificado individual", e);

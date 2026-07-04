@@ -91,7 +91,7 @@ const router = createBrowserRouter([
     
       {
         path: '/capacitaciones',
-        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CLIENTE']}><Capacitaciones /></ProtectedRoute>,
+        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CAPACITADOR', 'CLIENTE']}><Capacitaciones /></ProtectedRoute>,
       },
       {
         path: '/seguimiento-preventivo',

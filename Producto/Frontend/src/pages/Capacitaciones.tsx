@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import KpiCard from '../components/ui/KpiCard';
 import Panel from '../components/ui/Panel';
@@ -194,6 +195,23 @@ function VistaAdmin() {
   const programadas = capacitaciones.filter(c => c.estado === 'PROGRAMADA').length;
   const realizadas = capacitaciones.filter(c => c.estado === 'REALIZADA').length;
 
+  // Empresas sin capacitación (programada o realizada) en los últimos 90 días.
+  const empresasConCapReciente = new Set(
+    capacitaciones
+      .filter(c => {
+        const f = c.fechaRealizacion ?? c.fechaProgramada;
+        return f != null && Date.now() - new Date(f).getTime() <= 90 * 24 * 60 * 60 * 1000;
+      })
+      .map(c => c.idEmpresa)
+  );
+  const sinCap90 = clientes.filter(c => !empresasConCapReciente.has(c.id)).length;
+
+  // Asistencia promedio real sobre capacitaciones realizadas (presentes / inscritos).
+  const realizadasCaps = capacitaciones.filter(c => c.estado === 'REALIZADA');
+  const totalInscritos = realizadasCaps.reduce((acc, c) => acc + c.asistencias.length, 0);
+  const totalPresentes = realizadasCaps.reduce((acc, c) => acc + c.asistencias.filter(a => a.asistio).length, 0);
+  const asistenciaProm = totalInscritos > 0 ? Math.round((totalPresentes / totalInscritos) * 100) : 0;
+
   async function refrescarCapacitacion(idCapacitacion: number) {
     const actualizadas = (await listarCapacitaciones(0, 200)).content;
     setCapacitaciones(actualizadas);
@@ -273,10 +291,10 @@ function VistaAdmin() {
       </div>
 
       <div className="kpi-row">
-        <KpiCard label="Sin cap. 90d" value={5} variante="peligro" />
+        <KpiCard label="Sin cap. 90d" value={sinCap90} variante="peligro" />
         <KpiCard label="Programadas" value={programadas} variante="warn" />
         <KpiCard label="Realizadas" value={realizadas} variante="ok" />
-        <KpiCard label="Asistencia" value="87%" sub="promedio" />
+        <KpiCard label="Asistencia" value={`${asistenciaProm}%`} sub="promedio" />
       </div>
 
       <Panel
@@ -1382,6 +1400,7 @@ function separarNombreCompleto(nombreCompleto: string) {
 
 function VistaCliente() {
   const { email } = useAuth();
+  const navigate = useNavigate();
   
   // ── Estado general ──────────────────────────────────────────────────────────
   const [idEmpresa,      setIdEmpresa]      = useState<number | null>(null);
@@ -1394,7 +1413,6 @@ function VistaCliente() {
   const [modalDetalle,   setModalDetalle]   = useState<CapacitacionResponse | null>(null);
   const [modalConfirmar, setModalConfirmar] = useState<CapacitacionResponse | null>(null);
   const [modalActa,      setModalActa]      = useState<CapacitacionResponse | null>(null);
-  const [modalSolicitar, setModalSolicitar] = useState(false);
   const [modalInscribir, setModalInscribir] = useState<CapacitacionResponse | null>(null);
   const [firmado,        setFirmado]        = useState(false);
   const [observacion,    setObservacion]    = useState('');
@@ -1444,6 +1462,9 @@ function VistaCliente() {
   const historial    = capacitaciones.filter(c => c.estado === 'REALIZADA');
   const porConfirmar = programadas.filter(c => c.asistencias.filter(a => a.confirmado).length === 0).length;
   const certificados = historial.reduce((acc, c) => acc + c.asistencias.filter(a => a.confirmado).length, 0);
+  const inscritosHist = historial.reduce((acc, c) => acc + c.asistencias.length, 0);
+  const presentesHist = historial.reduce((acc, c) => acc + c.asistencias.filter(a => a.asistio).length, 0);
+  const asistenciaProm = inscritosHist > 0 ? Math.round((presentesHist / inscritosHist) * 100) : 0;
 
   // ── Confirmar asistencia ────────────────────────────────────────────────────
   async function onConfirmar(idCap: number, idAsistente: number) {
@@ -1580,8 +1601,8 @@ function VistaCliente() {
 
       <div className="kpi-row">
         <KpiCard label="Por confirmar"    value={porConfirmar}    variante="warn" sub={porConfirmar > 0 ? `Cap. del ${fmtFecha(programadas[0]?.fechaProgramada)}` : undefined} />
-        <KpiCard label="Realizadas"       value={historial.length} variante="ok" sub="Durante 2026" />
-        <KpiCard label="Asistencia prom." value="89%"              sub="Últimas capacitaciones" />
+        <KpiCard label="Realizadas"       value={historial.length} variante="ok" sub={`Durante ${new Date().getFullYear()}`} />
+        <KpiCard label="Asistencia prom." value={`${asistenciaProm}%`} sub="Últimas capacitaciones" />
         <KpiCard label="Certificados"     value={certificados}     sub="Emitidos a trabajadores" />
       </div>
 
@@ -1591,7 +1612,7 @@ function VistaCliente() {
         <>
           <Panel
             titulo="🎓 Capacitaciones programadas"
-            accion={<button className="btn btn-sm btn-outline" onClick={() => setModalSolicitar(true)}>Solicitar capacitación extra</button>}
+            accion={<button className="btn btn-sm btn-outline" onClick={() => navigate('/mis-solicitudes', { state: { tipoInicial: 'CAPACITACION' } })}>Solicitar capacitación</button>}
           >
             {programadas.length === 0
               ? <div className="placeholder">No tienes capacitaciones programadas próximamente.</div>
@@ -1927,19 +1948,6 @@ function VistaCliente() {
         )}
       </Modal>
 
-      {/* ── Modal Solicitar extra ── */}
-      <Modal abierto={modalSolicitar} titulo="Solicitar capacitación extra" onCerrar={() => setModalSolicitar(false)}
-        footer={<><button className="btn btn-outline" onClick={() => setModalSolicitar(false)}>Cancelar</button><button className="btn btn-primary" onClick={() => { alert('Solicitud enviada correctamente.'); setModalSolicitar(false); }}>Enviar solicitud</button></>}>
-        <div className="warning-box">Esta solicitud puede generar cobro adicional si supera lo incluido en el plan.</div>
-        <div className="form-grid">
-          <div className="form-group"><label className="auth-label">Tema</label><input className="auth-input" placeholder="Ej: Trabajo en altura" /></div>
-          <div className="form-group"><label className="auth-label">Fecha tentativa</label><input type="date" className="auth-input" /></div>
-          <div className="form-group"><label className="auth-label">Cantidad estimada</label><input type="number" className="auth-input" placeholder="15" /></div>
-          <div className="form-group"><label className="auth-label">Modalidad</label><select className="auth-input"><option>Presencial</option><option>Online</option><option>Híbrido</option></select></div>
-          <div className="form-group span2"><label className="auth-label">Motivo</label><textarea className="auth-input" rows={2} placeholder="Justificación de la solicitud..." /></div>
-        </div>
-      </Modal>
-
       {/* ── Modal Agregar/Editar trabajador ── */}
       <Modal abierto={modalAsistente} titulo={asistenteEditar ? 'Editar trabajador' : 'Agregar trabajador'} onCerrar={() => setModalAsistente(false)}
         footer={<><button className="btn btn-outline" onClick={() => setModalAsistente(false)}>Cancelar</button><button className="btn btn-primary" onClick={onGuardarAsistente} disabled={guardandoAsis}>{guardandoAsis ? 'Guardando...' : 'Guardar'}</button></>}>
@@ -1989,7 +1997,6 @@ function VistaCliente() {
 
 export default function Capacitaciones() {
   const { rol } = useAuth();
-  console.log('rol actual:', rol);
 
   if (rol === 'PROFESIONAL' || rol === 'CAPACITADOR') return <VistaProfesional />;
   if (rol === 'CLIENTE') return <VistaCliente />;

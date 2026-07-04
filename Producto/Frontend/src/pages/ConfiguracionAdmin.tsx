@@ -269,11 +269,6 @@ export default function ConfiguracionAdmin() {
                   </div>
 
                   <div>
-                    <label className="auth-label">Teléfono</label>
-                    <input className="auth-input" value="+56 9 7777 7777" readOnly />
-                  </div>
-
-                  <div>
                     <label className="auth-label">Rol</label>
                     <input className="auth-input" value={perfil?.rol ?? 'ADMIN'} readOnly />
                   </div>

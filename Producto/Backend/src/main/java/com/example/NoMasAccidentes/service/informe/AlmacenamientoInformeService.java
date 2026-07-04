@@ -18,16 +18,19 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /**
- * Almacena y recupera los PDFs de informes. Si hay un bucket S3 configurado
- * ({@code aws.s3.bucket-name}) usa S3; en caso contrario (dev) usa disco local
- * bajo {@code informes.local.dir}. La clave guardada en {@code Informe.urlPdf}
- * es el nombre de archivo, independiente del backend de almacenamiento.
+ * Almacena y recupera los PDFs generados por la aplicación. Si hay un bucket S3
+ * configurado ({@code aws.s3.bucket-name}) usa S3; en caso contrario (dev) usa
+ * disco local bajo {@code informes.local.dir}. Cada documento se guarda dentro de
+ * una carpeta por tipo (p. ej. {@code informes/}, {@code reportes/},
+ * {@code actas-capacitacion/}, {@code certificados/}). La clave devuelta —y
+ * guardada en {@code Informe.urlPdf}— es la ruta completa {@code carpeta/archivo},
+ * independiente del backend de almacenamiento.
  */
 @Service
 @Slf4j
 public class AlmacenamientoInformeService {
 
-    private static final String PREFIJO_S3 = "informes/";
+    private static final String CARPETA_POR_DEFECTO = "informes";
 
     private final String bucket;
     private final String region;
@@ -47,34 +50,44 @@ public class AlmacenamientoInformeService {
         return bucket != null && !bucket.isBlank();
     }
 
-    /** Guarda el PDF y devuelve la clave para recuperarlo luego. */
-    public String guardar(String nombreArchivo, byte[] pdf) {
+    /**
+     * Guarda el PDF en la carpeta indicada y devuelve la clave completa
+     * ({@code carpeta/archivo}) para recuperarlo luego.
+     */
+    public String guardar(String carpeta, String nombreArchivo, byte[] pdf) {
+        String clave = carpeta + "/" + nombreArchivo;
         if (usaS3()) {
             s3().putObject(
                     PutObjectRequest.builder()
                             .bucket(bucket)
-                            .key(PREFIJO_S3 + nombreArchivo)
+                            .key(clave)
                             .contentType("application/pdf")
                             .build(),
                     RequestBody.fromBytes(pdf));
-            log.info("Informe almacenado en S3 bucket={} key={}", bucket, PREFIJO_S3 + nombreArchivo);
+            log.info("PDF almacenado en S3 bucket={} key={}", bucket, clave);
         } else {
             try {
-                Files.createDirectories(dirLocal);
-                Files.write(dirLocal.resolve(nombreArchivo), pdf);
-                log.info("Informe almacenado en disco local: {}", dirLocal.resolve(nombreArchivo));
+                Path destino = dirLocal.resolve(clave);
+                Files.createDirectories(destino.getParent());
+                Files.write(destino, pdf);
+                log.info("PDF almacenado en disco local: {}", destino);
             } catch (IOException e) {
-                throw new UncheckedIOException("No se pudo guardar el informe en disco", e);
+                throw new UncheckedIOException("No se pudo guardar el PDF en disco", e);
             }
         }
-        return nombreArchivo;
+        return clave;
     }
 
-    /** Recupera el PDF a partir de la clave guardada. */
+    /** Atajo que guarda bajo la carpeta por defecto ({@code informes/}). */
+    public String guardar(String nombreArchivo, byte[] pdf) {
+        return guardar(CARPETA_POR_DEFECTO, nombreArchivo, pdf);
+    }
+
+    /** Recupera el PDF a partir de la clave completa guardada ({@code carpeta/archivo}). */
     public byte[] descargar(String clave) {
         if (usaS3()) {
             ResponseBytes<GetObjectResponse> bytes = s3().getObjectAsBytes(
-                    GetObjectRequest.builder().bucket(bucket).key(PREFIJO_S3 + clave).build());
+                    GetObjectRequest.builder().bucket(bucket).key(clave).build());
             return bytes.asByteArray();
         }
         Path archivo = dirLocal.resolve(clave);
