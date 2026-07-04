@@ -20,7 +20,18 @@ import type {
   ProfesionalResponse,
   VarianteBadge,
   VisitaResponse,
+  AsesoriaResponse,
+  CapacitacionResponse,
 } from '../types';
+
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import esLocale from '@fullcalendar/core/locales/es';
+import type { EventInput } from '@fullcalendar/core';
+
+import { misAsesorias } from '../api/asesorias';
+import { listarCapacitacionesPorRelator } from '../api/capacitaciones';
 
 interface UbicacionActual {
   latitud: number;
@@ -212,6 +223,102 @@ function MapaProfesional({
   );
 }
 
+function esFechaPasada(fecha: string) {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+
+  const f = new Date(`${fecha}T00:00:00`);
+  f.setHours(0, 0, 0, 0);
+
+  return f < hoy;
+}
+
+function colorEvento(tipo: 'visita' | 'asesoria' | 'capacitacion', estado: string, fecha: string) {
+  if (estado === 'CANCELADA') return '#9ca3af';
+
+  const pasado = esFechaPasada(fecha);
+
+  if (tipo === 'visita') {
+    if (estado === 'REALIZADA') return '#16a34a';
+    if (estado === 'EN_CURSO') return '#f59e0b';
+    return pasado ? '#93c5fd' : '#2563eb';
+  }
+
+  if (tipo === 'asesoria') {
+    if (estado === 'CERRADA') return '#15803d';
+    if (estado === 'EN_PROCESO') return '#f97316';
+    return pasado ? '#fed7aa' : '#ea580c';
+  }
+
+  if (estado === 'REALIZADA') return '#16a34a';
+  if (estado === 'EN_CURSO') return '#0891b2';
+  return pasado ? '#a5f3fc' : '#06b6d4';
+}
+
+function eventosVisitasProfesional(visitas: VisitaResponse[]): EventInput[] {
+  return visitas.map((v) => {
+    const color = colorEvento('visita', v.estado, v.fechaProgramada);
+
+    return {
+      id: `visita-${v.id}`,
+      title: `Visita - ${v.razonSocialEmpresa}`,
+      start: v.fechaProgramada,
+      allDay: true,
+      backgroundColor: color,
+      borderColor: color,
+      extendedProps: {
+        tipo: 'Visita',
+        estado: v.estado,
+        cliente: v.razonSocialEmpresa,
+        detalle: v.tipoRevision ?? 'Sin tipo',
+      },
+    };
+  });
+}
+
+function eventosAsesoriasProfesional(asesorias: AsesoriaResponse[]): EventInput[] {
+  return asesorias.map((a) => {
+    const fecha = a.fechaAtencion ?? a.fechaSolicitud;
+    const color = colorEvento('asesoria', a.estado, fecha);
+
+    return {
+      id: `asesoria-${a.id}`,
+      title: `Asesoria - ${a.razonSocialEmpresa}`,
+      start: fecha,
+      allDay: true,
+      backgroundColor: color,
+      borderColor: color,
+      extendedProps: {
+        tipo: 'Asesoria',
+        estado: a.estado,
+        cliente: a.razonSocialEmpresa,
+        detalle: a.motivo,
+      },
+    };
+  });
+}
+
+function eventosCapacitacionesProfesional(capacitaciones: CapacitacionResponse[]): EventInput[] {
+  return capacitaciones.map((c) => {
+    const color = colorEvento('capacitacion', c.estado, c.fechaProgramada);
+
+    return {
+      id: `capacitacion-${c.id}`,
+      title: `Capacitacion - ${c.curso}`,
+      start: c.fechaProgramada,
+      allDay: true,
+      backgroundColor: color,
+      borderColor: color,
+      extendedProps: {
+        tipo: 'Capacitacion',
+        estado: c.estado,
+        cliente: c.razonSocialEmpresa,
+        detalle: c.lugar,
+      },
+    };
+  });
+}
+
 export default function DashboardProfesional() {
   const { email } = useAuth();
 
@@ -253,6 +360,7 @@ export default function DashboardProfesional() {
       ? 'warn'
       : undefined;
 
+
   const cargarMiEstado = useCallback(async () => {
     try {
       const actual = await obtenerMiPerfilProfesional();
@@ -262,6 +370,18 @@ export default function DashboardProfesional() {
     }
   }, []);
 
+  const [asesorias, setAsesorias] = useState<AsesoriaResponse[]>([]);
+  const [capacitaciones, setCapacitaciones] = useState<CapacitacionResponse[]>([]);
+  const [errorAgenda, setErrorAgenda] = useState<string | null>(null);
+
+  const eventosAgenda = useMemo<EventInput[]>(
+    () => [
+      ...eventosVisitasProfesional(visitas),
+      ...eventosAsesoriasProfesional(asesorias),
+      ...eventosCapacitacionesProfesional(capacitaciones),
+    ],
+    [visitas, asesorias, capacitaciones]
+  );
   const cargarMisVisitas = useCallback(async () => {
     setCargandoVisitas(true);
 
@@ -286,6 +406,38 @@ export default function DashboardProfesional() {
   useEffect(() => {
     cargarMisVisitas();
   }, [cargarMisVisitas]);
+
+  useEffect(() => {
+    async function cargarAgendaProfesional() {
+      setErrorAgenda(null);
+
+      try {
+        const misAsesoriasData = await misAsesorias();
+        setAsesorias(misAsesoriasData);
+      } catch {
+        setAsesorias([]);
+        setErrorAgenda('No se pudieron cargar tus asesorias asignadas.');
+      }
+    }
+
+    cargarAgendaProfesional();
+  }, []);
+
+  useEffect(() => {
+    async function cargarCapacitacionesRelator() {
+      if (!miProfesional?.id) return;
+
+      try {
+        const data = await listarCapacitacionesPorRelator(miProfesional.id);
+        setCapacitaciones(data);
+      } catch {
+        setCapacitaciones([]);
+        setErrorAgenda('No se pudieron cargar tus capacitaciones como relator.');
+      }
+    }
+
+    cargarCapacitacionesRelator();
+  }, [miProfesional?.id]);
 
   useEffect(() => {
     obtenerDashboardProfesional()
@@ -523,7 +675,40 @@ export default function DashboardProfesional() {
           variante={varianteEstado}
         />
       </div>
+      <Panel titulo="Agenda semanal">
+        {errorAgenda && (
+          <div className="alert-item alert-item--warn" style={{ margin: 12 }}>
+            {errorAgenda}
+          </div>
+        )}
 
+        <div className="agenda-semanal">
+          <FullCalendar
+            plugins={[dayGridPlugin, interactionPlugin]}
+            initialView="dayGridWeek"
+            locale={esLocale}
+            firstDay={1}
+            height="auto"
+            events={eventosAgenda}
+            headerToolbar={{
+              left: 'prev,next today',
+              center: 'title',
+              right: 'dayGridWeek,dayGridMonth',
+            }}
+            buttonText={{
+              today: 'Hoy',
+              week: 'Semana',
+              month: 'Mes',
+            }}
+            eventClick={(info) => {
+              const props = info.event.extendedProps;
+              alert(
+                `${props.tipo}\n${info.event.title}\nEstado: ${props.estado}\nCliente: ${props.cliente}\nDetalle: ${props.detalle ?? '-'}`
+              );
+            }}
+          />
+        </div>
+      </Panel>
       <div className="grid-2">
         <Panel
           titulo="Mis proximas visitas"
