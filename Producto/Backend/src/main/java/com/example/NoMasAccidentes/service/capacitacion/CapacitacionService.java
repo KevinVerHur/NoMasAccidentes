@@ -27,6 +27,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.NoMasAccidentes.model.pago.CobroExtra;
+import com.example.NoMasAccidentes.model.pago.EstadoPago;
+import com.example.NoMasAccidentes.model.pago.Pago;
+import com.example.NoMasAccidentes.model.pago.PlanPago;
+import com.example.NoMasAccidentes.model.pago.TipoCobro;
+import com.example.NoMasAccidentes.repository.pago.CobroExtraRepository;
+import com.example.NoMasAccidentes.repository.pago.PagoRepository;
+import com.example.NoMasAccidentes.repository.pago.PlanPagoRepository;
+import java.math.BigDecimal;
 
 /**
  * Lógica de negocio para Capacitaciones.
@@ -55,7 +64,10 @@ public class CapacitacionService {
     private final CapacitacionMapper     mapper;
     private final NotificacionEventoService notificacionEventoService;
     private final EmpresaService         empresaService;
-
+    private final PlanPagoRepository planPagoRepository;
+    private final PagoRepository pagoRepository;
+    private final CobroExtraRepository cobroExtraRepository;
+    
     // ─────────────────────────────────────────────
     //  Consultas
     // ─────────────────────────────────────────────
@@ -303,6 +315,7 @@ public class CapacitacionService {
 
         capacitacion.setEstado(EstadoCapacitacion.REALIZADA);
         capacitacion.setFechaRealizacion(LocalDate.now());
+        generarCobroExtraCapacitacionSiCorresponde(capacitacion);
 
         if (request != null) {
             capacitacion.setObservacionActa(request.observacionActa());
@@ -382,5 +395,61 @@ public AsistenciaResponse registrarAsistencia(Long idCapacitacion,
             idAsistente, idCapacitacion, asistio);
 
     return mapper.toAsistenciaResponse(asistencia);
+}
+private void generarCobroExtraCapacitacionSiCorresponde(Capacitacion capacitacion) {
+    if (!capacitacion.isEsCapacitacionExtra()) {
+        return;
+    }
+
+    if (cobroExtraRepository.existsByTipoCobroAndIdOrigen(TipoCobro.CAPACITACION_EXTRA, capacitacion.getId())) {
+        log.info("Cobro extra de capacitación ya existe para capacitacion id={}", capacitacion.getId());
+        return;
+    }
+
+    PlanPago plan = planPagoRepository
+        .findFirstByEmpresa_IdAndFechaInicioLessThanEqualOrderByFechaInicioDesc(
+                capacitacion.getEmpresa().getId(),
+                LocalDate.now()
+        )
+        .orElse(null);
+    if (plan == null) {
+        log.warn("No se generó cobro extra: empresa id={} no tiene plan de pago vigente",
+                capacitacion.getEmpresa().getId());
+        return;
+    }
+
+    BigDecimal monto = plan.getMensualidad().getCostoCapacitacionExtra();
+
+    if (monto == null || monto.compareTo(BigDecimal.ZERO) <= 0) {
+        log.warn("No se generó cobro extra: plan id={} no tiene costo de capacitación extra configurado",
+                plan.getId());
+        return;
+    }
+
+    Pago pago = pagoRepository
+            .findFirstByPlanIdAndEstadoPagoInOrderByFechaVencimientoAsc(
+                    plan.getId(),
+                    List.of(EstadoPago.PENDIENTE, EstadoPago.ATRASADO)
+            )
+            .orElse(null);
+
+    if (pago == null) {
+        log.warn("No se generó cobro extra: plan id={} no tiene cuotas pendientes o atrasadas", plan.getId());
+        return;
+    }
+
+    CobroExtra cobro = CobroExtra.builder()
+            .pago(pago)
+            .tipoCobro(TipoCobro.CAPACITACION_EXTRA)
+            .idOrigen(capacitacion.getId())
+            .descripcion("Capacitación extra: " + capacitacion.getCurso())
+            .monto(monto)
+            .fechaGeneracion(LocalDate.now())
+            .build();
+
+    cobroExtraRepository.save(cobro);
+
+    log.info("Cobro extra generado por capacitación id={} pago id={} monto={}",
+            capacitacion.getId(), pago.getId(), monto);
 }
 }

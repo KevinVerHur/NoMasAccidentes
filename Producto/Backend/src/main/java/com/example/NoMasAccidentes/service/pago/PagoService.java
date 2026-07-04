@@ -155,4 +155,20 @@ public class PagoService {
         return pagoRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Pago", id));
     }
+
+    public List<CobroExtraResponse> listarMisCobrosExtra(Long idPago, String emailUsuario) {
+    Long idEmpresa = empresaService.empresaAutenticada(emailUsuario).getId();
+
+    Pago pago = buscarOFallar(idPago);
+
+    if (!pago.getPlan().getEmpresa().getId().equals(idEmpresa)) {
+        throw new ConflictoNegocioException("No puedes consultar cobros de otra empresa");
+    }
+
+    return cobroExtraRepository.findByPagoId(idPago)
+            .stream()
+            .map(cobroExtraMapper::toResponse)
+            .toList();
+}
+
 }

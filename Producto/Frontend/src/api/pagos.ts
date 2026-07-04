@@ -1,7 +1,7 @@
 import type {
   MensualidadResponse, CrearMensualidadRequest,
   PlanPagoResponse, CrearPlanPagoRequest,
-  PagoResponse, RegistrarPagoRequest,
+  PagoResponse, RegistrarPagoRequest,CobroExtraResponse
 } from '../types';
 import api from './axiosConfig';
 
@@ -51,5 +51,15 @@ export async function suspenderMorosos(): Promise<{ empresasSuspendidas: number 
 // ---- Portal cliente (solo lectura) ----
 export async function misPagos(): Promise<PagoResponse[]> {
   const res = await api.get<PagoResponse[]>('/api/pagos/mis-pagos');
+  return res.data;
+}
+
+export async function listarCobrosExtra(idPago: number): Promise<CobroExtraResponse[]> {
+  const res = await api.get<CobroExtraResponse[]>(`/api/pagos/${idPago}/cobros-extra`);
+  return res.data;
+}
+
+export async function listarMisCobrosExtra(idPago: number): Promise<CobroExtraResponse[]> {
+  const res = await api.get<CobroExtraResponse[]>(`/api/pagos/${idPago}/mis-cobros-extra`);
   return res.data;
 }

@@ -24,6 +24,7 @@ public class MensualidadService {
 
     private final MensualidadRepository mensualidadRepository;
     private final MensualidadMapper mensualidadMapper;
+    public static final String PLAN_BASICO = "PLAN_BASICO";
 
     @Transactional
     public MensualidadResponse crear(CrearMensualidadRequest request) {
@@ -53,4 +54,9 @@ public class MensualidadService {
         return mensualidadRepository.findById(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("Mensualidad", id));
     }
+
+    Mensualidad buscarPlanBasico() {
+    return mensualidadRepository.findByNombrePlan(PLAN_BASICO)
+            .orElseThrow(() -> new RecursoNoEncontradoException("Plan básico", PLAN_BASICO));
+}
 }

@@ -4,6 +4,8 @@ import com.example.NoMasAccidentes.model.pago.EstadoPago;
 import com.example.NoMasAccidentes.model.pago.Pago;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PagoRepository extends JpaRepository<Pago, Long> {
@@ -21,4 +23,12 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     /** Cuotas pendientes/atrasadas sin alerta enviada hasta hoy (RF31). */
     List<Pago> findByEstadoPagoInAndAlertaEnviadaFalseAndFechaVencimientoLessThanEqual(
             List<EstadoPago> estados, LocalDate fecha);
+         
+    Optional<Pago> findFirstByPlanIdAndEstadoPagoInOrderByFechaVencimientoAsc(
+    Long idPlan,
+    List<EstadoPago> estados
+    );
+    boolean existsByPlanIdAndFechaEmision(Long idPlan, LocalDate fechaEmision);
+
+    int countByPlanId(Long idPlan);        
 }
