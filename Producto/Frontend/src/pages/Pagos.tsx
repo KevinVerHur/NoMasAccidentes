@@ -20,8 +20,8 @@ import {
   listarPlanesPorCliente,
   historialPagos,
   registrarPago,
-  evaluarMorosidad,
-  suspenderMorosos,
+  evaluarMorosidadEmpresa,
+  suspenderMorosoEmpresa,
   listarCobrosExtra,
 } from '../api/pagos';
 
@@ -151,16 +151,26 @@ export default function Pagos() {
   }
 
   async function onEvaluarMorosidad() {
+    if (idEmpresa == null) return;
     setAviso(null);
-    const r = await evaluarMorosidad();
-    setAviso(`Morosidad evaluada: ${r.cuotasMarcadas} cuota(s) marcada(s) como atrasada(s).`);
-    if (idEmpresa != null) await cargarCliente(idEmpresa);
+    const r = await evaluarMorosidadEmpresa(idEmpresa);
+    setAviso(
+      `Morosidad evaluada: ${r.cuotasMarcadas} cuota(s) nueva(s) marcada(s) como atrasada(s). ` +
+        `Cuotas atrasadas vigentes de este cliente: ${r.totalAtrasadas}.`,
+    );
+    await cargarCliente(idEmpresa);
   }
 
   async function onSuspenderMorosos() {
+    if (idEmpresa == null) return;
     setAviso(null);
-    const r = await suspenderMorosos();
-    setAviso(`${r.empresasSuspendidas} cliente(s) suspendido(s) por morosidad.`);
+    const r = await suspenderMorosoEmpresa(idEmpresa);
+    setAviso(
+      r.suspendida
+        ? 'Cliente suspendido por morosidad (acumula 2 o más cuotas atrasadas).'
+        : 'No se suspendió: el cliente no acumula 2 o más cuotas atrasadas o ya estaba suspendido.',
+    );
+    await cargarCliente(idEmpresa);
   }
 
   return (
@@ -174,31 +184,6 @@ export default function Pagos() {
         <KpiCard label="Atrasadas" value={atrasadas} variante="peligro" />
         <KpiCard label="Adeudado" value={clp(totalAdeudado)} />
       </div>
-
-      {aviso && (
-        <div className="alert-item alert-item--info" style={{ marginBottom: 12 }}>
-          {aviso}
-        </div>
-      )}
-
-      <Panel
-        titulo="Acciones de cobranza"
-        accion={
-          <div className="btn-group">
-            <button className="btn btn-sm btn-warn" onClick={onEvaluarMorosidad}>
-              Evaluar morosidad
-            </button>
-            <button className="btn btn-sm btn-danger" onClick={onSuspenderMorosos}>
-              Suspender morosos
-            </button>
-          </div>
-        }
-      >
-        <div style={{ fontSize: 13, color: '#6b7280' }}>
-          “Evaluar morosidad” marca como atrasadas las cuotas vencidas e impagas.
-          “Suspender morosos” suspende a quienes acumulan 2 o más cuotas atrasadas.
-        </div>
-      </Panel>
 
       <div className="grid-2">
         <Panel titulo="Tarifas del plan básico">
@@ -259,7 +244,7 @@ export default function Pagos() {
             className="auth-input"
             value={idEmpresa ?? ''}
             onChange={e => setIdEmpresa(e.target.value ? Number(e.target.value) : null)}
-            style={{ marginBottom: 12 }}
+            style={{ marginTop: 12, marginBottom: 12, marginLeft: 16, marginRight: 16, width: 'calc(100% - 32px)' }}
           >
             <option value="">Seleccionar cliente...</option>
             {clientes.map(cliente => (
@@ -303,7 +288,31 @@ export default function Pagos() {
       </div>
 
       {idEmpresa != null && (
-        <Panel titulo="Historial de cuotas">
+        <Panel
+          titulo="Historial de cuotas"
+          accion={
+            <div className="btn-group">
+              <button className="btn btn-sm btn-warn" onClick={onEvaluarMorosidad}>
+                Evaluar morosidad
+              </button>
+              <button className="btn btn-sm btn-danger" onClick={onSuspenderMorosos}>
+                Suspender morosos
+              </button>
+            </div>
+          }
+        >
+          <div style={{ fontSize: 13, color: '#6b7280', marginTop: 12, marginBottom: 12, paddingLeft: 16 }}>
+            Acciones de cobranza sobre el cliente seleccionado: “Evaluar morosidad” marca
+            como atrasadas sus cuotas vencidas e impagas; “Suspender morosos” lo suspende
+            si acumula 2 o más cuotas atrasadas.
+          </div>
+
+          {aviso && (
+            <div className="alert-item alert-item--info" style={{ marginBottom: 12 }}>
+              {aviso}
+            </div>
+          )}
+
           {cargandoCliente ? (
             <div className="placeholder">Cargando...</div>
           ) : pagos.length === 0 ? (

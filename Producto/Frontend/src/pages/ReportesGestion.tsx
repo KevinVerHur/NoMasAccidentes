@@ -127,12 +127,12 @@ export default function ReportesGestion() {
       {error && <div className="alert-item alert-item--peligro" style={{ marginBottom: 12 }}>{error}</div>}
 
       <Panel
-        titulo="🗂️ Generar reporte mensual"
+        titulo="Generar reporte mensual"
         accion={esAdmin
           ? <button className="btn btn-sm btn-warn" onClick={() => { setError(null); setModalCierre(true); }}>Cierre mensual (todos)</button>
           : undefined}
       >
-        <div className="btn-group" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12, padding: 4 }}>
+        <div className="btn-group" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12, paddingTop: 12, paddingBottom: 12, paddingLeft: 16, paddingRight: 16 }}>
           <div style={{ flex: 1, minWidth: 200 }}>
             <label className="auth-label">Cliente</label>
             <select className="auth-input" value={idEmpresa ?? ''} onChange={e => { setReporteGenerado(null); setIdEmpresa(e.target.value ? Number(e.target.value) : null); }}>
@@ -170,7 +170,7 @@ export default function ReportesGestion() {
       )}
 
       <div className="grid-2">
-        <Panel titulo={`📈 Accidentabilidad ${idEmpresa != null ? anio : '(elige un cliente)'}`}>
+        <Panel titulo={`Accidentabilidad ${idEmpresa != null ? anio : '(elige un cliente)'}`}>
           {idEmpresa == null ? (
             <div className="placeholder">Selecciona un cliente para ver su accidentabilidad.</div>
           ) : (
@@ -190,7 +190,7 @@ export default function ReportesGestion() {
           )}
         </Panel>
 
-        <Panel titulo="🥧 Composición del periodo">
+        <Panel titulo="Composición del periodo">
           {composicion.length === 0 ? (
             <div className="placeholder">Genera un reporte para ver su composición.</div>
           ) : (
@@ -209,7 +209,7 @@ export default function ReportesGestion() {
         </Panel>
       </div>
 
-      <Panel titulo={`👷 Rendimiento de profesionales — ${MESES[mes - 1]} ${anio}`}>
+      <Panel titulo={`Rendimiento de profesionales — ${MESES[mes - 1]} ${anio}`}>
         {rendData.length === 0 ? (
           <div className="placeholder">Sin profesionales o sin datos para el periodo.</div>
         ) : (
@@ -230,7 +230,7 @@ export default function ReportesGestion() {
         )}
       </Panel>
 
-      <Panel titulo="📄 Historial de reportes del cliente">
+      <Panel titulo="Historial de reportes del cliente">
         {idEmpresa == null ? (
           <div className="placeholder">Selecciona un cliente para ver su historial.</div>
         ) : historial.length === 0 ? (

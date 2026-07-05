@@ -91,7 +91,11 @@ const router = createBrowserRouter([
     
       {
         path: '/capacitaciones',
-        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CAPACITADOR', 'CLIENTE']}><Capacitaciones /></ProtectedRoute>,
+        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CAPACITADOR']}><Capacitaciones /></ProtectedRoute>,
+      },
+      {
+        path: '/mis-capacitaciones',
+        element: <ProtectedRoute roles={['CLIENTE']}><Capacitaciones /></ProtectedRoute>,
       },
       {
         path: '/seguimiento-preventivo',
@@ -103,7 +107,11 @@ const router = createBrowserRouter([
       },
       {
         path: '/reportes',
-        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL', 'CLIENTE']}><Reportes /></ProtectedRoute>,
+        element: <ProtectedRoute roles={['ADMIN', 'PROFESIONAL']}><Reportes /></ProtectedRoute>,
+      },
+      {
+        path: '/mis-reportes',
+        element: <ProtectedRoute roles={['CLIENTE']}><Reportes /></ProtectedRoute>,
       },
       {
         path: '/asesorias',

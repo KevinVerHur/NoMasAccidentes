@@ -147,7 +147,7 @@ export default function ConfiguracionCliente() {
           {/* ---- Datos de la empresa (solo lectura) ---- */}
           <section className="responsive-panel-section">
             <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
-              <strong className="text-azul text-[14px]">🏢 Datos de la empresa</strong>
+              <strong className="text-azul text-[14px]">Datos de la empresa</strong>
               {empresa && (
                 <Badge variante={badgePorEstado[empresa.estado]}>{empresa.estado}</Badge>
               )}
@@ -189,7 +189,7 @@ export default function ConfiguracionCliente() {
           {/* ---- Mis datos de contacto (editable) ---- */}
           <section className="responsive-panel-section">
             <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200">
-              <strong className="text-azul text-[14px]">👤 Mis datos de contacto</strong>
+              <strong className="text-azul text-[14px]">Mis datos de contacto</strong>
               <button className="btn btn-sm btn-outline" onClick={abrirEditarContacto}>
                 Editar contacto
               </button>

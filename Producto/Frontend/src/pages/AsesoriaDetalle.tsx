@@ -263,7 +263,7 @@ export default function AsesoriaDetalle() {
       {error && <div className="auth-alert auth-alert--error" style={{ marginBottom: 12 }}>{error}</div>}
 
       <Panel
-        titulo="📋 Datos de la asesoría"
+        titulo="Datos de la asesoría"
         accion={
           <div className="btn-group">
             {asesoria.estado === 'SOLICITADA' && (
@@ -295,7 +295,7 @@ export default function AsesoriaDetalle() {
       {/* Accidentes */}
       {asesoria.tipo === 'ACCIDENTE' && (
         <Panel
-          titulo="🩹 Accidentes laborales"
+          titulo="Accidentes laborales"
           accion={<button className="btn btn-sm btn-primary" onClick={() => { formAccidente.reset(); setError(null); setModalAccidente(true); }}>+ Registrar accidente</button>}
         >
           {accidentes.length === 0 ? (
@@ -325,7 +325,7 @@ export default function AsesoriaDetalle() {
       {/* Fiscalizaciones */}
       {asesoria.tipo === 'FISCALIZACION' && (
         <Panel
-          titulo="🏛 Fiscalizaciones"
+          titulo="Fiscalizaciones"
           accion={<button className="btn btn-sm btn-primary" onClick={() => { formFisc.reset(); setError(null); setModalFisc(true); }}>+ Registrar fiscalización</button>}
         >
           {fiscalizaciones.length === 0 ? (
@@ -395,7 +395,7 @@ export default function AsesoriaDetalle() {
 
       {/* Informe + propuestas de mejora */}
       <Panel
-        titulo="📄 Informe de la asesoría"
+        titulo="Informe de la asesoría"
         accion={
           informe
             ? <button className="btn btn-sm btn-outline" onClick={onDescargarInforme}>📄 Descargar PDF</button>

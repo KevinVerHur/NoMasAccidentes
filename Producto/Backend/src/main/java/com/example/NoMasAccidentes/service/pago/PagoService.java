@@ -110,6 +110,11 @@ public class PagoService {
         return vencidas.size();
     }
 
+    /** Total de cuotas actualmente en estado ATRASADO (RF11). */
+    public int contarAtrasadas() {
+        return (int) pagoRepository.countByEstadoPago(EstadoPago.ATRASADO);
+    }
+
     /**
      * Suspende el servicio de las empresas con {@value #UMBRAL_SUSPENSION} o más
      * cuotas atrasadas (RF12). Devuelve la cantidad de empresas suspendidas.
@@ -131,6 +136,52 @@ public class PagoService {
             }
         }
         return suspendidos;
+    }
+
+    /**
+     * Evalúa la morosidad de UNA empresa (RF11): marca sus cuotas vencidas e
+     * impagas como ATRASADO y la pasa a MOROSO. Devuelve las cuotas marcadas.
+     */
+    @Transactional
+    public int evaluarMorosidadEmpresa(Long idEmpresa) {
+        List<Pago> vencidas = pagoRepository
+                .findByPlanEmpresaIdAndEstadoPagoAndFechaVencimientoBefore(
+                        idEmpresa, EstadoPago.PENDIENTE, LocalDate.now());
+        for (Pago pago : vencidas) {
+            pago.setEstadoPago(EstadoPago.ATRASADO);
+            Empresa empresa = pago.getPlan().getEmpresa();
+            if (empresa.getEstado() == EstadoEmpresa.ACTIVO) {
+                empresa.setEstado(EstadoEmpresa.MOROSO);
+            }
+        }
+        log.info("Morosidad evaluada empresa={}: {} cuotas ATRASADO (RF11)", idEmpresa, vencidas.size());
+        return vencidas.size();
+    }
+
+    /** Total de cuotas ATRASADO de una empresa (RF11). */
+    public int contarAtrasadasEmpresa(Long idEmpresa) {
+        return pagoRepository.findByPlanEmpresaIdAndEstadoPago(idEmpresa, EstadoPago.ATRASADO).size();
+    }
+
+    /**
+     * Suspende UNA empresa (RF12) si acumula {@value #UMBRAL_SUSPENSION} o más
+     * cuotas atrasadas y no está ya suspendida. Devuelve true si la suspendió.
+     */
+    @Transactional
+    public boolean suspenderMorosoEmpresa(Long idEmpresa) {
+        List<Pago> atrasadas = pagoRepository
+                .findByPlanEmpresaIdAndEstadoPago(idEmpresa, EstadoPago.ATRASADO);
+        if (atrasadas.size() < UMBRAL_SUSPENSION) {
+            return false;
+        }
+        Empresa empresa = atrasadas.get(0).getPlan().getEmpresa();
+        if (empresa.getEstado() == EstadoEmpresa.SUSPENDIDO) {
+            return false;
+        }
+        empresa.setEstado(EstadoEmpresa.SUSPENDIDO);
+        log.info("Empresa suspendida por morosidad id={} ({} cuotas atrasadas) (RF12)",
+                idEmpresa, atrasadas.size());
+        return true;
     }
 
     /** Agrega un cobro extra a una cuota (RF21, RF24, RF28). */

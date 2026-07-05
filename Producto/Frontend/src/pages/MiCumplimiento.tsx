@@ -9,7 +9,7 @@ export default function MiCumplimiento() {
         (solo lectura)
       </div>
 
-      <SeguimientoPreventivoPanel titulo="🛡️ Actividades preventivas" modoCliente />
+      <SeguimientoPreventivoPanel titulo="Actividades preventivas" modoCliente />
     </>
   );
 }

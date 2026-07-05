@@ -57,7 +57,7 @@ export default function MisReportes() {
         </div>
       )}
 
-      <Panel titulo="📈 Tendencia de accidentabilidad del año">
+      <Panel titulo="Tendencia de accidentabilidad del año">
         {dataGrafico.every(d => d.accidentes === 0 && d.diasPerdidos === 0) ? (
           <div className="placeholder">Sin accidentes registrados este año.</div>
         ) : (
@@ -77,7 +77,7 @@ export default function MisReportes() {
         )}
       </Panel>
 
-      <Panel titulo="📄 Historial de reportes">
+      <Panel titulo="Historial de reportes">
         {cargando ? (
           <div className="placeholder">Cargando...</div>
         ) : reportes.length === 0 ? (

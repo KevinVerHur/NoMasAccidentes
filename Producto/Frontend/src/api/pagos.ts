@@ -38,13 +38,17 @@ export async function registrarPago(id: number, data: RegistrarPagoRequest): Pro
   return res.data;
 }
 
-export async function evaluarMorosidad(): Promise<{ cuotasMarcadas: number }> {
-  const res = await api.post<{ cuotasMarcadas: number }>('/api/pagos/evaluar-morosidad');
+export async function evaluarMorosidadEmpresa(
+  idEmpresa: number,
+): Promise<{ cuotasMarcadas: number; totalAtrasadas: number }> {
+  const res = await api.post<{ cuotasMarcadas: number; totalAtrasadas: number }>(
+    `/api/pagos/empresa/${idEmpresa}/evaluar-morosidad`,
+  );
   return res.data;
 }
 
-export async function suspenderMorosos(): Promise<{ empresasSuspendidas: number }> {
-  const res = await api.post<{ empresasSuspendidas: number }>('/api/pagos/suspender-morosos');
+export async function suspenderMorosoEmpresa(idEmpresa: number): Promise<{ suspendida: boolean }> {
+  const res = await api.post<{ suspendida: boolean }>(`/api/pagos/empresa/${idEmpresa}/suspender`);
   return res.data;
 }
 
