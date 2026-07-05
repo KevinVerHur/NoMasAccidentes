@@ -298,7 +298,7 @@ function VistaAdmin() {
       </div>
 
       <Panel
-        titulo="🎓 Cursos y asistencia"
+        titulo="Cursos y asistencia"
         accion={
           <button
             className="btn btn-sm btn-primary"
@@ -1041,7 +1041,7 @@ function VistaProfesional() {
         <KpiCard label="Adicionales" value={extras} />
       </div>
 
-      <Panel titulo="📅 Capacitaciones programadas">
+      <Panel titulo="Capacitaciones programadas">
         {cargando ? (
           <div className="placeholder">Cargando...</div>
         ) : proximas.length === 0 ? (
@@ -1124,7 +1124,7 @@ function VistaProfesional() {
         )}
       </Panel>
 
-      <Panel titulo="📚 Historial de capacitaciones">
+      <Panel titulo="Historial de capacitaciones">
         {cargando ? (
           <div className="placeholder">Cargando...</div>
         ) : historial.length === 0 ? (
@@ -1611,7 +1611,7 @@ function VistaCliente() {
       {tab === 'capacitaciones' && (
         <>
           <Panel
-            titulo="🎓 Capacitaciones programadas"
+            titulo="Capacitaciones programadas"
             accion={<button className="btn btn-sm btn-outline" onClick={() => navigate('/mis-solicitudes', { state: { tipoInicial: 'CAPACITACION' } })}>Solicitar capacitación</button>}
           >
             {programadas.length === 0
@@ -1652,7 +1652,7 @@ function VistaCliente() {
               )}
           </Panel>
 
-          <Panel titulo="📚 Historial de capacitaciones">
+          <Panel titulo="Historial de capacitaciones">
             {historial.length === 0
               ? <div className="placeholder">Sin capacitaciones realizadas aún.</div>
               : (
@@ -1686,7 +1686,7 @@ function VistaCliente() {
       {/* ── TAB TRABAJADORES ── */}
       {tab === 'trabajadores' && (
         <Panel
-          titulo="👷 Mis trabajadores"
+          titulo="Mis trabajadores"
           accion={<button className="btn btn-sm btn-primary" onClick={abrirCrear}>+ Agregar trabajador</button>}
         >
           {asistentes.length === 0

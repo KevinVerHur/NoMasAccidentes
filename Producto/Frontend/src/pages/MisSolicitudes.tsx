@@ -79,8 +79,8 @@ export default function MisSolicitudes() {
         Solicita una asesoría, capacitación o visita a tu consultora
       </div>
 
-      <Panel titulo="➕ Nueva solicitud">
-        <form onSubmit={enviar} className="flex flex-col gap-3 max-w-[520px] w-full">
+      <Panel titulo="Nueva solicitud">
+        <form onSubmit={enviar} className="flex flex-col gap-3 max-w-[520px] w-full px-4 py-3">
           <label className="text-[13px] text-gray-600">
             Tipo de servicio
             <select
@@ -148,7 +148,7 @@ export default function MisSolicitudes() {
         </form>
       </Panel>
 
-      <Panel titulo="📋 Mis solicitudes">
+      <Panel titulo="Mis solicitudes">
         {cargando ? (
           <div className="placeholder">Cargando...</div>
         ) : items.length === 0 ? (

@@ -85,7 +85,7 @@ export default function MisActividades() {
         Historial de tus visitas y asesorías (solo lectura)
       </div>
 
-      <Panel titulo="📅 Visitas">
+      <Panel titulo="Visitas">
         {cargando ? (
           <div className="placeholder">Cargando...</div>
         ) : visitas.length === 0 ? (
@@ -112,7 +112,7 @@ export default function MisActividades() {
         )}
       </Panel>
 
-      <Panel titulo="📋 Asesorías">
+      <Panel titulo="Asesorías">
         {cargando ? (
           <div className="placeholder">Cargando...</div>
         ) : asesorias.length === 0 ? (

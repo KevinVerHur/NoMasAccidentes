@@ -134,7 +134,7 @@ export default function SolicitudesAdmin() {
         </label>
       </div>
 
-      <Panel titulo="📥 Bandeja de solicitudes">
+      <Panel titulo="Bandeja de solicitudes">
         {cargando ? (
           <div className="placeholder">Cargando...</div>
         ) : items.length === 0 ? (

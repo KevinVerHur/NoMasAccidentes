@@ -75,7 +75,7 @@ export default function Notificaciones() {
         </div>
       )}
 
-      <Panel titulo="🔔 Tu bandeja">
+      <Panel titulo="Tu bandeja">
         {cargando ? (
           <div className="placeholder">Cargando...</div>
         ) : items.length === 0 ? (

@@ -200,7 +200,13 @@ export default function Morosidad() {
 
       <Panel
         titulo="Clientes con deuda"
-        accion={<button className="btn btn-sm btn-outline" onClick={cargarMorosidades} disabled={cargando}>Actualizar</button>}
+        accion={
+          <div className="btn-group">
+            <button className="btn btn-sm btn-outline" onClick={() => setRiesgo('CRITICO')}>Ver críticos</button>
+            <button className="btn btn-sm btn-outline" onClick={() => { setFiltro(''); setRiesgo(''); }}>Limpiar filtros</button>
+            <button className="btn btn-sm btn-outline" onClick={cargarMorosidades} disabled={cargando}>Actualizar</button>
+          </div>
+        }
       >
         <div className="searchbar">
           <input
@@ -254,18 +260,6 @@ export default function Morosidad() {
             </tbody>
           </table>
         )}
-      </Panel>
-
-      <Panel titulo="Gestión rápida de cobranza">
-        <div className="responsive-action-row" style={{ padding: 16 }}>
-          <div style={{ fontSize: 12, color: '#6b7280' }}>
-            Filtra clientes morosos, registra pagos completos de cuotas existentes y suspende servicios usando los endpoints actuales del sistema.
-          </div>
-          <div className="btn-group">
-            <button className="btn btn-sm btn-outline" onClick={() => setRiesgo('CRITICO')}>Ver críticos</button>
-            <button className="btn btn-sm btn-outline" onClick={() => { setFiltro(''); setRiesgo(''); }}>Limpiar filtros</button>
-          </div>
-        </div>
       </Panel>
 
       <Modal

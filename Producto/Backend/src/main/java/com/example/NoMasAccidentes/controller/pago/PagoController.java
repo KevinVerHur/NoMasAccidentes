@@ -76,7 +76,10 @@ public class PagoController {
     @PostMapping("/evaluar-morosidad")
     @PreAuthorize("hasRole('ADMIN')")
     public Map<String, Integer> evaluarMorosidad() {
-        return Map.of("cuotasMarcadas", pagoService.evaluarMorosidad());
+        int marcadas = pagoService.evaluarMorosidad();
+        return Map.of(
+                "cuotasMarcadas", marcadas,
+                "totalAtrasadas", pagoService.contarAtrasadas());
     }
 
     @Operation(summary = "Suspender empresas con pagos atrasados (RF12)")
@@ -84,6 +87,23 @@ public class PagoController {
     @PreAuthorize("hasRole('ADMIN')")
     public Map<String, Integer> suspenderMorosos() {
         return Map.of("empresasSuspendidas", pagoService.suspenderMorosos());
+    }
+
+    @Operation(summary = "Evaluar la morosidad de una empresa: marca sus cuotas vencidas como ATRASADO (RF11)")
+    @PostMapping("/empresa/{idEmpresa}/evaluar-morosidad")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Map<String, Integer> evaluarMorosidadEmpresa(@PathVariable Long idEmpresa) {
+        int marcadas = pagoService.evaluarMorosidadEmpresa(idEmpresa);
+        return Map.of(
+                "cuotasMarcadas", marcadas,
+                "totalAtrasadas", pagoService.contarAtrasadasEmpresa(idEmpresa));
+    }
+
+    @Operation(summary = "Suspender una empresa por pagos atrasados (RF12)")
+    @PostMapping("/empresa/{idEmpresa}/suspender")
+    @PreAuthorize("hasRole('ADMIN')")
+    public Map<String, Boolean> suspenderMorosoEmpresa(@PathVariable Long idEmpresa) {
+        return Map.of("suspendida", pagoService.suspenderMorosoEmpresa(idEmpresa));
     }
 
     @Operation(summary = "Agregar un cobro extra a una cuota (RF21, RF24, RF28)")

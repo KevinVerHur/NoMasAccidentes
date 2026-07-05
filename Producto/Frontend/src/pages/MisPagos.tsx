@@ -124,7 +124,7 @@ export default function MisPagos() {
         <KpiCard label="Adeudado"   value={clp(adeudado)} />
       </div>
 
-      <Panel titulo="💳 Historial de cuotas">
+      <Panel titulo="Historial de cuotas">
         {cargando ? (
           <div className="placeholder">Cargando...</div>
         ) : pagos.length === 0 ? (

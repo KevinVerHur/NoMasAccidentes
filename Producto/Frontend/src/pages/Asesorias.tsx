@@ -164,7 +164,7 @@ export default function Asesorias() {
       </div>
 
       <Panel
-        titulo="📋 Listado de asesorías"
+        titulo="Listado de asesorías"
         accion={esAdmin
           ? <button className="btn btn-sm btn-primary" onClick={() => { formNueva.reset(); setError(null); setModalNueva(true); }}>+ Registrar asesoría</button>
           : undefined}

@@ -234,7 +234,7 @@ export default function Visitas() {
       </div>
 
       <Panel
-        titulo="📅 Listado de visitas"
+        titulo="Listado de visitas"
         accion={esAdmin
           ? <button className="btn btn-sm btn-primary" onClick={() => { formNueva.reset(); setError(null); setModalNueva(true); }}>+ Planificar visita</button>
           : undefined}
