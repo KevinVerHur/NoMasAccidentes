@@ -3,6 +3,7 @@ package com.example.NoMasAccidentes.e2e;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
@@ -17,10 +18,9 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 
 import java.io.File;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -32,17 +32,20 @@ import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Ejecutar:
-// .\mvnw.cmd test "-Dtest=CajaNegraWebDriverTest"
-// Requiere frontend en http://localhost:5173 y Mailpit en http://localhost:8025.
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@ActiveProfiles("e2e")
+// Ejecutar con: mvn clean verify -Pe2e
+// Abre Chrome visible y prueba la aplicacion publicada en e2e.base-url/E2E_BASE_URL.
 public class CajaNegraWebDriverTest {
 
-    private static final String BASE_URL = "http://localhost:5173";
-    private static final String MAILPIT_URL = "http://localhost:8025";
-    private static final String ADMIN_EMAIL = "admin@nma.cl";
-    private static final String ADMIN_PASSWORD = "123456";
+    private static final String BASE_URL = normalizarBaseUrl(
+            propiedadOEnv("e2e.base-url", "E2E_BASE_URL", "https://nomasaccidentes.duckdns.org"));
+    private static final String MAILPIT_URL = normalizarBaseUrl(
+            propiedadOEnv("e2e.mailpit-url", "E2E_MAILPIT_URL", "http://localhost:8025"));
+    private static final String ADMIN_EMAIL = propiedadOEnv("e2e.admin-email", "E2E_ADMIN_EMAIL", "admin@nma.cl");
+    private static final String ADMIN_PASSWORD = propiedadOEnv("e2e.admin-password", "E2E_ADMIN_PASSWORD", "123456");
+    private static final boolean HEADLESS = Boolean.parseBoolean(
+            propiedadOEnv("e2e.headless", "E2E_HEADLESS", "false"));
+    private static final boolean MAILPIT_ENABLED = !"disabled".equalsIgnoreCase(MAILPIT_URL)
+            && !"none".equalsIgnoreCase(MAILPIT_URL);
 
     private final HttpClient http = HttpClient.newHttpClient();
     private final ObjectMapper mapper = new ObjectMapper();
@@ -54,11 +57,19 @@ public class CajaNegraWebDriverTest {
 
     @BeforeEach
     void iniciar() {
+        verificarFrontendDisponible();
+
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--window-size=1366,768");
+        if (HEADLESS) {
+            options.addArguments("--headless=new");
+            options.addArguments("--disable-gpu");
+            options.addArguments("--no-sandbox");
+            options.addArguments("--disable-dev-shm-usage");
+        }
 
         driver = new ChromeDriver(options);
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(15));
     }
 
     @AfterEach
@@ -118,6 +129,23 @@ public class CajaNegraWebDriverTest {
         wait.until(d -> d.getPageSource().contains(texto));
     }
 
+    void verificarFrontendDisponible() {
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(BASE_URL))
+                    .timeout(Duration.ofSeconds(8))
+                    .GET()
+                    .build();
+            int status = http.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
+            Assumptions.assumeTrue(
+                    status >= 200 && status < 500,
+                    "No se pudo abrir la aplicacion en " + BASE_URL + ". Revisa que la EC2/dominio este encendido."
+            );
+        } catch (Exception ex) {
+            Assumptions.abort("No se pudo abrir la aplicacion en " + BASE_URL + ". Revisa que la EC2/dominio este encendido.");
+        }
+    }
+
     String sufijoUnico() {
         return String.valueOf(System.currentTimeMillis());
     }
@@ -139,8 +167,7 @@ public class CajaNegraWebDriverTest {
         escribir("nombreContacto", "Contacto " + etiqueta);
         escribir("email", email);
         escribir("telefono", "912345678");
-        seleccionar("rubro", "Construcción");
-        seleccionar("plan", "PRO");
+        seleccionar("idRubro", "Construcción");
         clicTexto("Guardar cliente");
 
         esperarBotonEnFila(rut, "Suspender");
@@ -148,6 +175,7 @@ public class CajaNegraWebDriverTest {
     }
 
     ClientePrueba crearClienteConInvitacion(String etiqueta) throws Exception {
+        requiereMailpit();
         limpiarMailpit();
 
         loginAdmin();
@@ -202,15 +230,21 @@ public class CajaNegraWebDriverTest {
     }
 
     void limpiarMailpit() throws Exception {
+        requiereMailpit();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(MAILPIT_URL + "/api/v1/messages"))
                 .DELETE()
                 .build();
 
-        http.send(request, HttpResponse.BodyHandlers.ofString());
+        try {
+            http.send(request, HttpResponse.BodyHandlers.ofString());
+        } catch (ConnectException ex) {
+            Assumptions.abort("Prueba omitida: Mailpit no responde en " + MAILPIT_URL);
+        }
     }
 
     String leerLinkMailpit(String destinatario, String textoAsunto) throws Exception {
+        requiereMailpit();
         long fin = System.currentTimeMillis() + 15_000;
 
         while (System.currentTimeMillis() < fin) {
@@ -219,7 +253,13 @@ public class CajaNegraWebDriverTest {
                     .GET()
                     .build();
 
-            String body = http.send(request, HttpResponse.BodyHandlers.ofString()).body();
+            String body;
+            try {
+                body = http.send(request, HttpResponse.BodyHandlers.ofString()).body();
+            } catch (ConnectException ex) {
+                Assumptions.abort("Prueba omitida: Mailpit no responde en " + MAILPIT_URL);
+                return null;
+            }
             JsonNode root = mapper.readTree(body);
             JsonNode mensajes = root.has("messages") ? root.get("messages") : root.get("Messages");
 
@@ -249,20 +289,52 @@ public class CajaNegraWebDriverTest {
     }
 
     String leerMensajeMailpit(String id) throws Exception {
+        requiereMailpit();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(MAILPIT_URL + "/api/v1/message/" + id))
                 .GET()
                 .build();
 
-        return http.send(request, HttpResponse.BodyHandlers.ofString()).body();
+        try {
+            return http.send(request, HttpResponse.BodyHandlers.ofString()).body();
+        } catch (ConnectException ex) {
+            Assumptions.abort("Prueba omitida: Mailpit no responde en " + MAILPIT_URL);
+            return "";
+        }
     }
 
     String extraerLinkRestablecimiento(String contenido) {
         var matcher = Pattern
-                .compile("http://localhost:5173/restablecer-contrasena\\?token=[a-f0-9\\-]+")
+                .compile(Pattern.quote(BASE_URL) + "/restablecer-contrasena\\?token=[a-f0-9\\-]+")
                 .matcher(contenido);
 
         return matcher.find() ? matcher.group() : null;
+    }
+
+    static String propiedadOEnv(String propiedad, String env, String valorPorDefecto) {
+        String valor = System.getProperty(propiedad);
+        if (valor == null || valor.isBlank()) {
+            valor = System.getenv(env);
+        }
+        return (valor == null || valor.isBlank()) ? valorPorDefecto : valor.trim();
+    }
+
+    static String normalizarBaseUrl(String url) {
+        if (url == null) {
+            return "";
+        }
+        String limpia = url.trim();
+        while (limpia.endsWith("/")) {
+            limpia = limpia.substring(0, limpia.length() - 1);
+        }
+        return limpia;
+    }
+
+    void requiereMailpit() {
+        Assumptions.assumeTrue(
+                MAILPIT_ENABLED,
+                "Prueba omitida: Mailpit esta deshabilitado. Configure -De2e.mailpit-url=http://localhost:8025 para flujos de correo."
+        );
     }
 
     String normalizarUrlMailpit(String url) {
@@ -372,8 +444,7 @@ public class CajaNegraWebDriverTest {
         escribir("nombreContacto", "Contacto Test");
         escribir("email", "rut.invalido." + sufijoUnico() + "@nma.cl");
         escribir("telefono", "912345678");
-        seleccionar("rubro", "Construcción");
-        seleccionar("plan", "PRO");
+        seleccionar("idRubro", "Construcción");
 
         clicTexto("Guardar cliente");
 
@@ -397,8 +468,7 @@ public class CajaNegraWebDriverTest {
         escribir("nombreContacto", "Contacto Base");
         escribir("email", "rutbase" + sufijo + "@nma.cl");
         escribir("telefono", "912345678");
-        seleccionar("rubro", "Construcción");
-        seleccionar("plan", "PRO");
+        seleccionar("idRubro", "Construcción");
         clicTexto("Guardar cliente");
         esperarBotonEnFila(rutComun, "Suspender");
 
@@ -408,11 +478,10 @@ public class CajaNegraWebDriverTest {
         escribir("nombreContacto", "Contacto Duplicado");
         escribir("email", "rutdup" + sufijo + "@nma.cl");
         escribir("telefono", "912345678");
-        seleccionar("rubro", "Construcción");
-        seleccionar("plan", "PRO");
+        seleccionar("idRubro", "Construcción");
         clicTexto("Guardar cliente");
 
-        esperarTexto("Ya existe un cliente con RUT");
+        esperarTexto("Ya existe una empresa con RUT");
         captura("CP-09-rut-duplicado");
     }
 
@@ -434,8 +503,7 @@ public class CajaNegraWebDriverTest {
         escribir("nombreContacto", "Contacto Base");
         escribir("email", correoComun);
         escribir("telefono", "912345678");
-        seleccionar("rubro", "Construcción");
-        seleccionar("plan", "PRO");
+        seleccionar("idRubro", "Construcción");
         clicTexto("Guardar cliente");
         esperarBotonEnFila(rut1, "Suspender");
 
@@ -445,11 +513,10 @@ public class CajaNegraWebDriverTest {
         escribir("nombreContacto", "Contacto Duplicado");
         escribir("email", correoComun);
         escribir("telefono", "912345678");
-        seleccionar("rubro", "Construcción");
-        seleccionar("plan", "PRO");
+        seleccionar("idRubro", "Construcción");
         clicTexto("Guardar cliente");
 
-        esperarTexto("Ya existe un cliente con ese correo");
+        esperarTexto("Ya existe un usuario con ese correo");
         captura("CP-10-email-duplicado");
     }
 

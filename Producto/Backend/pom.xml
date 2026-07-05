@@ -214,6 +214,17 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/e2e/**</exclude>
+                        <exclude>**/*IT.java</exclude>
+                        <exclude>**/*E2ETest.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <executions>
                     <execution>
@@ -270,5 +281,46 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>e2e</id>
+            <properties>
+                <e2e.base-url>https://nomasaccidentes.duckdns.org</e2e.base-url>
+                <e2e.backend-url>http://localhost:8080</e2e.backend-url>
+                <e2e.mailpit-url>http://localhost:8025</e2e.mailpit-url>
+                <e2e.headless>false</e2e.headless>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-failsafe-plugin</artifactId>
+                        <configuration>
+                            <includes>
+                                <include>**/e2e/**/*Test.java</include>
+                                <include>**/*E2ETest.java</include>
+                                <include>**/*IT.java</include>
+                            </includes>
+                            <systemPropertyVariables>
+                                <e2e.base-url>${e2e.base-url}</e2e.base-url>
+                                <e2e.backend-url>${e2e.backend-url}</e2e.backend-url>
+                                <e2e.mailpit-url>${e2e.mailpit-url}</e2e.mailpit-url>
+                                <e2e.headless>${e2e.headless}</e2e.headless>
+                            </systemPropertyVariables>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>integration-test</goal>
+                                    <goal>verify</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
