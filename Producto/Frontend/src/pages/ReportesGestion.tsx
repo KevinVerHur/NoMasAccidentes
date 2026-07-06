@@ -132,8 +132,8 @@ export default function ReportesGestion() {
           ? <button className="btn btn-sm btn-warn" onClick={() => { setError(null); setModalCierre(true); }}>Cierre mensual (todos)</button>
           : undefined}
       >
-        <div className="btn-group" style={{ flexWrap: 'wrap', alignItems: 'flex-end', gap: 12, paddingTop: 12, paddingBottom: 12, paddingLeft: 16, paddingRight: 16 }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
+        <div className="responsive-filter-grid">
+          <div>
             <label className="auth-label">Cliente</label>
             <select className="auth-input" value={idEmpresa ?? ''} onChange={e => { setReporteGenerado(null); setIdEmpresa(e.target.value ? Number(e.target.value) : null); }}>
               <option value="">Seleccionar cliente...</option>

@@ -886,45 +886,17 @@ export default function DashboardProfesional() {
 
       {modalMapa && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,.45)',
-            zIndex: 4000,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 18,
-          }}
+          className="responsive-modal-overlay"
           onClick={(e) => {
             if (e.target === e.currentTarget) setModalMapa(false);
           }}
         >
-          <div
-            style={{
-              width: 'min(1040px, 96vw)',
-              background: 'white',
-              borderRadius: 12,
-              overflow: 'hidden',
-              boxShadow: '0 12px 40px rgba(0,0,0,.22)',
-              position: 'relative',
-              zIndex: 4001,
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '14px 18px',
-                borderBottom: '1px solid #e8edf3',
-                background: '#f8fafc',
-              }}
-            >
-              <strong style={{ color: '#18395a', fontSize: 15 }}>Mapa completo de ubicacion</strong>
+          <div className="responsive-modal-card">
+            <div className="responsive-modal-header">
+              <strong className="responsive-modal-title">Mapa completo de ubicacion</strong>
               <button
                 onClick={() => setModalMapa(false)}
-                style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#8994a3', lineHeight: 1 }}
+                className="responsive-modal-close"
               >
                 x
               </button>
