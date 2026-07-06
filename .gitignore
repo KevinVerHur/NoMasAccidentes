@@ -8,3 +8,7 @@ deploy/.env.prod
 
 # Nota: .env.prod.example SI se versiona (es la plantilla sin secretos).
 # El .env.prod real se crea en el servidor copiando el .example y rellenando.
+
+# PDFs generados en disco (copia local del almacenamiento dual). No versionar.
+Producto/librerias/
+Producto/Backend/informes-pdf/

@@ -58,7 +58,10 @@ public class NotificacionEventoService {
                 destinatario.getEmail(), empresa.getRazonSocial(), fecha, empresa.getDireccion());
     }
 
-    /** Capacitación programada → avisa a los representantes con acceso de la empresa (RF-CAP1). */
+    /**
+     * Capacitación programada → avisa a los representantes con acceso de la empresa (RF-CAP1)
+     * y al profesional (relator) asignado a dictarla.
+     */
     public void notificarCapacitacionProgramada(Capacitacion capacitacion) {
         Empresa empresa = capacitacion.getEmpresa();
         String fecha = String.valueOf(capacitacion.getFechaProgramada());
@@ -69,14 +72,30 @@ public class NotificacionEventoService {
 
         for (Cliente representante : representantesConAcceso(empresa)) {
             notificacionService.crear(representante.getUsuario(),
-                    TipoNotificacion.CAPACITACION_PROGRAMADA, titulo, mensaje, "/mis-actividades");
+                    TipoNotificacion.CAPACITACION_PROGRAMADA, titulo, mensaje, "/mis-capacitaciones");
             correoService.enviarAvisoCapacitacionProgramada(
                     representante.getEmail(), empresa.getRazonSocial(),
                     capacitacion.getCurso(), fecha, hora, capacitacion.getLugar());
         }
+
+        // Profesional que dicta (relator): avisa que fue asignado (bandeja + correo).
+        Profesional relator = capacitacion.getRelator();
+        if (relator != null && relator.getUsuario() != null) {
+            String tituloProf = "Capacitación asignada";
+            String mensajeProf = "Se te asignó como relator de \"%s\" en %s, el %s a las %s."
+                    .formatted(capacitacion.getCurso(), empresa.getRazonSocial(), fecha, hora);
+            notificacionService.crear(relator.getUsuario(),
+                    TipoNotificacion.CAPACITACION_PROGRAMADA, tituloProf, mensajeProf, "/capacitaciones");
+            correoService.enviarAvisoCapacitacionAsignada(
+                    relator.getUsuario().getEmail(), empresa.getRazonSocial(),
+                    capacitacion.getCurso(), fecha, hora, capacitacion.getLugar());
+        }
     }
 
-    /** Asesoría registrada → avisa a los representantes con acceso de la empresa (RF22). */
+    /**
+     * Asesoría registrada → avisa a los representantes con acceso de la empresa (RF22)
+     * y al profesional asignado a atenderla.
+     */
     public void notificarAsesoriaRegistrada(Asesoria asesoria) {
         Empresa empresa = asesoria.getEmpresa();
         String tipo = String.valueOf(asesoria.getTipo());
@@ -88,6 +107,18 @@ public class NotificacionEventoService {
                     TipoNotificacion.ASESORIA_REGISTRADA, titulo, mensaje, "/mis-actividades");
             correoService.enviarAvisoAsesoriaRegistrada(
                     representante.getEmail(), empresa.getRazonSocial(), tipo, asesoria.getMotivo());
+        }
+
+        // Profesional asignado a atender la asesoría (bandeja + correo).
+        Profesional profesional = asesoria.getProfesional();
+        if (profesional != null && profesional.getUsuario() != null) {
+            String tituloProf = "Asesoría asignada";
+            String mensajeProf = "Se te asignó una asesoría (%s) para %s."
+                    .formatted(tipo, empresa.getRazonSocial());
+            notificacionService.crear(profesional.getUsuario(),
+                    TipoNotificacion.ASESORIA_REGISTRADA, tituloProf, mensajeProf, "/asesorias");
+            correoService.enviarAvisoAsesoriaAsignada(
+                    profesional.getUsuario().getEmail(), empresa.getRazonSocial(), tipo, asesoria.getMotivo());
         }
     }
 
