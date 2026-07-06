@@ -57,8 +57,6 @@ public class CajaNegraWebDriverTest {
 
     @BeforeEach
     void iniciar() {
-        verificarFrontendDisponible();
-
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--window-size=1366,768");
         if (HEADLESS) {
@@ -127,23 +125,6 @@ public class CajaNegraWebDriverTest {
 
     void esperarTexto(String texto) {
         wait.until(d -> d.getPageSource().contains(texto));
-    }
-
-    void verificarFrontendDisponible() {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(BASE_URL))
-                    .timeout(Duration.ofSeconds(8))
-                    .GET()
-                    .build();
-            int status = http.send(request, HttpResponse.BodyHandlers.discarding()).statusCode();
-            Assumptions.assumeTrue(
-                    status >= 200 && status < 500,
-                    "No se pudo abrir la aplicacion en " + BASE_URL + ". Revisa que la EC2/dominio este encendido."
-            );
-        } catch (Exception ex) {
-            Assumptions.abort("No se pudo abrir la aplicacion en " + BASE_URL + ". Revisa que la EC2/dominio este encendido.");
-        }
     }
 
     String sufijoUnico() {
