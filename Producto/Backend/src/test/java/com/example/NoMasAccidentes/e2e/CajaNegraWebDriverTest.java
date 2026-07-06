@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CajaNegraWebDriverTest {
 
     private static final String BASE_URL = normalizarBaseUrl(
-            propiedadOEnv("e2e.base-url", "E2E_BASE_URL", "https://nomasaccidentes.duckdns.org"));
+            propiedadOEnv("e2e.base-url", "E2E_BASE_URL", "http://127.0.0.1:5173"));
     private static final String MAILPIT_URL = normalizarBaseUrl(
             propiedadOEnv("e2e.mailpit-url", "E2E_MAILPIT_URL", "http://localhost:8025"));
     private static final String ADMIN_EMAIL = propiedadOEnv("e2e.admin-email", "E2E_ADMIN_EMAIL", "admin@nma.cl");

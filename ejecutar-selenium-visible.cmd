@@ -10,7 +10,7 @@ echo Modo EC2: los casos que dependen de Mailpit se omiten si no hay tunel de co
 echo.
 
 cd /d "%~dp0Producto\Backend"
-mvn clean verify -Pe2e -De2e.base-url=%BASE_URL% -De2e.headless=false -De2e.mailpit-url=disabled
+call mvnw.cmd clean verify -Pe2e -De2e.base-url=%BASE_URL% -De2e.headless=false -De2e.mailpit-url=disabled
 
 echo.
 echo Selenium termino. Presiona una tecla para cerrar esta ventana.
