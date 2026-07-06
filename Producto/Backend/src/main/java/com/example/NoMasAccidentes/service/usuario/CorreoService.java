@@ -476,6 +476,74 @@ public class CorreoService {
         }
     }
 
+    /** Avisa al profesional que se le asignó como relator de una capacitación. */
+    @Async
+    public void enviarAvisoCapacitacionAsignada(String destinatario, String empresa, String curso, String fecha, String hora, String lugar){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Capacitacion asignada");
+            helper.setText(construirHtmlAvisoCapacitacionAsignada(empresa, curso, fecha, hora, lugar), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de capacitacion asignada enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de capacitacion asignada a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    /** Avisa al profesional que se le asignó una asesoría a atender. */
+    @Async
+    public void enviarAvisoAsesoriaAsignada(String destinatario, String empresa, String tipo, String motivo){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Asesoria asignada");
+            helper.setText(construirHtmlAvisoAsesoriaAsignada(empresa, tipo, motivo), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de asesoria asignada enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de asesoria asignada a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    private String construirHtmlAvisoCapacitacionAsignada(String empresa, String curso, String fecha, String hora, String lugar){
+        String lugarTexto = lugar == null || lugar.isBlank() ? "Por confirmar" : lugar;
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Se te asigno como relator de una capacitacion.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Empresa:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Curso:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Fecha:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Hora:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Lugar:</strong> %s</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, curso, fecha, hora, lugarTexto);
+    }
+
+    private String construirHtmlAvisoAsesoriaAsignada(String empresa, String tipo, String motivo){
+        String motivoTexto = motivo == null || motivo.isBlank() ? "Sin detalle" : motivo;
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Se te asigno una asesoria para atender.</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Empresa:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Tipo:</strong> %s</p>
+              <p style="color:#3d4856;font-size:14px"><strong>Motivo:</strong> %s</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, tipo, motivoTexto);
+    }
+
     private String construirHtmlAvisoVisitaPlanificada(String empresa, String fecha, String direccion){
         String direccionTexto = direccion == null || direccion.isBlank() ? "Por confirmar" : direccion;
         return """

@@ -18,15 +18,16 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 /**
- * Almacena y recupera los PDFs generados por la aplicación. Si hay un bucket S3
- * configurado ({@code aws.s3.bucket-name}) usa S3; en caso contrario (dev) usa
- * disco local bajo {@code informes.local.dir}. Cada documento se guarda dentro de
- * una carpeta por tipo (p. ej. {@code informes/}, {@code reportes/},
- * {@code actas-capacitacion/}, {@code certificados/}, {@code comprobantes/}) y,
- * dentro de ella, una subcarpeta por empresa (p. ej. {@code informes/1/}) para
- * agrupar los documentos de cada cliente. La clave devuelta —y guardada en
- * {@code Informe.urlPdf}— es la ruta completa {@code carpeta/idEmpresa/archivo},
- * independiente del backend de almacenamiento.
+ * Almacena y recupera los PDFs generados por la aplicación. Guarda SIEMPRE una
+ * copia en disco local bajo {@code informes.local.dir} (por defecto
+ * {@code ../librerias}, es decir {@code Producto/librerias}) y, si además hay un
+ * bucket S3 configurado ({@code aws.s3.bucket-name}), sube la misma clave a S3.
+ * Cada documento se guarda dentro de una carpeta por tipo (p. ej. {@code informes/},
+ * {@code reportes/}, {@code actas-capacitacion/}, {@code certificados/},
+ * {@code comprobantes/}) y, dentro de ella, una subcarpeta por empresa
+ * (p. ej. {@code informes/1/}) para agrupar los documentos de cada cliente. La clave
+ * devuelta —y guardada en {@code Informe.urlPdf}— es la ruta completa
+ * {@code carpeta/idEmpresa/archivo}, idéntica en disco y en S3.
  */
 @Service
 @Slf4j
@@ -42,7 +43,7 @@ public class AlmacenamientoInformeService {
     public AlmacenamientoInformeService(
             @Value("${aws.s3.bucket-name:}") String bucket,
             @Value("${aws.region:us-east-1}") String region,
-            @Value("${informes.local.dir:./informes-pdf}") String dirLocal) {
+            @Value("${informes.local.dir:../librerias}") String dirLocal) {
         this.bucket = bucket;
         this.region = region;
         this.dirLocal = Paths.get(dirLocal);
@@ -58,6 +59,9 @@ public class AlmacenamientoInformeService {
      */
     public String guardar(String carpeta, String nombreArchivo, byte[] pdf) {
         String clave = carpeta + "/" + nombreArchivo;
+        // 1) Siempre deja una copia en disco local (misma estructura carpeta/idEmpresa/archivo).
+        guardarEnDisco(clave, pdf);
+        // 2) Además, si hay un bucket configurado, sube la MISMA clave a S3.
         if (usaS3()) {
             s3().putObject(
                     PutObjectRequest.builder()
@@ -67,17 +71,20 @@ public class AlmacenamientoInformeService {
                             .build(),
                     RequestBody.fromBytes(pdf));
             log.info("PDF almacenado en S3 bucket={} key={}", bucket, clave);
-        } else {
-            try {
-                Path destino = dirLocal.resolve(clave);
-                Files.createDirectories(destino.getParent());
-                Files.write(destino, pdf);
-                log.info("PDF almacenado en disco local: {}", destino);
-            } catch (IOException e) {
-                throw new UncheckedIOException("No se pudo guardar el PDF en disco", e);
-            }
         }
         return clave;
+    }
+
+    /** Escribe el PDF en disco bajo {@code dirLocal/clave}, creando las carpetas necesarias. */
+    private void guardarEnDisco(String clave, byte[] pdf) {
+        try {
+            Path destino = dirLocal.resolve(clave);
+            Files.createDirectories(destino.getParent());
+            Files.write(destino, pdf);
+            log.info("PDF guardado en disco local: {}", destino);
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo guardar el PDF en disco", e);
+        }
     }
 
     /** Atajo que guarda bajo la carpeta por defecto ({@code informes/}). */
@@ -95,22 +102,25 @@ public class AlmacenamientoInformeService {
         return guardar(carpetaEmpresa, nombreArchivo, pdf);
     }
 
-    /** Recupera el PDF a partir de la clave completa guardada ({@code carpeta/archivo}). */
+    /**
+     * Recupera el PDF a partir de la clave completa guardada ({@code carpeta/archivo}).
+     * Prefiere la copia en disco local; si no existe, la baja de S3 (si hay bucket).
+     */
     public byte[] descargar(String clave) {
+        Path archivo = dirLocal.resolve(clave);
+        if (Files.exists(archivo)) {
+            try {
+                return Files.readAllBytes(archivo);
+            } catch (IOException e) {
+                throw new UncheckedIOException("No se pudo leer el informe del disco", e);
+            }
+        }
         if (usaS3()) {
             ResponseBytes<GetObjectResponse> bytes = s3().getObjectAsBytes(
                     GetObjectRequest.builder().bucket(bucket).key(clave).build());
             return bytes.asByteArray();
         }
-        Path archivo = dirLocal.resolve(clave);
-        if (!Files.exists(archivo)) {
-            throw new RecursoNoEncontradoException("Archivo de informe no encontrado: " + clave);
-        }
-        try {
-            return Files.readAllBytes(archivo);
-        } catch (IOException e) {
-            throw new UncheckedIOException("No se pudo leer el informe del disco", e);
-        }
+        throw new RecursoNoEncontradoException("Archivo de informe no encontrado: " + clave);
     }
 
     /** Cliente S3 perezoso: solo se crea si hay bucket configurado. */
