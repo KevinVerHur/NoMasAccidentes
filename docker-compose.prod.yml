@@ -16,6 +16,11 @@ services:
   mysql:
     image: mysql:8.4
     restart: unless-stopped
+    # Puerto expuesto SOLO en el localhost de la EC2 (127.0.0.1) para conectar
+    # MySQL Workbench/DBeaver por tunel SSH. NO abrir el 3306 en el Security Group:
+    # asi la BD queda accesible unicamente a traves de SSH, nunca desde internet.
+    ports:
+      - "127.0.0.1:3306:3306"
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE:-no_mas_accidentes}
       MYSQL_USER: ${DB_USER:-nma_user}
