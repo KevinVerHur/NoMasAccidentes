@@ -11,7 +11,7 @@ echo Si no hay tunel SSH a Mailpit, fallaran los casos de correo.
 echo.
 
 cd /d "%~dp0Producto\Backend"
-mvn clean verify -Pe2e -De2e.base-url=%BASE_URL% -De2e.headless=false -De2e.mailpit-url=%MAILPIT_URL%
+call mvnw.cmd clean verify -Pe2e -De2e.base-url=%BASE_URL% -De2e.headless=false -De2e.mailpit-url=%MAILPIT_URL%
 
 echo.
 echo Selenium termino. Presiona una tecla para cerrar esta ventana.

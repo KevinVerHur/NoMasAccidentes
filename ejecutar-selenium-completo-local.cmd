@@ -65,7 +65,7 @@ if errorlevel 1 (
 )
 
 cd /d "%~dp0Producto\Backend"
-mvn clean verify -Pe2e -De2e.base-url=%BASE_URL% -De2e.headless=false -De2e.mailpit-url=%MAILPIT_URL%
+call mvnw.cmd clean verify -Pe2e -De2e.base-url=%BASE_URL% -De2e.headless=false -De2e.mailpit-url=%MAILPIT_URL%
 set TEST_EXIT=%ERRORLEVEL%
 
 echo.
