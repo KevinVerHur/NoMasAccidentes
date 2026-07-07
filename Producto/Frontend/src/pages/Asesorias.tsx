@@ -11,7 +11,7 @@ import type {
   EstadoAsesoria, TipoAsesoria, VarianteBadge, EmpresaResponse, ProfesionalResponse,
 } from '../types';
 import {
-  listarAsesorias, crearAsesoria, atenderAsesoria, cerrarAsesoria, cancelarAsesoria,
+  listarAsesorias, misAsesorias, crearAsesoria, atenderAsesoria, cerrarAsesoria, cancelarAsesoria,
 } from '../api/asesorias';
 import { listarClientes } from '../api/clientes';
 import { listarProfesionales } from '../api/profesionales';
@@ -66,12 +66,13 @@ export default function Asesorias() {
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
-      const data = await listarAsesorias(0, 200);
-      setAsesorias(data.content);
+      // El ADMIN ve todas las asesorías; el profesional solo las asignadas a él.
+      const data = esAdmin ? (await listarAsesorias(0, 200)).content : await misAsesorias();
+      setAsesorias(data);
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [esAdmin]);
 
   useEffect(() => { cargar(); }, [cargar]);
 
