@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import KpiCard from '../components/ui/KpiCard';
@@ -19,6 +19,8 @@ import type {
 } from '../types';
 import {
   listarCapacitaciones,
+  misCapacitaciones,
+  listarCapacitacionesPorRelator,
   crearCapacitacion,
   cancelarCapacitacion,
   confirmarAsistencia,
@@ -31,7 +33,7 @@ import {
   descargarCertificadoAsistente,
 } from '../api/capacitaciones';
 import { listarClientes, miCliente } from '../api/clientes';
-import { listarProfesionales } from '../api/profesionales';
+import { listarProfesionales, obtenerMiPerfilProfesional } from '../api/profesionales';
 import { crearAsistente, editarAsistente, eliminarAsistente, listarAsistentesPorCliente } from '../api/asistentes';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -901,6 +903,7 @@ function VistaAdmin() {
 
 function VistaProfesional() {
   const { email } = useAuth();
+  const miIdRef = useRef<number | null>(null);   // id del profesional (relator) logueado
 
   const [capacitaciones, setCapacitaciones] = useState<CapacitacionResponse[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -919,8 +922,13 @@ function VistaProfesional() {
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
-      const d = await listarCapacitaciones(0, 200);
-      setCapacitaciones(d.content);
+      // Solo las capacitaciones que dicta este profesional (relator), no todas (RF41).
+      if (miIdRef.current == null) {
+        miIdRef.current = (await obtenerMiPerfilProfesional()).id;
+      }
+      setCapacitaciones(await listarCapacitacionesPorRelator(miIdRef.current));
+    } catch {
+      setCapacitaciones([]);
     } finally {
       setCargando(false);
     }
@@ -978,7 +986,7 @@ function VistaProfesional() {
     try {
       await registrarAsistenciaEfectiva(idCapacitacion, idAsistente, asistio);
 
-      const fresca = (await listarCapacitaciones(0, 200)).content.find(
+      const fresca = (await listarCapacitacionesPorRelator(miIdRef.current!)).find(
         c => c.id === idCapacitacion
       );
 
@@ -1435,8 +1443,8 @@ function VistaCliente() {
 
   // ── Carga inicial ───────────────────────────────────────────────────────────
   const cargarCapacitaciones = useCallback(async () => {
-    const d = await listarCapacitaciones(0, 200);
-    setCapacitaciones(d.content);
+    // Solo las capacitaciones de la empresa del cliente autenticado (RF07), no las de todas.
+    setCapacitaciones(await misCapacitaciones());
   }, []);
 
   const cargarAsistentes = useCallback(async (id: number) => {
@@ -1476,7 +1484,7 @@ function VistaCliente() {
         firmaDigital: `Firmado por ${email}`,
       });
       await cargarCapacitaciones();
-      const fresca = (await listarCapacitaciones(0, 200)).content.find(c => c.id === idCap);
+      const fresca = (await misCapacitaciones()).find(c => c.id === idCap);
       if (fresca) setModalConfirmar(fresca);
     } catch (e) { alert(mensajeError(e, 'No se pudo confirmar.')); }
     finally { setConfirmandoId(null); }
@@ -1513,7 +1521,7 @@ function VistaCliente() {
 
       await cargarAsistentes(idEmpresa);
 
-      const actualizadas = (await listarCapacitaciones(0, 200)).content;
+      const actualizadas = await misCapacitaciones();
       setCapacitaciones(actualizadas);
 
       const capacitacionActualizada = actualizadas.find(c => c.id === modalConfirmar.id);
