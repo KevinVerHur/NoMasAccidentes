@@ -26,6 +26,13 @@ const etiquetaTipo: Record<TipoSolicitud, string> = {
 const fmtFecha = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('es-CL') : '—';
 
+// Fecha mínima seleccionable (formato yyyy-mm-dd) a N días de hoy, en hora local.
+function fechaInputOffset(dias: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export default function MisSolicitudes() {
   const location = useLocation();
   const tipoInicial =
@@ -51,6 +58,11 @@ export default function MisSolicitudes() {
     e.preventDefault();
     if (!descripcion.trim()) {
       setError('Describe brevemente lo que necesitas.');
+      return;
+    }
+    // La capacitación requiere al menos 15 días de anticipación (RF-CAP1).
+    if (tipo === 'CAPACITACION' && fechaPreferida && fechaPreferida < fechaInputOffset(15)) {
+      setError('La capacitación debe solicitarse con al menos 15 días de anticipación.');
       return;
     }
     setEnviando(true);
@@ -125,8 +137,14 @@ export default function MisSolicitudes() {
                 type="date"
                 className="auth-input mt-1"
                 value={fechaPreferida}
+                min={tipo === 'CAPACITACION' ? fechaInputOffset(15) : fechaInputOffset(0)}
                 onChange={(e) => setFechaPreferida(e.target.value)}
               />
+              {tipo === 'CAPACITACION' && (
+                <span className="block text-[12px] text-gray-500 mt-1">
+                  La capacitación debe solicitarse con al menos 15 días de anticipación.
+                </span>
+              )}
             </label>
           )}
 
