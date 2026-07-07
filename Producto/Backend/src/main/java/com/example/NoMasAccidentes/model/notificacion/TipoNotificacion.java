@@ -20,5 +20,11 @@ public enum TipoNotificacion {
     /** El cliente reportó que cumplió su parte de una actividad (aviso a la consultora). */
     CUMPLIMIENTO_REPORTADO,
     /** El cliente pagó una cuota (aviso al representante, con comprobante adjunto en el correo) (RF09). */
-    PAGO_REALIZADO
+    PAGO_REALIZADO,
+    /** Se finalizó una visita: el informe quedó disponible para el cliente (RF14/RF15). */
+    VISITA_REALIZADA,
+    /** Se cerró una asesoría: el informe quedó disponible para el cliente (RF25). */
+    ASESORIA_CERRADA,
+    /** Se realizó una capacitación: el acta y los certificados quedaron disponibles para el cliente. */
+    CAPACITACION_REALIZADA
 }

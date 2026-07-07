@@ -122,6 +122,58 @@ public class NotificacionEventoService {
         }
     }
 
+    /**
+     * Visita finalizada → el informe quedó disponible; avisa a los representantes con acceso (RF14/RF15).
+     */
+    public void notificarVisitaRealizada(Visita visita) {
+        Empresa empresa = visita.getEmpresa();
+        String fecha = String.valueOf(visita.getFechaProgramada());
+        String titulo = "Informe de visita disponible";
+        String mensaje = "La visita del %s finalizó. Ya puedes descargar su informe.".formatted(fecha);
+
+        for (Cliente representante : representantesConAcceso(empresa)) {
+            notificacionService.crear(representante.getUsuario(),
+                    TipoNotificacion.VISITA_REALIZADA, titulo, mensaje, "/mis-actividades");
+            correoService.enviarAvisoInformeVisitaDisponible(
+                    representante.getEmail(), empresa.getRazonSocial(), fecha);
+        }
+    }
+
+    /**
+     * Asesoría cerrada → el informe quedó disponible; avisa a los representantes con acceso (RF25).
+     */
+    public void notificarAsesoriaCerrada(Asesoria asesoria) {
+        Empresa empresa = asesoria.getEmpresa();
+        String tipo = String.valueOf(asesoria.getTipo());
+        String titulo = "Informe de asesoría disponible";
+        String mensaje = "Se cerró la asesoría (%s). Ya puedes descargar su informe.".formatted(tipo);
+
+        for (Cliente representante : representantesConAcceso(empresa)) {
+            notificacionService.crear(representante.getUsuario(),
+                    TipoNotificacion.ASESORIA_CERRADA, titulo, mensaje, "/mis-actividades");
+            correoService.enviarAvisoInformeAsesoriaDisponible(
+                    representante.getEmail(), empresa.getRazonSocial(), tipo);
+        }
+    }
+
+    /**
+     * Capacitación realizada → el acta y los certificados quedaron disponibles; avisa a los representantes.
+     */
+    public void notificarCapacitacionRealizada(Capacitacion capacitacion) {
+        Empresa empresa = capacitacion.getEmpresa();
+        String fecha = String.valueOf(capacitacion.getFechaRealizacion());
+        String titulo = "Capacitación realizada";
+        String mensaje = "Se realizó la capacitación \"%s\". El acta y los certificados ya están disponibles."
+                .formatted(capacitacion.getCurso());
+
+        for (Cliente representante : representantesConAcceso(empresa)) {
+            notificacionService.crear(representante.getUsuario(),
+                    TipoNotificacion.CAPACITACION_REALIZADA, titulo, mensaje, "/mis-capacitaciones");
+            correoService.enviarAvisoCapacitacionRealizada(
+                    representante.getEmail(), empresa.getRazonSocial(), capacitacion.getCurso(), fecha);
+        }
+    }
+
     /** Solicitud creada por el cliente → avisa a los administradores (bandeja + correo). */
     public void notificarSolicitudRecibida(Solicitud solicitud) {
         Empresa empresa = solicitud.getEmpresa();

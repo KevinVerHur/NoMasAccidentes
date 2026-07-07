@@ -321,6 +321,9 @@ public class CapacitacionService {
             capacitacion.setObservacionActa(request.observacionActa());
         }
 
+        // Al finalizar, avisa al cliente que el acta y los certificados quedaron disponibles.
+        notificacionEventoService.notificarCapacitacionRealizada(capacitacion);
+
         log.info("Capacitación finalizada id={} curso='{}' presentes={}/{}",
                 id,
                 capacitacion.getCurso(),

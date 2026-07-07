@@ -42,6 +42,7 @@ public class AsesoriaService {
     private final AsesoriaMapper asesoriaMapper;
     private final NotificacionEventoService notificacionEventoService;
     private final EmpresaService empresaService;
+    private final InformeAsesoriaService informeAsesoriaService;
 
     /** Registra una asesoría (RF22) y determina si es extra según el límite anual (RF23, RF24). */
     @Transactional
@@ -93,6 +94,11 @@ public class AsesoriaService {
             throw new ConflictoNegocioException("La asesoría no está en un estado que permita cerrarla");
         }
         asesoria.setEstado(EstadoAsesoria.CERRADA);
+
+        // Al cerrar, genera el informe de la asesoría automáticamente y avisa al cliente (RF15/RF25).
+        informeAsesoriaService.generarParaAsesoria(id);
+        notificacionEventoService.notificarAsesoriaCerrada(asesoria);
+
         log.info("Asesoría cerrada id={}", id);
         return asesoriaMapper.toResponse(asesoria);
     }
