@@ -30,16 +30,17 @@ public class CapacitacionController {
     private final ActaCapacitacionPdfService actaCapacitacionPdfService;
     private final CertificadoCapacitacionPdfService certificadoCapacitacionPdfService;
 
+    // Listado global: solo personal interno. El cliente usa GET /mias (su empresa).
     @Operation(summary = "Listar todas las capacitaciones paginadas")
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL','CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public Page<CapacitacionResponse> listar(Pageable pageable) {
         return capacitacionService.listar(pageable);
     }
 
     @Operation(summary = "Obtener capacitación por id")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL','CLIENTE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PROFESIONAL')")
     public CapacitacionResponse obtener(@PathVariable Long id) {
         return capacitacionService.obtener(id);
     }

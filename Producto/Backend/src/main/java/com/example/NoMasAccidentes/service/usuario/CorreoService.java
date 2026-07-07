@@ -743,4 +743,93 @@ public class CorreoService {
         """.formatted(empresa, tipo, motivoTexto);
     }
 
+    // ---- Documentos disponibles para el cliente al finalizar una actividad ----
+
+    @Async
+    public void enviarAvisoInformeVisitaDisponible(String destinatario, String empresa, String fecha){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Informe de visita disponible");
+            helper.setText(construirHtmlAvisoInformeVisita(empresa, fecha), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de informe de visita disponible enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de informe de visita a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    private String construirHtmlAvisoInformeVisita(String empresa, String fecha){
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Hola %s, la visita de prevencion del %s ya fue realizada.</p>
+              <p style="color:#3d4856;font-size:14px">El informe con los hallazgos y las propuestas de mejora ya esta disponible en tu portal, en la seccion <strong>Mis actividades</strong>.</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, fecha);
+    }
+
+    @Async
+    public void enviarAvisoInformeAsesoriaDisponible(String destinatario, String empresa, String tipo){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Informe de asesoria disponible");
+            helper.setText(construirHtmlAvisoInformeAsesoria(empresa, tipo), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de informe de asesoria disponible enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de informe de asesoria a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    private String construirHtmlAvisoInformeAsesoria(String empresa, String tipo){
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Hola %s, la asesoria (%s) a nombre de tu empresa fue cerrada.</p>
+              <p style="color:#3d4856;font-size:14px">El informe con el detalle y las recomendaciones ya esta disponible en tu portal, en la seccion <strong>Mis actividades</strong>.</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, tipo);
+    }
+
+    @Async
+    public void enviarAvisoCapacitacionRealizada(String destinatario, String empresa, String curso, String fecha){
+        try {
+            var mensaje = mailSender.createMimeMessage();
+            var helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(remitente);
+            helper.setTo(destinatario);
+            helper.setSubject("No Mas Accidentes - Capacitacion realizada");
+            helper.setText(construirHtmlAvisoCapacitacionRealizada(empresa, curso, fecha), true);
+
+            mailSender.send(mensaje);
+            log.info("Aviso de capacitacion realizada enviado a {}", destinatario);
+        } catch (Exception e) {
+            log.error("Error al enviar aviso de capacitacion realizada a {}: {}", destinatario, e.getMessage());
+        }
+    }
+
+    private String construirHtmlAvisoCapacitacionRealizada(String empresa, String curso, String fecha){
+        return """
+            <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;background:#f5f7fa;border-radius:12px">
+              <h2 style="color:#18395a;margin-bottom:8px"><span style="color:#f0a500">No Mas</span> Accidentes</h2>
+              <p style="color:#3d4856;font-size:14px">Hola %s, la capacitacion "%s" del %s ya fue realizada.</p>
+              <p style="color:#3d4856;font-size:14px">El acta y los certificados de asistencia ya estan disponibles en tu portal, en la seccion <strong>Mis capacitaciones</strong>.</p>
+              <p style="color:#8b95a1;font-size:12px">Este es un mensaje automatico del sistema.</p>
+            </div>
+        """.formatted(empresa, curso, fecha);
+    }
+
 }

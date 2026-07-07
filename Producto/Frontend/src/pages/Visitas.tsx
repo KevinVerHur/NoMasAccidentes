@@ -11,7 +11,7 @@ import type {
   ItemChequeoResponse, EstadoCumplimiento, ResultadoChequeoRequest,
 } from '../types';
 import {
-  listarVisitas, planificarVisita, iniciarVisita, registrarVisita, cancelarVisita, eliminarVisita,
+  listarVisitas, listarMisVisitas, planificarVisita, iniciarVisita, registrarVisita, cancelarVisita, eliminarVisita,
   obtenerListaChequeoEmpresa,
 } from '../api/visitas';
 import { listarClientes } from '../api/clientes';
@@ -70,12 +70,13 @@ export default function Visitas() {
   const cargar = useCallback(async () => {
     setCargando(true);
     try {
-      const data = await listarVisitas(0, 200);
-      setVisitas(data.content);
+      // El ADMIN ve todas las visitas; el profesional solo las asignadas a él (RF04).
+      const data = esAdmin ? (await listarVisitas(0, 200)).content : await listarMisVisitas();
+      setVisitas(data);
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [esAdmin]);
 
   useEffect(() => { cargar(); }, [cargar]);
 

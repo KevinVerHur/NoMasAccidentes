@@ -23,6 +23,7 @@ import com.example.NoMasAccidentes.repository.visita.ResultadoChequeoRepository;
 import com.example.NoMasAccidentes.repository.visita.VisitaRepository;
 import com.example.NoMasAccidentes.service.empresa.EmpresaService;
 import com.example.NoMasAccidentes.service.notificacion.NotificacionEventoService;
+import com.example.NoMasAccidentes.service.informe.InformeService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -51,6 +52,7 @@ public class VisitaService {
     private final VisitaMapper visitaMapper;
     private final EmpresaService empresaService;
     private final NotificacionEventoService notificacionEventoService;
+    private final InformeService informeService;
 
     /** Planifica una visita (RF13). Requiere que la empresa tenga lista de chequeo (RF16). */
     @Transactional
@@ -121,6 +123,11 @@ public class VisitaService {
         visita.setLongitud(request.longitud());
         visita.getProfesional().setEstado(EstadoProfesional.DISPONIBLE);
         guardarResultados(visita, request.resultados());
+
+        // Al finalizar, genera el informe automáticamente y avisa al cliente (RF14/RF15).
+        informeService.generarParaVisita(visita.getId());
+        notificacionEventoService.notificarVisitaRealizada(visita);
+
         log.info("Visita registrada en terreno id={} (RF14); profesional={} -> DISPONIBLE",
                 id, visita.getProfesional().getId());
         return visitaMapper.toResponse(visita);
